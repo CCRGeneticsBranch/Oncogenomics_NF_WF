@@ -3,6 +3,7 @@ reads_ch = Channel.fromFilePairs(params.reads)
 
 process cutadapt {
 	container 'nciccbr/ncigb_cutadapt_v1.18:latest'
+	publishDir 's3://myncitestout', mode: 'copy'
 	
 	input:
 	tuple val(sample_id), path(reads) from reads_ch
