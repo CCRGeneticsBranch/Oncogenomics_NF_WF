@@ -1,5 +1,11 @@
 name: nfmvp
 schemaVersion: 1
+workflows:
+  nfmvp:
+    type:
+      language: nextflow
+      version: 1.0
+    sourceURL: mvp/
 data:
   - location: s3://myncitestbucket
     readOnly: true
