@@ -1,7 +1,7 @@
 {
-  "mainWorkflowURL": "https://github.com/KevinSayers/rnaseq-nf.git",
+  "mainWorkflowURL": "https://github.com/KevinSayers/AWS_MVP_HPC.git",
   "inputFileURLs": [
     "inputs.json"
   ],
-  "engineOptions": "-resume -r kstest"
+  "engineOptions": "-resume -r nfonly"
 }
