@@ -1,0 +1,13 @@
+name: nfmvp
+schemaVersion: 1
+data:
+  - location: s3://myncitestbucket
+    readOnly: true
+contexts:
+    nfmvp:
+        requestSpotInstances: true
+        instanceTypes:
+          - "m5.large"
+        engines:
+            - type: nextflow
+              engine: nextflow

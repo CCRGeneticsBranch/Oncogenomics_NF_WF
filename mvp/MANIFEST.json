@@ -1,0 +1,7 @@
+{
+  "mainWorkflowURL": "https://github.com/KevinSayers/rnaseq-nf.git",
+  "inputFileURLs": [
+    "inputs.json"
+  ],
+  "engineOptions": "-resume -r kstest"
+}
