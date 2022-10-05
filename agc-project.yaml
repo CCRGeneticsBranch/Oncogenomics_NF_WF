@@ -9,6 +9,8 @@ workflows:
 data:
   - location: s3://myncitestbucket
     readOnly: true
+  - location: s3://myncitestout
+    readOnly: false
 contexts:
     nfmvp:
         requestSpotInstances: true

@@ -3,5 +3,5 @@
   "inputFileURLs": [
     "inputs.json"
   ],
-  "engineOptions": "-resume -r nfonly"
+  "engineOptions": "-r nfonly"
 }
