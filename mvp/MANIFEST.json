@@ -1,5 +1,5 @@
 {
-  "mainWorkflowURL": "https://github.com/KevinSayers/AWS_MVP_HPC.git",
+  "mainWorkflowURL": "https://github.com/kopardev/AWS_MVP_HPC.git",
   "inputFileURLs": [
     "inputs.json"
   ],
