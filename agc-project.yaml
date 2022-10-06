@@ -17,3 +17,14 @@ contexts:
         engines:
             - type: nextflow
               engine: nextflow
+    nfmvpnotspot:
+      requestSpotInstances: false
+      instanceTypes:
+        - "m5.large"
+        - "c5.large"
+        - "c5.xlarge"
+        - "r5.large"
+        - "r5.xlarge"
+      engines:
+          - type: nextflow
+            engine: nextflow
