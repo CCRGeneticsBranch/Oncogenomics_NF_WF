@@ -7,10 +7,8 @@ workflows:
       version: 1.0
     sourceURL: mvp/
 data:
-  - location: s3://myncitestbucket
+  - location: s3://ccr-genomics-testdata
     readOnly: true
-  - location: s3://myncitestout
-    readOnly: false
 contexts:
     nfmvp:
         requestSpotInstances: true

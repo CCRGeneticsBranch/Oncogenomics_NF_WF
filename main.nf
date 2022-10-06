@@ -1,9 +1,9 @@
-params.reads = "s3://myncitestbucket/inputs/ggal_gut_{1,2}.fastq"
+params.reads = "s3://ccr-genomics-testdata/testdata/Test*_R_T_R{1,2}.fastq.gz"
 reads_ch = Channel.fromFilePairs(params.reads)
 
 process cutadapt {
 	container 'nciccbr/ncigb_cutadapt_v1.18:latest'
-	publishDir 's3://agc-913060503860-us-west-2/nfmvpout', mode: 'copy'
+	publishDir 's3://agc-424336837382-us-east-1/nfmvpout', mode: 'copy'
 	
 	input:
 	tuple val(sample_id), path(reads) from reads_ch
