@@ -1,6 +1,6 @@
 ## AWS_MVP_HPC
 
-This is a code repository and a living document describing ideas, "how-tos", slideshows etc. related to the Minimal Viable Product (MVP) to be built for the Genetics Branch (GB) on AWS (Cloud One).
+This is a code repository and a living document describing ideas, "how-tos", slideshows etc. related to the Proof of Concept(POC) to be built for the Genetics Branch (GB) on AWS (Cloud One).
 
 > <ins>Disclaimer</ins>: There are two parallel efforts underway for the _"cloudification"_ of GB, namely, 
 > 
