@@ -1,7 +1,7 @@
 {
-  "mainWorkflowURL": "https://github.com/kopardev/AWS_MVP_HPC.git",
+  "mainWorkflowURL": "https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow.git",
   "inputFileURLs": [
     "inputs.json"
   ],
-  "engineOptions": "-r nfonly"
+  "engineOptions": "-resume"
 }
