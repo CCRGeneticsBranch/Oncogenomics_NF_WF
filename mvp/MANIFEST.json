@@ -1,0 +1,7 @@
+{
+  "mainWorkflowURL": "https://github.com/kopardev/AWS_MVP_HPC.git",
+  "inputFileURLs": [
+    "inputs.json"
+  ],
+  "engineOptions": "-r nfonly"
+}

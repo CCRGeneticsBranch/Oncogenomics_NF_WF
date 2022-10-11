@@ -1,0 +1,30 @@
+name: nfmvp
+schemaVersion: 1
+workflows:
+  nfmvp:
+    type:
+      language: nextflow
+      version: 1.0
+    sourceURL: mvp/
+data:
+  - location: s3://ccr-genomics-testdata
+    readOnly: true
+contexts:
+    nfmvp:
+        requestSpotInstances: true
+        instanceTypes:
+          - "m5.large"
+        engines:
+            - type: nextflow
+              engine: nextflow
+    nfmvpnotspot:
+      requestSpotInstances: false
+      instanceTypes:
+        - "m5.large"
+        - "c5.large"
+        - "c5.xlarge"
+        - "r5.large"
+        - "r5.xlarge"
+      engines:
+          - type: nextflow
+            engine: nextflow
