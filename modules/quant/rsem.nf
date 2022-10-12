@@ -11,7 +11,7 @@ process rsem {
         output:
         tuple val("${dataset_id}"), path("trim_${dataset_id}.genes.results")
         
-        container 'docker://nciccbr/ccbr_rsem_1.3.3:v1.0'
+        container 'nciccbr/ccbr_rsem_1.3.3:v1.0'
 
         script:
         """
