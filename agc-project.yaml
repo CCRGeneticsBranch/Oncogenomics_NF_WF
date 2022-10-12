@@ -14,15 +14,18 @@ contexts:
         requestSpotInstances: true
         instanceTypes:
           - "m5.large"
+          - "c5.9xlarge"
+          - "m5.large"
         engines:
             - type: nextflow
               engine: nextflow
     nfmvpnotspot:
       requestSpotInstances: false
       instanceTypes:
+        - "c5.2xlarge"
         - "c5.4xlarge"
-        - "c5.9xlarge"
-        - "m5.large"
+        - "m5.2xlarge"
+        - "m5.4xlarge"
       engines:
           - type: nextflow
             engine: nextflow
