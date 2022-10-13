@@ -1,6 +1,6 @@
 process fastqc {
         tag { dataset_id }
-        publishDir 's3://agc-424336837382-us-east-1/nfmvpout', mode: 'copy'
+        publishDir '$params.s3_bucket/nfmvpout/$dataset_id', mode: 'copy'
 
 //      cache false
         input:
