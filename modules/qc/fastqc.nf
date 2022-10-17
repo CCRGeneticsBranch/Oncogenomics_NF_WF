@@ -1,6 +1,6 @@
 process fastqc {
         tag { dataset_id }
-        publishDir '$params.s3_bucket/nfmvpout/$dataset_id', mode: 'copy'
+        publishDir '$params.s3_bucket/nfmvpout/test/$dataset_id', mode: 'copy'
 
         cache false
         input:
