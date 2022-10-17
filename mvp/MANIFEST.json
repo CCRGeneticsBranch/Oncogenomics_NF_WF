@@ -3,5 +3,5 @@
   "inputFileURLs": [
     "inputs.json"
   ],
-  "engineOptions": "-resume -profile test -r main"
+  "engineOptions": "-resume -profile test_nextflow,testparams_nextflow -r main"
 }
