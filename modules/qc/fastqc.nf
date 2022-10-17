@@ -2,7 +2,7 @@ process fastqc {
         tag { dataset_id }
         publishDir '$params.s3_bucket/nfmvpout/$dataset_id', mode: 'copy'
 
-//      cache false
+        cache false
         input:
         tuple val(dataset_id),
         path(forward),
