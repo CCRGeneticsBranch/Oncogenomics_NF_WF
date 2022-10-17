@@ -1,7 +1,7 @@
 // Using DSL-2
 nextflow.enable.dsl=2
 
-params.reads = "s3://ccr-genomics-testdata/testdata/Test*_R_T_R{1,2}.fastq.gz"
+//params.reads = "s3://ccr-genomics-testdata/testdata/Test*_R_T_R{1,2}.fastq.gz"
 params.genome_index = "s3://ccr-genomics-testdata/References/index-STAR_2.7.9a"
 params.gtf = "s3://ccr-genomics-testdata/References/gencode.v37lift37.annotation_ERCC92.gtf"
 params.rsem_index = "s3://ccr-genomics-testdata/References/rsem_1.3.2"
