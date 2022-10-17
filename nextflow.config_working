@@ -1,0 +1,14 @@
+
+process {
+    cpus = 2
+    memory = '3 GB'
+
+   withName: star {
+       cpus = 8
+       memory = '32 GB'
+       time = '5h'
+   }    
+
+}
+docker.enabled = true
+nextflow.enable.dsl=2
