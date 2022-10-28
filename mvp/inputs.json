@@ -1,3 +1,7 @@
 {
-  "reads": "s3://ccr-genomics-testdata/testdata/Test*_R_T_R{1,2}.fastq.gz"
+  "reads": "s3://ccr-genomics-testdata/testdata/Test*_R_T_R{1,2}.fastq.gz",
+  "genome_index": "s3://ccr-genomics-testdata/References/index-STAR_2.7.9a",
+  "gtf":  "s3://ccr-genomics-testdata/References/gencode.v37lift37.annotation_ERCC92.gtf",
+  "rsem_index": "s3://ccr-genomics-testdata/References/rsem_1.3.2",
+  "resultsdir": "s3://agc-424336837382-us-east-1/nfmvpout"
 }
