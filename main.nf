@@ -21,8 +21,8 @@ include {multiqc} from './modules/qc/multiqc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
 include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_RTC} from './modules/RNAseq_GATK/GATK'
-
+include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
+include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 
 // check input files
 
@@ -59,8 +59,16 @@ workflow{
             .combine(genome_fai)
             .combine(genome_dict)
     )    
-    GATK_RNASeq_RTC(
+    GATK_RNASeq_RTC_IR(
         GATK_RNASeq_Trim.out
+            .combine(genome)
+            .combine(genome_fai)
+            .combine(genome_dict)
+            .combine(phase1_1000g)
+            .combine(Mills_and_1000g)
+    )
+    GATK_RNASeq_BR_PR(
+        GATK_RNASeq_RTC_IR.out
             .combine(genome)
             .combine(genome_fai)
             .combine(genome_dict)
