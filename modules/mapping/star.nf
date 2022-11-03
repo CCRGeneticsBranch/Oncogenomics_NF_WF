@@ -9,7 +9,10 @@ process star {
         
         output:
         tuple val("${dataset_id}"),
-            path("trim_${dataset_id}Aligned.toTranscriptome.out.bam")
+            path("trim_${dataset_id}Aligned.toTranscriptome.out.bam"),
+            path("trim_${dataset_id}Aligned.sortedByCoord.out.bam")
+//        path "trim_${dataset_id}Aligned.toTranscriptome.out.bam", emit: transcriptome_bam,
+//        path "trim_${dataset_id}Aligned.sortedByCoord.out.bam", emit: genome_bam
 
         container 'nciccbr/ncigb_star_v2.7.10a:latest'
 

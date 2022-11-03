@@ -5,8 +5,10 @@ process rsem {
         publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
 
         input:
+
         tuple val(dataset_id),
-        path(bam),
+        path(T_bam),
+        path(G_bam),
         path(genomeIndex)
 
         output:
@@ -16,7 +18,7 @@ process rsem {
 
         script:
         """
-        rsem-calculate-expression --no-bam-output --paired-end -p ${task.cpus}  --estimate-rspd  --bam $bam ${genomeIndex}/rsem_1.3.2 trim_$dataset_id
+        rsem-calculate-expression --no-bam-output --paired-end -p ${task.cpus}  --estimate-rspd  --bam $T_bam ${genomeIndex}/rsem_1.3.2 trim_$dataset_id
         """
 
 }

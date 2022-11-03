@@ -1,0 +1,54 @@
+process GATK_RNASeq_Trim {
+        tag { dataset_id }
+
+        input:
+        tuple val(dataset_id),
+        path(bam),
+        path(index),
+        path(markdup),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict)
+
+        output:
+        tuple val("${dataset_id}"),
+        path("trim_${dataset_id}.star.trim.bam"),
+        path("trim_${dataset_id}.star.trim.bai")
+
+        container 'nciccbr/ccrgb_gatk_3.8-1:v1.0'
+
+        script:
+        """
+
+        java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T SplitNCigarReads -R $genome -I $bam -o trim_${dataset_id}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
+
+        """
+}
+
+
+process GATK_RNASeq_RTC {
+        tag { dataset_id }
+
+        input:
+	tuple val(dataset_id),
+        path(bam),
+        path(index),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict),
+        path(phase1_1000g),
+        path(Mills_and_1000g)
+
+        output:
+        tuple val("${dataset_id}"),
+        path("trim_${dataset_id}.star.realignment.intervals")
+
+        container 'nciccbr/ccrgb_gatk_3.8-1:v1.0'
+
+        script:
+        """
+
+	java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.realignment.intervals
+        """
+}
+
