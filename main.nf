@@ -23,6 +23,8 @@ include {Picard_MarkDuplicates} from './modules/qc/picard'
 include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
 include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
 include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
+include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
+include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 
 // check input files
 
@@ -35,6 +37,8 @@ workflow{
     genome_fai = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf = Channel.of(file(params.gtf, checkIfExists:true))
+    ref_flat = Channel.of(file(params.ref_flat, checkIfExists:true))
+    rRNA_interval = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
     rsemIndex = Channel.of(file(params.rsem_index, checkIfExists:true))
     phase1_1000g = Channel.of(file(params.phase1_1000g, checkIfExists:true))
     Mills_and_1000g = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
@@ -52,6 +56,15 @@ workflow{
     )
     multiqc(fastqc.out)
     Picard_AddReadgroups(star.out)    
+    Picard_CollectRNAseqmetrics(
+        Picard_AddReadgroups.out
+            .combine(ref_flat)
+            .combine(rRNA_interval) 
+    )    
+    Picard_CollectAlignmentSummaryMetrics(
+        Picard_AddReadgroups.out
+            .combine(genome)
+    )
     Picard_MarkDuplicates(Picard_AddReadgroups.out)
     GATK_RNASeq_Trim(
         Picard_MarkDuplicates.out
