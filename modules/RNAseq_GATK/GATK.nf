@@ -15,7 +15,6 @@ process GATK_RNASeq_Trim {
         path("trim_${dataset_id}.star.trim.bam"),
         path("trim_${dataset_id}.star.trim.bai")
 
-        container 'nciccbr/ccrgb_gatk_3.8-1:v1.0'
 
         script:
         """
@@ -44,7 +43,6 @@ process GATK_RNASeq_RTC_IR {
         path("trim_${dataset_id}.star.Ir.bam"),
         path("trim_${dataset_id}.star.Ir.bai")
 
-        container 'nciccbr/ccrgb_gatk_3.8-1:v1.0'
 
         script:
         """
@@ -76,7 +74,6 @@ process GATK_RNASeq_BR_PR {
         path("trim_${dataset_id}.star.final.bam"),
         path("trim_${dataset_id}.star.final.bam.bai")
 
-        container 'nciccbr/ccrgb_gatk_3.8-1:v1.0'
 
         script:
         """

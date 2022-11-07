@@ -13,7 +13,6 @@ process cutadapt {
         path("trim_${dataset_id}_R1.fastq"),
         path("trim_${dataset_id}_R2.fastq")
 
-        container 'nciccbr/ncigb_cutadapt_v1.18:latest'
 
         script:
         """

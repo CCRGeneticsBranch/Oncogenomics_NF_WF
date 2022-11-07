@@ -1,7 +1,6 @@
 process rsem {
         tag { dataset_id }
 
-//        publishDir "s3://agc-424336837382-us-east-1/nfmvpout/$dataset_id", mode: 'copy'
         publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
 
         input:
@@ -14,7 +13,6 @@ process rsem {
         output:
         tuple val("${dataset_id}"), path("trim_${dataset_id}.genes.results")
         
-        container 'nciccbr/ccbr_rsem_1.3.3:v1.0'
 
         script:
         """

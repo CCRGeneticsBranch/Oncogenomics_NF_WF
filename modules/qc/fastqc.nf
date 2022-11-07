@@ -11,7 +11,6 @@ process fastqc {
         tuple val("${dataset_id}"),
         path("fastqc_trim_${dataset_id}")
 
-        container 'nciccbr/ccbr_fastqc_0.11.9:v1.1'
 
         script:
         """

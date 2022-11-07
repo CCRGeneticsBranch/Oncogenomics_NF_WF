@@ -1,5 +1,4 @@
 
-
 process Picard_AddReadgroups {
         tag { dataset_id }
 
@@ -14,7 +13,6 @@ process Picard_AddReadgroups {
         path("trim_${dataset_id}_star.bam"),
         path("trim_${dataset_id}_star.bam.bai")
 
-        container 'nciccbr/ccrgb_qctools:latest'
 
         script:
         """
@@ -42,7 +40,6 @@ process Picard_CollectRNAseqmetrics {
         path("trim_${dataset_id}.RnaSeqMetrics.txt"),
         path("trim_${dataset_id}.RnaSeqMetrics.pdf")
 
-        container 'nciccbr/ccrgb_qctools:latest'
 
         script:
         """
@@ -67,7 +64,6 @@ process Picard_CollectAlignmentSummaryMetrics {
         tuple val("${dataset_id}"),
         path("trim_${dataset_id}.AlignmentSummaryMetrics.txt")
 
-        container 'nciccbr/ccrgb_qctools:latest'
 
         script:
         """
@@ -93,7 +89,6 @@ process Picard_MarkDuplicates {
         path("trim_${dataset_id}.star.dd.bam.bai"),
         path("trim_${dataset_id}.markdup.txt")
 
-        container 'nciccbr/ccrgb_qctools:latest'
 
         script:
         """
