@@ -16,10 +16,12 @@ process Picard_AddReadgroups {
 
         script:
         """
-       
-        java  -jar /opt2/picardtools/picardcloud.jar AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $G_bam  -OUTPUT trim_${dataset_id}_star.bam -SORT_ORDER coordinate -RGLB trim_${dataset_id} -RGPU trim_${dataset_id} -RGPL ILLUMINA -RGSM trim_${dataset_id} -RGCN khanlab
+        set -exo pipefail
+        printenv
+          
+        java  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $G_bam  -OUTPUT trim_${dataset_id}_star.bam -SORT_ORDER coordinate -RGLB trim_${dataset_id} -RGPU trim_${dataset_id} -RGPL ILLUMINA -RGSM trim_${dataset_id} -RGCN khanlab
 
-        java  -jar /opt2/picardtools/picardcloud.jar BuildBamIndex  -INPUT trim_${dataset_id}_star.bam -OUTPUT trim_${dataset_id}_star.bam.bai
+        java  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${dataset_id}_star.bam -OUTPUT trim_${dataset_id}_star.bam.bai
         """
 }
 
@@ -44,7 +46,7 @@ process Picard_CollectRNAseqmetrics {
         script:
         """
 
-        java  -jar /opt2/picardtools/picardcloud.jar CollectRnaSeqMetrics STRAND_SPECIFICITY=NONE VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=trim_${dataset_id}.RnaSeqMetrics.txt CHART_OUTPUT=trim_${dataset_id}.RnaSeqMetrics.pdf
+        java  -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=NONE VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=trim_${dataset_id}.RnaSeqMetrics.txt CHART_OUTPUT=trim_${dataset_id}.RnaSeqMetrics.pdf
 
         """
 }
@@ -68,7 +70,7 @@ process Picard_CollectAlignmentSummaryMetrics {
         script:
         """
 
-	java  -jar /opt2/picardtools/picardcloud.jar CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE=$genome INPUT=$bam OUTPUT=trim_${dataset_id}.AlignmentSummaryMetrics.txt ADAPTER_SEQUENCE=null
+	java  -jar \$PICARDJAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE=$genome INPUT=$bam OUTPUT=trim_${dataset_id}.AlignmentSummaryMetrics.txt ADAPTER_SEQUENCE=null
 
         """
 }
@@ -93,9 +95,9 @@ process Picard_MarkDuplicates {
         script:
         """
 
-        java  -jar /opt2/picardtools/picardcloud.jar MarkDuplicates AS=true M=trim_${dataset_id}.markdup.txt INPUT=$bam OUTPUT=trim_${dataset_id}.star.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
+        java  -jar \$PICARDJAR MarkDuplicates AS=true M=trim_${dataset_id}.markdup.txt INPUT=$bam OUTPUT=trim_${dataset_id}.star.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
 
-        java  -jar /opt2/picardtools/picardcloud.jar BuildBamIndex  -INPUT trim_${dataset_id}.star.dd.bam -OUTPUT trim_${dataset_id}.star.dd.bam.bai
+        java  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${dataset_id}.star.dd.bam -OUTPUT trim_${dataset_id}.star.dd.bam.bai
 
         """
 }

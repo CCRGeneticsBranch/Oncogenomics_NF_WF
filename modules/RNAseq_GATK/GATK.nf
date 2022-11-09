@@ -19,7 +19,7 @@ process GATK_RNASeq_Trim {
         script:
         """
 
-        java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T SplitNCigarReads -R $genome -I $bam -o trim_${dataset_id}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
+        java -jar \$GATK_JAR -T SplitNCigarReads -R $genome -I $bam -o trim_${dataset_id}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
 
         """
 }
@@ -47,9 +47,9 @@ process GATK_RNASeq_RTC_IR {
         script:
         """
 
-	java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.realignment.intervals
+	java -jar \$GATK_JAR -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.realignment.intervals
 
-        java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals trim_${dataset_id}.star.realignment.intervals -o trim_${dataset_id}.star.Ir.bam        
+        java -jar \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals trim_${dataset_id}.star.realignment.intervals -o trim_${dataset_id}.star.Ir.bam        
 
         """
 }
@@ -78,9 +78,9 @@ process GATK_RNASeq_BR_PR {
         script:
         """
 
-        java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.recalibration.matrix.txt 
+        java -jar \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.recalibration.matrix.txt 
 
-        java -jar /opt2/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar -T PrintReads -R $genome -I $bam -o trim_${dataset_id}.star.final.bam -BQSR trim_${dataset_id}.star.recalibration.matrix.txt
+        java -jar \$GATK_JAR -T PrintReads -R $genome -I $bam -o trim_${dataset_id}.star.final.bam -BQSR trim_${dataset_id}.star.recalibration.matrix.txt
 
         mv trim_${dataset_id}.star.final.bai trim_${dataset_id}.star.final.bam.bai
 

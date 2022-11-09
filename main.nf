@@ -25,6 +25,7 @@ include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
 include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
+//include {fusioncatcher} from './modules/fusion/fusion'
 
 // check input files
 
@@ -50,6 +51,7 @@ workflow{
             .combine(star_genomeIndex)
             .combine(gtf)
     )
+//    fusioncatcher(cutadapt.out)        
     rsem(
         star.out
             .combine(rsemIndex)
