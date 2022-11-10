@@ -14,10 +14,10 @@ log.info """\
 //import modules
 
 include {cutadapt} from './modules/cutadapt/cutadapt'
-include {fastqc} from './modules/qc/fastqc'
+include {fastqc} from './modules/qc/qc'
 include {star} from './modules/mapping/star'
 include {rsem} from './modules/quant/rsem'
-include {multiqc} from './modules/qc/multiqc'
+include {multiqc} from './modules/qc/qc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
 include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
@@ -25,6 +25,8 @@ include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
 include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
+//working on Genotyping process
+//include {Genotyping} from  './modules/qc/qc'
 //include {fusioncatcher} from './modules/fusion/fusion'
 
 // check input files
@@ -43,7 +45,12 @@ workflow{
     rsemIndex = Channel.of(file(params.rsem_index, checkIfExists:true))
     phase1_1000g = Channel.of(file(params.phase1_1000g, checkIfExists:true))
     Mills_and_1000g = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
+    Sites1000g4genotyping = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
+    vcf2genotype = Channel.of(file(params.vcf2genotype, checkIfExists:true))
+    vcf2loh = Channel.of(file(params.vcf2loh, checkIfExists:true))
     
+// Assigning inputs to all the process
+
     cutadapt(read_pairs)
     fastqc(cutadapt.out)
     star(
@@ -51,7 +58,6 @@ workflow{
             .combine(star_genomeIndex)
             .combine(gtf)
     )
-//    fusioncatcher(cutadapt.out)        
     rsem(
         star.out
             .combine(rsemIndex)
@@ -68,6 +74,14 @@ workflow{
             .combine(genome)
     )
     Picard_MarkDuplicates(Picard_AddReadgroups.out)
+//    Genotyping(
+//       Picard_AddReadgroups.out
+//            .combine(genome)
+//            .combine(Sites1000g4genotyping)
+//            .combine(vcf2genotype)
+//            .combine(vcf2loh)
+//    )
+
     GATK_RNASeq_Trim(
         Picard_MarkDuplicates.out
             .combine(genome)
