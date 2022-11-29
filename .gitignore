@@ -1,2 +1,4 @@
 **/.koparde*
 site/**
+**/.nextflow*
+work/**
