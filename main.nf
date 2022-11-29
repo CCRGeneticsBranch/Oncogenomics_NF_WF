@@ -52,10 +52,10 @@ workflow{
 // Assigning inputs to all the process
 
     cutadapt(read_pairs)
-    // fastqc_input = Channel.fromPath([params.reads,params.resultsdir+'/*fastq.gz'])
+    fastqc_input = Channel.fromPath([params.resultsdir+'*fastq.gz'])
     // fastqc_input = Channel.fromPath([params.reads])
-    fastqc_input = cutadapt.out
-                    .combine(read_pairs)
+    // fastqc_input = cutadapt.out
+    //                 .combine(read_pairs)
     fastqc_input.view()
     // fastqc(read_pairs)
     // fastqc(cutadapt.out)
