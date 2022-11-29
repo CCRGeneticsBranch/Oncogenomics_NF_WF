@@ -10,8 +10,8 @@ process cutadapt {
 
         output:
         tuple val("${dataset_id}"),
-        path("${dataset_id}_R1.trim.fastq.gz "),
-        path("${dataset_id}_R2.trim.fastq.gz )
+        path("${dataset_id}_R1.trim.fastq.gz"),
+        path("${dataset_id}_R2.trim.fastq.gz")
 
 
         script:
