@@ -12,7 +12,7 @@ export NXF_HOME="/data/khanlab3/kopardevn/.nextflow"
 # this can also be set using "workDir" in nextflow.config
 # export NXF_WORK="/data/khanlab3/kopardevn/AWS_MVP_test/work"
 export OUTDIR="/data/khanlab3/kopardevn/AWS_MVP_test"
-export OUTTAG=".2" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG
+export OUTTAG="2" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
 
 printenv|grep NXF
 
