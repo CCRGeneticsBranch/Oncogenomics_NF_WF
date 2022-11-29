@@ -52,28 +52,28 @@ workflow{
 // Assigning inputs to all the process
 
     cutadapt(read_pairs)
-    fastqc(cutadapt.out)
-    star(
-        cutadapt.out
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
-    rsem(
-        star.out
-            .combine(rsemIndex)
-    )
-    multiqc(fastqc.out)
-    Picard_AddReadgroups(star.out)    
-    Picard_CollectRNAseqmetrics(
-        Picard_AddReadgroups.out
-            .combine(ref_flat)
-            .combine(rRNA_interval) 
-    )    
-    Picard_CollectAlignmentSummaryMetrics(
-        Picard_AddReadgroups.out
-            .combine(genome)
-    )
-    Picard_MarkDuplicates(Picard_AddReadgroups.out)
+    // fastqc(cutadapt.out)
+    // star(
+    //     cutadapt.out
+    //         .combine(star_genomeIndex)
+    //         .combine(gtf)
+    // )
+    // rsem(
+    //     star.out
+    //         .combine(rsemIndex)
+    // )
+    // multiqc(fastqc.out)
+    // Picard_AddReadgroups(star.out)    
+    // Picard_CollectRNAseqmetrics(
+    //     Picard_AddReadgroups.out
+    //         .combine(ref_flat)
+    //         .combine(rRNA_interval) 
+    // )    
+    // Picard_CollectAlignmentSummaryMetrics(
+    //     Picard_AddReadgroups.out
+    //         .combine(genome)
+    // )
+    // Picard_MarkDuplicates(Picard_AddReadgroups.out)
 //    Genotyping(
 //       Picard_AddReadgroups.out
 //            .combine(genome)
@@ -82,28 +82,28 @@ workflow{
 //            .combine(vcf2loh)
 //    )
 
-    GATK_RNASeq_Trim(
-        Picard_MarkDuplicates.out
-            .combine(genome)
-            .combine(genome_fai)
-            .combine(genome_dict)
-    )    
-    GATK_RNASeq_RTC_IR(
-        GATK_RNASeq_Trim.out
-            .combine(genome)
-            .combine(genome_fai)
-            .combine(genome_dict)
-            .combine(phase1_1000g)
-            .combine(Mills_and_1000g)
-    )
-    GATK_RNASeq_BR_PR(
-        GATK_RNASeq_RTC_IR.out
-            .combine(genome)
-            .combine(genome_fai)
-            .combine(genome_dict)
-            .combine(phase1_1000g)
-            .combine(Mills_and_1000g)
-    )
+    // GATK_RNASeq_Trim(
+    //     Picard_MarkDuplicates.out
+    //         .combine(genome)
+    //         .combine(genome_fai)
+    //         .combine(genome_dict)
+    // )    
+    // GATK_RNASeq_RTC_IR(
+    //     GATK_RNASeq_Trim.out
+    //         .combine(genome)
+    //         .combine(genome_fai)
+    //         .combine(genome_dict)
+    //         .combine(phase1_1000g)
+    //         .combine(Mills_and_1000g)
+    // )
+    // GATK_RNASeq_BR_PR(
+    //     GATK_RNASeq_RTC_IR.out
+    //         .combine(genome)
+    //         .combine(genome_fai)
+    //         .combine(genome_dict)
+    //         .combine(phase1_1000g)
+    //         .combine(Mills_and_1000g)
+    // )
 
 }
 
