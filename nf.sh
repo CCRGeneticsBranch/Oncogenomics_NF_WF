@@ -5,7 +5,7 @@
 # biowulf_test_run_slurm -> get interactive node and submit jobs to slurm
 # 
 
-PROFILE = "biowulf_test_run_local"
+PROFILE="biowulf_test_run_local"
 
 set -e
 
@@ -19,12 +19,11 @@ CONFIG_FILE="$WF_HOME/nextflow.config"
 # load singularity and nextflow modules
 module load singularity nextflow
 
-
 # set workDir ... by default it goes to `pwd`/work
 # this can also be set using "workDir" in nextflow.config
 # export NXF_WORK="/data/khanlab2/kopardevn/AWS_MVP_test/work"
 export OUTDIR="/data/khanlab3/kopardevn/AWS_MVP_test"
-export OUTTAG="6" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
+export OUTTAG="7" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
 export RESULTSDIR="$OUTDIR/results.$OUTTAG"
 export WORKDIR="$OUTDIR/work.$OUTTAG"
 
