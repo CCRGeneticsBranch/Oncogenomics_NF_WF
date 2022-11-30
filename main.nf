@@ -17,7 +17,7 @@ log.info """\
 include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
 include {Star} from './modules/mapping/star'
-include {rsem} from './modules/quant/rsem'
+include {Rsem} from './modules/quant/rsem'
 include {multiqc} from './modules/qc/qc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
@@ -72,10 +72,12 @@ workflow{
             .combine(star_genomeIndex)
             .combine(gtf)
     )
-    // rsem(
-    //     star.out
-    //         .combine(rsemIndex)
-    // )
+
+    Rsem(
+        Star.out
+            .combine(rsemIndex)
+    )
+
     // multiqc(fastqc.out)
     // Picard_AddReadgroups(star.out)    
     // Picard_CollectRNAseqmetrics(
