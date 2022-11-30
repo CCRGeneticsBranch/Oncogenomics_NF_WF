@@ -58,9 +58,11 @@ workflow{
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
     fastqc_input = Cutadapt.out.combine(read_pairs)
-    fastqc_input = fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
+    fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
                 fqc_input: id1 == id2
                     return ( tuple (id1,r1,r2,trimr1,trimr2) )
+                other: true
+                    return ( tuple (id1,id2) )
                     } \
                 .set { fqc_inputs }
     // fqc_inputs.fqc_input.view()
