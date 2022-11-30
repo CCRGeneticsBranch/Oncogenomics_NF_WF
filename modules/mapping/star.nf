@@ -17,15 +17,15 @@ process Star {
         path("${dataset_id}.Aligned.sortedByCoord.out.bam.bai")
 
     script:
-    randstr = randomstr
     """
     set -exo pipefail
 if [ -d /lscratch/${SLURM_JOB_ID} ];then
-        TMPDIR="/lscratch/${SLURM_JOB_ID}/$randstr"
+    TMPDIR="/lscratch/${SLURM_JOB_ID}/$dataset_id"
 else
-    TMPDIR="/dev/shm/$randstr"
+    TMPDIR="/dev/shm/$dataset_id"
 fi
-    """
+if [ ! -d $TMPDIR ];then mkdir -p $TMPDIR;fi
+
     STAR --genomeDir ${genomeIndex} \
         --readFilesIn $r1 $r2 \
         --readFilesCommand zcat \
@@ -43,7 +43,7 @@ fi
         --outSAMtype BAM Unsorted \
         --quantMode TranscriptomeSAM 
     samtools sort -@ ${task.cpus} -T $TMPDIR -o ${dataset_id}.Aligned.sortedByCoord.out.bam -O BAM ${dataset_id}.Aligned.out.bam
-    samtools index -@ {task.cpus} ${dataset_id}.Aligned.sortedByCoord.out.bam
+    samtools index -@ ${task.cpus} ${dataset_id}.Aligned.sortedByCoord.out.bam
     """
 
 }
