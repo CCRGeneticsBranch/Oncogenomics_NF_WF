@@ -1,21 +1,22 @@
 process fastqc {
         tag { dataset_id }
+
         publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
 
-        input:
-        tuple val(dataset_id),
-        path(forward),
-        path(reverse)
+	input:
+	tuple val(dataset_id),
+        path(r1),
+        path(r2),
+        path(trim_r1),
+        path(trim_r2)
 
-        output:
-        tuple val("${dataset_id}"),
-        path("fastqc_trim_${dataset_id}")
-
+	output:
+	path(fastqc)
 
         script:
         """
-        mkdir fastqc_trim_${dataset_id}
-        fastqc -o fastqc_trim_${dataset_id} -q $forward $reverse
+	if [ ! -d fastqc ];then mkdir -p fastqc;fi
+        fastqc $r1 $r2 $trim_r1 $trim_r2 -t $task.cpus -o fastqc
         """
 }
 
