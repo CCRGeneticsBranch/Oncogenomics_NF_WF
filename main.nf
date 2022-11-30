@@ -52,13 +52,20 @@ workflow{
 // Assigning inputs to all the process
 
     cutadapt(read_pairs)
-    fastqc_input = Channel.fromPath([params.resultsdir+'*fastq.gz'])
-    // fastqc_input = Channel.fromPath([params.reads])
-    // fastqc_input = cutadapt.out
-    //                 .combine(read_pairs)
-    fastqc_input.view()
-    // fastqc(read_pairs)
-    // fastqc(cutadapt.out)
+    // cutadapt.out.view()
+    fastqc_input = cutadapt.out.combine(read_pairs)
+    fastqc_input = fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
+				fqc_input: id1 == id2
+					return ( tuple (id1,r1,r2,trimr1,trimr2) )
+					} \
+				.set { fqc_inputs }
+    fqc_inputs.fqc_input.view()
+	
+    //fastqc_input.view()
+
+    // fastqc_input = Channel.fromPath([params.reads,params.resultsdir+'/**/*.fastq.gz']).collect()
+    // fastqc_input.view()
+    fastqc(fqc_inputs.fqc_input)
     // star(
     //     cutadapt.out
     //         .combine(star_genomeIndex)
