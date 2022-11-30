@@ -35,4 +35,8 @@ nextflow \
 	-C $CONFIG_FILE \
 	run \
 	-profile test_biowulf \
-	$WF_HOME/main.nf -resume
+	$WF_HOME/main.nf -resume \
+	-with-report $RESULTSDIR/report.html \
+	-with-trace \
+	-with-timeline $RESULTSDIR/timeline.html \
+	-with-dag $RESULTSDIR/dag.png
