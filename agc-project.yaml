@@ -11,7 +11,7 @@ data:
     readOnly: true
 contexts:
     nfmvp:
-        requestSpotInstances: true
+        requestSpotInstances: false
         instanceTypes:
           - "m5.large"
           - "c5.9xlarge"
