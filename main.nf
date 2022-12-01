@@ -32,17 +32,17 @@ log.info """\
 //import modules
 
 include {Cutadapt} from './modules/cutadapt/cutadapt'
-include {Fastqc} from './modules/qc/qc'
-include {Star} from './modules/mapping/star'
-include {Rsem} from './modules/quant/rsem'
-include {multiqc} from './modules/qc/qc'
-include {Picard_AddReadgroups} from './modules/qc/picard'
-include {Picard_MarkDuplicates} from './modules/qc/picard'
-include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
-include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
-include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
+//include {Fastqc} from './modules/qc/qc'
+//include {Star} from './modules/mapping/star'
+//include {Rsem} from './modules/quant/rsem'
+//include {multiqc} from './modules/qc/qc'
+//include {Picard_AddReadgroups} from './modules/qc/picard'
+//include {Picard_MarkDuplicates} from './modules/qc/picard'
+//include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
+//include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
+//include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
+//include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
+//include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 //working on Genotyping process
 //include {Genotyping} from  './modules/qc/qc'
 //include {fusioncatcher} from './modules/fusion/fusion'
@@ -52,7 +52,7 @@ workflow {
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
                                 .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
-    star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
+    // star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
     // genome                  = Channel.of(file(params.genome, checkIfExists:true))
     // genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     // genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
@@ -71,28 +71,28 @@ workflow {
     Cutadapt(read_pairs)
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
-    fastqc_input = Cutadapt.out.combine(read_pairs)
-    fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
-                fqc_input: id1 == id2
-                    return ( tuple (id1,r1,r2,trimr1,trimr2) )
-                other: true
-                    return ( tuple (id1,id2) )
-                    } \
-                .set { fqc_inputs }
+    //fastqc_input = Cutadapt.out.combine(read_pairs)
+    //fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
+    //            fqc_input: id1 == id2
+    //                return ( tuple (id1,r1,r2,trimr1,trimr2) )
+    //            other: true
+    //                return ( tuple (id1,id2) )
+    //               } \
+    //            .set { fqc_inputs }
     // fqc_inputs.fqc_input.view()
     
-    Fastqc(fqc_inputs.fqc_input)
+    //Fastqc(fqc_inputs.fqc_input)
     
-    Star(
-        Cutadapt.out
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
+    //Star(
+    //    Cutadapt.out
+    //        .combine(star_genomeIndex)
+    //        .combine(gtf)
+    //)
 
-    Rsem(
-        Star.out
-            .combine(rsemIndex)
-    )
+    //Rsem(
+    //    Star.out
+    //        .combine(rsemIndex)
+    //)
 
     // multiqc(fastqc.out)
     // Picard_AddReadgroups(star.out)    
