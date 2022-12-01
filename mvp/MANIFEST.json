@@ -1,8 +1,5 @@
 {
   "mainWorkflowURL": "https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow.git",
-  "inputFileURLs": [
-    "inputs.json"
-  ],
-  "engineOptions": "-resume -profile test -r main"
+  "engineOptions": "-resume -profile aws_agc_test -r mvp_vnk"
 }
 
