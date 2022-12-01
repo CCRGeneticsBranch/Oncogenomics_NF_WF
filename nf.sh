@@ -5,7 +5,8 @@
 # biowulf_test_run_slurm -> get interactive node and submit jobs to slurm
 # 
 
-PROFILE="biowulf_test_run_local"
+#PROFILE="biowulf_test_run_local"
+PROFILE="biowulf_test_run_slurm"
 
 set -e
 
