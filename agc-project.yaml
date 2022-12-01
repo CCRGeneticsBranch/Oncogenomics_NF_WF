@@ -15,7 +15,7 @@ contexts:
         instanceTypes:
           - "m5.large"
           - "c5.9xlarge"
-          - "m5.large"
+          - "m5.xlarge"
         engines:
             - type: nextflow
               engine: nextflow
