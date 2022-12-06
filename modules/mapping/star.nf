@@ -20,7 +20,7 @@ process Star {
     """
     set -exo pipefail
     if [ -d /lscratch/\${SLURM_JOB_ID} ];then
-        TMPDIR="/lscratch/${SLURM_JOB_ID}/$dataset_id"
+        TMPDIR="/lscratch/\${SLURM_JOB_ID}/$dataset_id"
     else
         TMPDIR="/dev/shm/$dataset_id"
     fi
