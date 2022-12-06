@@ -35,7 +35,7 @@ include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
 include {Star} from './modules/mapping/star'
 include {Rsem} from './modules/quant/rsem'
-//include {multiqc} from './modules/qc/qc'
+include {multiqc} from './modules/qc/qc'
 //include {Picard_AddReadgroups} from './modules/qc/picard'
 //include {Picard_MarkDuplicates} from './modules/qc/picard'
 //include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
@@ -81,20 +81,23 @@ workflow {
                 .set { fqc_inputs }
     // fqc_inputs.fqc_input.view()
     
+    // Run FASTQC, MULTIQC report
     Fastqc(fqc_inputs.fqc_input)
+    multiqc(fastqc.out)
     
+    // Run STAR
     Star(
         Cutadapt.out
             .combine(star_genomeIndex)
             .combine(gtf)
     )
 
+    // Run STAR
     Rsem(
         Star.out
             .combine(rsemIndex)
     )
 
-    // multiqc(fastqc.out)
     // Picard_AddReadgroups(star.out)    
     // Picard_CollectRNAseqmetrics(
     //     Picard_AddReadgroups.out
