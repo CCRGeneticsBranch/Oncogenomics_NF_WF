@@ -16,6 +16,7 @@ contexts:
           - "m5.large"
           - "c5.9xlarge"
           - "m5.xlarge"
+          - "m5.12xlarge"
         engines:
             - type: nextflow
               engine: nextflow
