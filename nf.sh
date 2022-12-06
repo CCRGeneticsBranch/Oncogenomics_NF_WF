@@ -5,8 +5,8 @@
 # biowulf_test_run_slurm -> get interactive node and submit jobs to slurm
 # 
 
-#PROFILE="biowulf_test_run_local"
-PROFILE="biowulf_test_run_slurm"
+PROFILE="biowulf_test_run_local"
+# PROFILE="biowulf_test_run_slurm"
 
 set -e
 
@@ -18,7 +18,7 @@ WF_HOME=$SCRIPT_DIRNAME
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
 # load singularity and nextflow modules
-module load singularity nextflow
+module load singularity nextflow graphviz
 
 # set workDir ... by default it goes to `pwd`/work
 # this can also be set using "workDir" in nextflow.config
