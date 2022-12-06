@@ -8,7 +8,7 @@ This code repo represents the Nextflow implementation of the POC (and MVP) of th
 
 ### Flowchart
 
-https://i.imgur.com/NvfwmRD.png
+![](https://i.imgur.com/NvfwmRD.png)
 
 This chart represents the entire MVP plan with the POC being highlighted in yellow.
 
