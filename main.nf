@@ -83,7 +83,7 @@ workflow {
     
     // Run FASTQC, MULTIQC report
     Fastqc(fqc_inputs.fqc_input)
-    multiqc(Fastqc.out)
+    Multiqc(Fastqc.out)
     
     // Run STAR
     Star(
