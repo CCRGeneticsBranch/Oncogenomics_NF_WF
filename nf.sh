@@ -30,7 +30,7 @@ export WORKDIR="$OUTDIR/work.$OUTTAG"
 
 # set .nextflow dir ... dont want this to go to $HOME/.nextflow
 export NXF_HOME="$RESULTSDIR/.nextflow"
-
+# export SINGULARITY_BIND="/lscratch/$SLURM_JOB_ID"
 
 printenv|grep NXF
 
