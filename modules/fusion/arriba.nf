@@ -17,6 +17,13 @@ process Arriba {
         path("${dataset_id}.fusions.discarded.tsv"),
         path("${dataset_id}.fusions.pdf")
 
+    stub:
+    """
+    touch "${dataset_id}.fusions.tsv"
+    touch "${dataset_id}.fusions.discarded.tsv"
+    touch "${dataset_id}.fusions.pdf"
+    """
+
     shell:
     '''
 set -exo pipefail
@@ -25,9 +32,7 @@ if [ -d /lscratch/${SLURM_JOB_ID} ];then
 else
     TMPDIR="/dev/shm/!{dataset_id}_Arriba"
 fi
-if [ -d $TMPDIR ];then rm -rf $TMPDIR;fi
-
-# cd \$TMPDIR
+if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
 
 STAR \
     --runThreadN !{task.cpus} \
