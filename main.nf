@@ -35,6 +35,7 @@ include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
 include {Star} from './modules/mapping/star'
 include {Rsem} from './modules/quant/rsem'
+include {Arriba} from './modules/fusion/arriba'
 include {multiqc} from './modules/qc/qc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
@@ -52,14 +53,26 @@ workflow {
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
                                 .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
-    star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
+
+// Genome specifics
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
+
+// STAR and RSEM
+    star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
+    rsemIndex               = Channel.of(file(params.rsem_index, checkIfExists:true))
+
+// Arriba params
+// These are now coming from the docker (ccbr_starplus)
+    // blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
+    // proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
+    // cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
+
+// Picard and Genotyping
     ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
     rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
-    rsemIndex               = Channel.of(file(params.rsem_index, checkIfExists:true))
     phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
     Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
     Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
@@ -92,6 +105,13 @@ workflow {
     Rsem(
        Star.out
            .combine(rsemIndex)
+    )
+
+    Arriba(
+        Cutadapt.out
+            .combine(genome)
+            .combine(star_genomeIndex)
+            .combine(gtf)
     )
 
     // multiqc(fastqc.out)
