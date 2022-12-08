@@ -36,6 +36,7 @@ include {Fastqc} from './modules/qc/qc'
 include {Star} from './modules/mapping/star'
 include {Rsem} from './modules/quant/rsem'
 include {Arriba} from './modules/fusion/arriba'
+include {Fusioncatcher} from './modules/fusion/fusioncatcher'
 include {multiqc} from './modules/qc/qc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
@@ -70,6 +71,9 @@ workflow {
     // proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
     // cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
 
+// Fusioncatcher db
+    fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
+
 // Picard and Genotyping
     ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
     rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
@@ -92,7 +96,7 @@ workflow {
                    return ( tuple (id1,id2) )
                   } \
                .set { fqc_inputs }
-    fqc_inputs.fqc_input.view()
+    // fqc_inputs.fqc_input.view()
     
     Fastqc(fqc_inputs.fqc_input)
     
@@ -112,6 +116,11 @@ workflow {
             .combine(genome)
             .combine(star_genomeIndex)
             .combine(gtf)
+    )
+
+    Fusioncatcher(
+        Cutadapt.out
+            .combine(fusioncatcher_db)
     )
 
     // multiqc(fastqc.out)

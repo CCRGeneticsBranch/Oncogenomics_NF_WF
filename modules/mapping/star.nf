@@ -1,7 +1,7 @@
 process Star {
     tag { dataset_id }
 
-    publishDir "$params.resultsdir/$dataset_id/STAR", mode: 'copy'
+    publishDir "${params.resultsdir}/${dataset_id}/STAR", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -15,6 +15,13 @@ process Star {
         path("${dataset_id}.Aligned.toTranscriptome.out.bam"),
         path("${dataset_id}.Aligned.sortedByCoord.out.bam"),
         path("${dataset_id}.Aligned.sortedByCoord.out.bam.bai")
+
+    stub:
+    """
+    touch "${dataset_id}.Aligned.toTranscriptome.out.bam"
+    touch "${dataset_id}.Aligned.sortedByCoord.out.bam"
+    touch "${dataset_id}.Aligned.sortedByCoord.out.bam.bai"
+    """
 
     shell:
     '''
@@ -46,12 +53,5 @@ if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
     samtools sort -@ !{task.cpus} -T ${TMPDIR} -o !{dataset_id}.Aligned.sortedByCoord.out.bam -O BAM !{dataset_id}.Aligned.out.bam
     samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
     '''
-
-    stub:
-    """
-    touch "${dataset_id}.Aligned.toTranscriptome.out.bam"
-    touch "${dataset_id}.Aligned.sortedByCoord.out.bam"
-    touch "${dataset_id}.Aligned.sortedByCoord.out.bam.bai"
-    """
 }
 

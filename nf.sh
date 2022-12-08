@@ -1,12 +1,17 @@
 #!/bin/bash
 
+if [[ "$#" -ne "1" ]];then
+	echo "TAG argument is required!"
+	exit
+fi
+
 # list of profiles
 # biowulf_test_run_local -> get interactive node and run there
 # biowulf_test_run_slurm -> get interactive node and submit jobs to slurm
 # 
 
-PROFILE="biowulf_test_run_local"
-# PROFILE="biowulf_test_run_slurm"
+# PROFILE="biowulf_test_run_local"
+PROFILE="biowulf_test_run_slurm"
 
 set -e
 
@@ -24,7 +29,8 @@ module load singularity nextflow graphviz
 # this can also be set using "workDir" in nextflow.config
 # export NXF_WORK="/data/khanlab2/kopardevn/AWS_MVP_test/work"
 export OUTDIR="/data/khanlab3/kopardevn/AWS_MVP_test"
-export OUTTAG="7" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
+# export OUTTAG="9" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
+export OUTTAG=$1
 export RESULTSDIR="$OUTDIR/results.$OUTTAG"
 export WORKDIR="$OUTDIR/work.$OUTTAG"
 
