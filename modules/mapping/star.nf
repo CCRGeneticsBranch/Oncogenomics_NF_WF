@@ -1,7 +1,7 @@
 process Star {
     tag { dataset_id }
 
-    publishDir "$params.resultsdir/$dataset_id/STAR", mode: 'copy'
+    publishDir "${params.resultsdir}/${dataset_id}/STAR", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -16,24 +16,32 @@ process Star {
         path("${dataset_id}.Aligned.sortedByCoord.out.bam"),
         path("${dataset_id}.Aligned.sortedByCoord.out.bam.bai")
 
-    script:
+    stub:
     """
-    set -exo pipefail
-    if [ -d /lscratch/\${SLURM_JOB_ID} ];then
-        TMPDIR="/lscratch/\${SLURM_JOB_ID}/$dataset_id"
-    else
-        TMPDIR="/dev/shm/$dataset_id"
-    fi
-    if [ ! -d \$TMPDIR ]; then mkdir -p \$TMPDIR; fi
+    touch "${dataset_id}.Aligned.toTranscriptome.out.bam"
+    touch "${dataset_id}.Aligned.sortedByCoord.out.bam"
+    touch "${dataset_id}.Aligned.sortedByCoord.out.bam.bai"
+    """
 
-    STAR --genomeDir ${genomeIndex} \
-        --readFilesIn $r1 $r2 \
+
+    shell:
+    '''
+    set -exo pipefail
+if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
+    TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_STAR"
+else
+    TMPDIR="/dev/shm/!{dataset_id}_STAR"
+fi
+if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
+
+    STAR --genomeDir !{genomeIndex} \
+        --readFilesIn !{r1} !{r2} \
         --readFilesCommand zcat \
-        --sjdbGTFfile ${gtf} \
-        --runThreadN ${task.cpus} \
+        --sjdbGTFfile !{gtf} \
+        --runThreadN !{task.cpus} \
         --twopassMode Basic \
         --outSAMunmapped Within \
-        --outFileNamePrefix "${dataset_id}." \
+        --outFileNamePrefix "!{dataset_id}." \
         --chimSegmentMin 12 \
         --chimJunctionOverhangMin 12 \
         --alignSJDBoverhangMin 10 \
@@ -41,8 +49,9 @@ process Star {
         --chimSegmentReadGapMax 3 \
         --outFilterMismatchNmax 2 \
         --outSAMtype BAM Unsorted \
+        --outTmpDir ${TMPDIR} \
         --quantMode TranscriptomeSAM 
-    samtools sort -@ ${task.cpus} -T \$TMPDIR -o ${dataset_id}.Aligned.sortedByCoord.out.bam -O BAM ${dataset_id}.Aligned.out.bam
-    samtools index -@ ${task.cpus} ${dataset_id}.Aligned.sortedByCoord.out.bam
-    """
+    samtools sort -@ !{task.cpus} -T ${TMPDIR} -o !{dataset_id}.Aligned.sortedByCoord.out.bam -O BAM !{dataset_id}.Aligned.out.bam
+    samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
+    '''
 }
