@@ -56,9 +56,9 @@ workflow {
                                 .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
 
 // Genome specifics
-    genome                  = Channel.of(file(params.genome, checkIfExists:true))
-    genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
-    genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
+    // genome                  = Channel.of(file(params.genome, checkIfExists:true))
+    // genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
+    // genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
 
 // STAR and RSEM
@@ -72,16 +72,16 @@ workflow {
     // cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
 
 // Fusioncatcher db
-    fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
+    // fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
 
 // Picard and Genotyping
-    ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
-    rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
-    phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
-    Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
-    Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
-    vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
-    vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
+    // ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
+    // rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
+    // phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
+    // Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
+    // Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
+    // vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
+    // vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
     
 // Assigning inputs to all the process
 
@@ -111,17 +111,17 @@ workflow {
            .combine(rsemIndex)
     )
 
-    Arriba(
-        Cutadapt.out
-            .combine(genome)
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
+    // Arriba(
+    //     Cutadapt.out
+    //         .combine(genome)
+    //         .combine(star_genomeIndex)
+    //         .combine(gtf)
+    // )
 
-    Fusioncatcher(
-        Cutadapt.out
-            .combine(fusioncatcher_db)
-    )
+    // Fusioncatcher(
+    //     Cutadapt.out
+    //         .combine(fusioncatcher_db)
+    // )
 
     // Picard_AddReadgroups(star.out)    
     // Picard_CollectRNAseqmetrics(

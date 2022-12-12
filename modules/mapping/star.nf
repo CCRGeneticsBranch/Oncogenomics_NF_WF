@@ -7,7 +7,7 @@ process Star {
     tuple val(dataset_id),
         path(r1), 
         path(r2),
-        path(genomeIndex),
+        path(star_genomeIndex),
         path(gtf)
     
     output:
@@ -27,14 +27,15 @@ process Star {
     shell:
     '''
     set -exo pipefail
-if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
-    TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_STAR"
-else
-    TMPDIR="/dev/shm/!{dataset_id}_STAR"
-fi
-if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
-
-    STAR --genomeDir !{genomeIndex} \
+    if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
+        TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_STAR"
+    else
+        TMPDIR="/dev/shm/!{dataset_id}_STAR"
+    fi
+    if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
+    
+    # run STAR alignment
+    STAR --genomeDir !{star_genomeIndex} \
         --readFilesIn !{r1} !{r2} \
         --readFilesCommand zcat \
         --sjdbGTFfile !{gtf} \
@@ -51,6 +52,8 @@ if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
         --outSAMtype BAM Unsorted \
         --outTmpDir ${TMPDIR} \
         --quantMode TranscriptomeSAM 
+        
+    # sort and index files
     samtools sort -@ !{task.cpus} -T ${TMPDIR} -o !{dataset_id}.Aligned.sortedByCoord.out.bam -O BAM !{dataset_id}.Aligned.out.bam
     samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
     '''
