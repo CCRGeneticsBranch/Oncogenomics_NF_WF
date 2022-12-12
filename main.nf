@@ -33,7 +33,7 @@ log.info """\
 
 include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
-// include {Star} from './modules/mapping/star'
+include {Star} from './modules/mapping/star'
 // include {Rsem} from './modules/quant/rsem'
 // include {Arriba} from './modules/fusion/arriba'
 // include {Fusioncatcher} from './modules/fusion/fusioncatcher'
@@ -59,10 +59,10 @@ workflow {
     // genome                  = Channel.of(file(params.genome, checkIfExists:true))
     // genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     // genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
-    // gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
+    gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
 
 // STAR and RSEM
-    // star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
+    star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
     // rsemIndex               = Channel.of(file(params.rsem_index, checkIfExists:true))
 
 // Arriba params
@@ -100,11 +100,11 @@ workflow {
     
     Fastqc(fqc_inputs.fqc_input)
     
-    // Star(
-    //    Cutadapt.out
-    //        .combine(star_genomeIndex)
-    //        .combine(gtf)
-    // )
+    Star(
+        Cutadapt.out
+            .combine(star_genomeIndex)
+            .combine(gtf)
+    )
 
     // Rsem(
     //    Star.out
