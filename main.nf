@@ -45,6 +45,7 @@ include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
 include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
+include {Mixcr_VCJtools} from './modules/misc/mixcr'
 // working on Genotyping process
 // include {Genotyping} from  './modules/qc/qc'
 // include {fusioncatcher} from './modules/fusion/fusion'
@@ -74,6 +75,9 @@ workflow {
 // Fusioncatcher db
     fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
 
+// Mixcr license
+    mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
+
 // Picard and Genotyping
     ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
     rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
@@ -97,7 +101,7 @@ workflow {
                   } \
                .set { fqc_inputs }
     // fqc_inputs.fqc_input.view()
-    
+/*    
     Fastqc(fqc_inputs.fqc_input)
     
     Star(
@@ -121,6 +125,11 @@ workflow {
     Fusioncatcher(
         Cutadapt.out
             .combine(fusioncatcher_db)
+    )
+*/
+    Mixcr_VCJtools (
+        Cutadapt.out
+            .combine(mixcr_license)
     )
 
     // multiqc(fastqc.out)
