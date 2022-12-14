@@ -14,13 +14,15 @@ process Star {
     tuple val("${dataset_id}"),
         path("${dataset_id}.Aligned.toTranscriptome.out.bam"),
         path("${dataset_id}.Aligned.sortedByCoord.out.bam"),
-        path("${dataset_id}.Aligned.sortedByCoord.out.bam.bai")
+        path("${dataset_id}.Aligned.sortedByCoord.out.bam.bai"),
+        path("${dataset_id}.Chimeric.out.junction")
 
     stub:
     """
     touch "${dataset_id}.Aligned.toTranscriptome.out.bam"
     touch "${dataset_id}.Aligned.sortedByCoord.out.bam"
     touch "${dataset_id}.Aligned.sortedByCoord.out.bam.bai"
+    touch "${dataset_id}.Chimeric.out.junction"
     """
 
     shell:
@@ -46,6 +48,7 @@ if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
         --alignSJDBoverhangMin 10 \
         --alignMatesGapMax 100000 \
         --chimSegmentReadGapMax 3 \
+        --chimOutJunctionFormat 1 \
         --outFilterMismatchNmax 2 \
         --outSAMtype BAM Unsorted \
         --outTmpDir ${TMPDIR} \

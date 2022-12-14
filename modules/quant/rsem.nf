@@ -9,6 +9,7 @@ process Rsem {
         path(T_bam),
         path(G_bam),
         path(G_bai),
+        path(chimeric_junction),
         path(genomeIndex)
 
         output:

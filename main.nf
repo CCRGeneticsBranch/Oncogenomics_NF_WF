@@ -37,6 +37,7 @@ include {Star} from './modules/mapping/star'
 include {Rsem} from './modules/quant/rsem'
 include {Arriba} from './modules/fusion/arriba'
 include {Fusioncatcher} from './modules/fusion/fusioncatcher'
+include {Starfusion} from './modules/fusion/starfusion'
 include {multiqc} from './modules/qc/qc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
@@ -48,7 +49,6 @@ include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 include {Mixcr_VCJtools} from './modules/misc/mixcr'
 // working on Genotyping process
 // include {Genotyping} from  './modules/qc/qc'
-// include {fusioncatcher} from './modules/fusion/fusion'
 
 
 workflow {
@@ -75,6 +75,9 @@ workflow {
 // Fusioncatcher db
     fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
 
+// STARfusion db
+    starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+
 // Mixcr license
     mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
@@ -87,8 +90,8 @@ workflow {
     vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
     vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
     
-// Assigning inputs to all the process
 
+// Trim away adapters
     Cutadapt(read_pairs)
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
@@ -101,32 +104,61 @@ workflow {
                   } \
                .set { fqc_inputs }
     // fqc_inputs.fqc_input.view()
-/*    
+
+// QC with FastQC 
     Fastqc(fqc_inputs.fqc_input)
-    
+
+// Align with STAR    
     Star(
        Cutadapt.out
            .combine(star_genomeIndex)
            .combine(gtf)
     )
 
+// Count with RSEM
     Rsem(
        Star.out
            .combine(rsemIndex)
     )
 
+
+// Fusion tools
+// 1. Arriba
     Arriba(
         Cutadapt.out
             .combine(genome)
             .combine(star_genomeIndex)
             .combine(gtf)
     )
-
+// 2. Fusioncatcher
     Fusioncatcher(
         Cutadapt.out
             .combine(fusioncatcher_db)
     )
-*/
+
+// 3. Star-Fusion
+// Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions -> 
+                other: true
+                    return( tuple(id, chimeric_junctions))} \
+                .set{Starfusion_input_tmp}
+    Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)                
+    // Starfusion_input.view()
+    Starfusion(Starfusion_input)
+
+    Arriba.out
+        .combine(Fusioncatcher.out)
+        .combine(Starfusion.out)
+        .branch { id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, id2, fusioncatcher_final_list, fusioncatcher_summary, id3, starfusion_predictions_tsv ->
+            all_fusions: id1 == id2 == id3
+                return( tuple(id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, fusioncatcher_final_list, fusioncatcher_summary, starfusion_predictions_tsv))
+            other: true
+                return(tuple(id1,id2,id3))
+            } \
+            .set{merge_fusions_input}
+    merge_fusions_input.all_fusions.view()
+
+// Mixcr
     Mixcr_VCJtools (
         Cutadapt.out
             .combine(mixcr_license)
