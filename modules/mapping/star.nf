@@ -77,6 +77,9 @@ process Star {
         # sort and index files
         samtools sort -@ !{task.cpus} -o !{dataset_id}.Aligned.sortedByCoord.out.bam -O BAM !{dataset_id}.Aligned.out.bam
         samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
+        
+        # print size for testing
+        du -h .
     fi
     '''
 }
