@@ -72,7 +72,7 @@ workflow {
     //cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
 
 // Fusioncatcher db
-    // fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
+    fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
 
 // Picard and Genotyping
     // ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
@@ -106,17 +106,17 @@ workflow {
             .combine(gtf)
     )
 
-    Rsem(
-       Star.out
-           .combine(rsemIndex)
-    )
+    // Rsem(
+    //    Star.out
+    //        .combine(rsemIndex)
+    // )
 
-    Arriba(
-        Cutadapt.out
-            .combine(genome)
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
+    // Arriba(
+    //     Cutadapt.out
+    //         .combine(genome)
+    //         .combine(star_genomeIndex)
+    //         .combine(gtf)
+    // )
 
     // Fusioncatcher(
     //     Cutadapt.out
