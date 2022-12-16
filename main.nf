@@ -106,10 +106,10 @@ workflow {
             .combine(gtf)
     )
 
-    // Rsem(
-    //    Star.out
-    //        .combine(rsemIndex)
-    // )
+    Rsem(
+        Star.out
+           .combine(rsemIndex)
+    )
 
     // Arriba(
     //     Cutadapt.out
