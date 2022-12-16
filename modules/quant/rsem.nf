@@ -18,7 +18,7 @@ process Rsem {
 
         script:
         """
-        rsem-calculate-expression --no-bam-output --paired-end -p ${task.cpus}  --estimate-rspd  --bam $T_bam ${genomeIndex}/rsem_1.3.2 $dataset_id
+        rsem-calculate-expression --no-bam-output --paired-end -p ${task.cpus} --estimate-rspd --bam $T_bam ${genomeIndex}/rsem_1.3.2 $dataset_id
         """
 
 }
