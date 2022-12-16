@@ -82,6 +82,7 @@ process Arriba{
             --outFileNamePrefix "!{dataset_id}.arriba."
         
         samtools sort -@ !{task.cpus} -o !{dataset_id}.arriba.Aligned.sortedByCoords.out.bam -O BAM !{dataset_id}.arriba.Aligned.out.bam
+    fi
     
     # Run arriba
     arriba \
