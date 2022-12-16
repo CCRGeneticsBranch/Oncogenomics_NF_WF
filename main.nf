@@ -35,7 +35,7 @@ include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
 include {Star} from './modules/mapping/star'
 include {Rsem} from './modules/quant/rsem'
-// include {Arriba} from './modules/fusion/arriba'
+include {Arriba} from './modules/fusion/arriba'
 // include {Fusioncatcher} from './modules/fusion/fusioncatcher'
 // include {multiqc} from './modules/qc/qc'
 // include {Picard_AddReadgroups} from './modules/qc/picard'
@@ -56,7 +56,7 @@ workflow {
                                 .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
 
 // Genome specifics
-    // genome                  = Channel.of(file(params.genome, checkIfExists:true))
+    genome                  = Channel.of(file(params.genome, checkIfExists:true))
     // genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     // genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
@@ -67,9 +67,9 @@ workflow {
 
 // Arriba params
 // These are now coming from the docker (ccbr_starplus)
-    // blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
-    // proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
-    // cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
+    blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
+    proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
+    cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
 
 // Fusioncatcher db
     // fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
@@ -111,12 +111,12 @@ workflow {
            .combine(rsemIndex)
     )
 
-    // Arriba(
-    //     Cutadapt.out
-    //         .combine(genome)
-    //         .combine(star_genomeIndex)
-    //         .combine(gtf)
-    // )
+    Arriba(
+        Cutadapt.out
+            .combine(genome)
+            .combine(star_genomeIndex)
+            .combine(gtf)
+    )
 
     // Fusioncatcher(
     //     Cutadapt.out
