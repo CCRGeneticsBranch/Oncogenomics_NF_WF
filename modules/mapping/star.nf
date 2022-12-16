@@ -51,9 +51,8 @@ process Star {
             --outTmpDir ${TMPDIR} \
             --quantMode TranscriptomeSAM 
             
-        # sort and index files
+        # sort files
         samtools sort -@ !{task.cpus} -T ${TMPDIR} -o !{dataset_id}.Aligned.sortedByCoord.out.bam -O BAM !{dataset_id}.Aligned.out.bam
-        samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
     
     else
         # run STAR alignment
@@ -74,9 +73,11 @@ process Star {
             --outSAMtype BAM Unsorted \
             --quantMode TranscriptomeSAM 
             
-        # sort and index files
+        # sort files
         samtools sort -@ !{task.cpus} -o !{dataset_id}.Aligned.sortedByCoord.out.bam -O BAM !{dataset_id}.Aligned.out.bam
-        samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
+    
+    # index files
+    samtools index -@ !{task.cpus} !{dataset_id}.Aligned.sortedByCoord.out.bam
         
     fi
     '''
