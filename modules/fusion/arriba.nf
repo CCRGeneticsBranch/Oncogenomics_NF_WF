@@ -8,7 +8,7 @@ process Arriba{
         path(r1), 
         path(r2),
         path(reffa),
-        path(genomeIndex),
+        path(star_genomeIndex),
         path(gtf)
     
     output:
@@ -33,11 +33,10 @@ process Arriba{
         TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_STAR"
         if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
             
-        STAR \
-            --runThreadN !{task.cpus} \
-            --genomeDir !{genomeIndex} \
+        STAR --genomeDir !{star_genomeIndex} \
             --readFilesIn !{r1} !{r2} \
             --readFilesCommand zcat \
+            --runThreadN !{task.cpus} \
             --outSAMtype BAM Unsorted \
             --outSAMunmapped Within \
             --outBAMcompression 0 \
@@ -53,17 +52,16 @@ process Arriba{
             --chimScoreSeparation 1 \
             --chimSegmentReadGapMax 3 \
             --chimMultimapNmax 50 \
-            --outTmpDir $TMPDIR \
+            --outTmpDir ${TMPDIR} \
             --outFileNamePrefix "!{dataset_id}.arriba."
         
         samtools sort -@ !{task.cpus} -T $TMPDIR -o !{dataset_id}.arriba.Aligned.sortedByCoords.out.bam -O BAM !{dataset_id}.arriba.Aligned.out.bam
         
     else
-        STAR \
-            --runThreadN !{task.cpus} \
-            --genomeDir !{genomeIndex} \
+        STAR --genomeDir !{star_genomeIndex} \
             --readFilesIn !{r1} !{r2} \
             --readFilesCommand zcat \
+            --runThreadN !{task.cpus} \
             --outSAMtype BAM Unsorted \
             --outSAMunmapped Within \
             --outBAMcompression 0 \
