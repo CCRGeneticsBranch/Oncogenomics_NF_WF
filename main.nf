@@ -111,12 +111,12 @@ workflow {
            .combine(rsemIndex)
     )
 
-    // Arriba(
-    //     Cutadapt.out
-    //         .combine(genome)
-    //         .combine(star_genomeIndex)
-    //         .combine(gtf)
-    // )
+    Arriba(
+        Cutadapt.out
+            .combine(genome)
+            .combine(star_genomeIndex)
+            .combine(gtf)
+    )
 
     // Fusioncatcher(
     //     Cutadapt.out
