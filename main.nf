@@ -118,10 +118,10 @@ workflow {
             .combine(gtf)
     )
 
-    // Fusioncatcher(
-    //     Cutadapt.out
-    //         .combine(fusioncatcher_db)
-    // )
+    Fusioncatcher(
+        Cutadapt.out
+            .combine(fusioncatcher_db)
+    )
 
     // Picard_AddReadgroups(star.out)    
     // Picard_CollectRNAseqmetrics(
