@@ -67,9 +67,9 @@ workflow {
 
 // Arriba params
 // These are now coming from the docker (ccbr_starplus)
-    blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
-    proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
-    cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
+    //blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
+    //proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
+    //cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
 
 // Fusioncatcher db
     // fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
