@@ -40,7 +40,7 @@ process Fusioncatcher{
         fusioncatcher.py \
             -p !{task.cpus} \
             -d !{db} \
-            -i !{r1},!{r2}
+            -i !{r1},!{r2} \
             -o fusioncatcher/
         
         cp fusioncatcher/final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
