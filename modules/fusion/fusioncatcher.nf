@@ -22,22 +22,30 @@ process Fusioncatcher{
 
     shell:
     '''
-set -exo pipefail
-if [ -d /lscratch/${SLURM_JOB_ID} ];then
-    TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_fusioncatcher"
-else
-    TMPDIR="/dev/shm/!{dataset_id}_fusioncatcher"
-fi
-if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR}; fi
+    # if running on biowulf SLURM
+    if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
+        TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_STAR"
+        if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
 
-fusioncatcher.py \
-    -p !{task.cpus} \
-    -d !{db} \
-    -i !{r1},!{r2} \
-    -o ${TMPDIR}
-
-cp ${TMPDIR}/final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
-cp ${TMPDIR}/summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
+        fusioncatcher.py \
+            -p !{task.cpus} \
+            -d !{db} \
+            -i !{r1},!{r2} \
+            -o ${TMPDIR}
+        
+        cp ${TMPDIR}/final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
+        cp ${TMPDIR}/summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
+    else
+        mkdir fusioncatcher/
+        fusioncatcher.py \
+            -p !{task.cpus} \
+            -d !{db} \
+            -i !{r1},!{r2} \
+            -o fusioncatcher/
+        
+        cp fusioncatcher/final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
+        cp fusioncatcher/summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
+    fi
 
     '''
 

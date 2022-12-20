@@ -58,8 +58,8 @@ workflow {
 
 // Genome specifics
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
-    genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
-    genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
+    // genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
+    // genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
 
 // STAR and RSEM
@@ -68,9 +68,9 @@ workflow {
 
 // Arriba params
 // These are now coming from the docker (ccbr_starplus)
-    // blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
-    // proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
-    // cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
+    //blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
+    //proteinDomains          = Channel.of(file(params.proteinDomains), checkIfExists:true)
+    //cytobands               = Channel.of(file(params.cytobands), checkIfExists:true)
 
 // Fusioncatcher db
     fusioncatcher_db        = Channel.of(file(params.fusioncatcher_db, checkIfExists:true))
@@ -82,13 +82,13 @@ workflow {
     mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
 // Picard and Genotyping
-    ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
-    rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
-    phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
-    Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
-    Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
-    vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
-    vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
+    // ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
+    // rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
+    // phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
+    // Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
+    // Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
+    // vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
+    // vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
     
 
 // Trim away adapters
@@ -110,14 +110,14 @@ workflow {
 
 // Align with STAR    
     Star(
-       Cutadapt.out
-           .combine(star_genomeIndex)
-           .combine(gtf)
+        Cutadapt.out
+            .combine(star_genomeIndex)
+            .combine(gtf)
     )
 
 // Count with RSEM
     Rsem(
-       Star.out
+        Star.out
            .combine(rsemIndex)
     )
 

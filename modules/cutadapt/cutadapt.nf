@@ -1,6 +1,5 @@
 process Cutadapt {
         tag { dataset_id }
-//        publishDir 's3://agc-424336837382-us-east-1/nfmvpout', mode: 'copy'
         publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
 
         input:
