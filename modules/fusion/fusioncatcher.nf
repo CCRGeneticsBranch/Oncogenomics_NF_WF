@@ -36,14 +36,15 @@ process Fusioncatcher{
         cp ${TMPDIR}/final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
         cp ${TMPDIR}/summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
     else
+        mkdir fusioncatcher/
         fusioncatcher.py \
             -p !{task.cpus} \
             -d !{db} \
             -i !{r1},!{r2}
-            -o ${PWD}
+            -o fusioncatcher/
         
-        cp final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
-        cp summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
+        cp fusioncatcher/final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
+        cp fusioncatcher/summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
     fi
 
     '''
