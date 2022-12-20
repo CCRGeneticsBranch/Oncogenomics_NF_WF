@@ -40,6 +40,7 @@ process Fusioncatcher{
             -p !{task.cpus} \
             -d !{db} \
             -i !{r1},!{r2}
+            -o .
         
         cp final-list_candidate-fusion-genes.hg19.txt !{dataset_id}.final-list_candidate-fusion-genes.hg19.txt
         cp summary_candidate_fusions.txt !{dataset_id}.summary_candidate_fusions.txt
