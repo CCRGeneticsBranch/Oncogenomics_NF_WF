@@ -23,7 +23,7 @@ WF_HOME=$SCRIPT_DIRNAME
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
 # load singularity and nextflow modules
-module load singularity nextflow/20.10.0 graphviz
+module load singularity nextflow graphviz
 
 # set workDir ... by default it goes to `pwd`/work
 # this can also be set using "workDir" in nextflow.config
