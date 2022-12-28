@@ -49,10 +49,10 @@ nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
 nf_cmd="$nf_cmd $WF_HOME/main.nf -resume"
-nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
+# nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
 nf_cmd="$nf_cmd -with-timeline $RESULTSDIR/timeline.html"
-nf_cmd="$nf_cmd -with-dag $RESULTSDIR/dag.png"
+# nf_cmd="$nf_cmd -with-dag $RESULTSDIR/dag.png"
 
 echo $nf_cmd
 
