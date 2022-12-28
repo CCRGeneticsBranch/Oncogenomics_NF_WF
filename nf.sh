@@ -23,7 +23,7 @@ WF_HOME=$SCRIPT_DIRNAME
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
 # load singularity and nextflow modules
-module load singularity nextflow graphviz
+module load singularity nextflow/20.10.0 graphviz
 
 # set workDir ... by default it goes to `pwd`/work
 # this can also be set using "workDir" in nextflow.config
@@ -44,12 +44,16 @@ printenv|grep NXF
 if [ ! -d $RESULTSDIR ]; then mkdir -p $RESULTSDIR;fi
 cd $RESULTSDIR
 #nextflow run -profile biowulf main.nf -resume
-nextflow \
-	-C $CONFIG_FILE \
-	run \
-	-profile $PROFILE \
-	$WF_HOME/main.nf -resume \
-	-with-report $RESULTSDIR/report.html \
-	-with-trace \
-	-with-timeline $RESULTSDIR/timeline.html \
-	-with-dag $RESULTSDIR/dag.png
+nf_cmd="nextflow"
+nf_cmd="$nf_cmd run"
+nf_cmd="$nf_cmd -c $CONFIG_FILE"
+nf_cmd="$nf_cmd -profile $PROFILE"
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume"
+nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
+nf_cmd="$nf_cmd -with-trace"
+nf_cmd="$nf_cmd -with-timeline $RESULTSDIR/timeline.html"
+nf_cmd="$nf_cmd -with-dag $RESULTSDIR/dag.png"
+
+echo $nf_cmd
+
+eval $nf_cmd
