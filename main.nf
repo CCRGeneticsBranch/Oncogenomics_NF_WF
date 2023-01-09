@@ -47,6 +47,8 @@ include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 include {Mixcr_VCJtools} from './modules/misc/mixcr'
+include {HLAminer} from './modules/neoantigens/hlaminer'
+include {Seq2HLA} from './modules/neoantigens/seq2hla.nf'
 // working on Genotyping process
 // include {Genotyping} from  './modules/qc/qc'
 
@@ -95,74 +97,74 @@ workflow {
     Cutadapt(read_pairs)
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
-    fastqc_input = Cutadapt.out.combine(read_pairs)
-    fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
-               fqc_input: id1 == id2
-                   return ( tuple (id1,r1,r2,trimr1,trimr2) )
-               other: true
-                   return ( tuple (id1,id2) )
-                  } \
-               .set { fqc_inputs }
+//    fastqc_input = Cutadapt.out.combine(read_pairs)
+//    fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
+//               fqc_input: id1 == id2
+//                   return ( tuple (id1,r1,r2,trimr1,trimr2) )
+//               other: true
+//                   return ( tuple (id1,id2) )
+//                  } \
+//               .set { fqc_inputs }
     // fqc_inputs.fqc_input.view()
 
 // QC with FastQC 
-    Fastqc(fqc_inputs.fqc_input)
+//    Fastqc(fqc_inputs.fqc_input)
 
 // Align with STAR    
-    Star(
-        Cutadapt.out
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
+//    Star(
+//        Cutadapt.out
+//            .combine(star_genomeIndex)
+//            .combine(gtf)
+//    )
 
 // Count with RSEM
-    Rsem(
-        Star.out
-           .combine(rsemIndex)
-    )
+//    Rsem(
+//        Star.out
+//           .combine(rsemIndex)
+//    )
 
 
 // Fusion tools
 // 1. Arriba
-    Arriba(
-        Cutadapt.out
-            .combine(genome)
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
+//    Arriba(
+//        Cutadapt.out
+//            .combine(genome)
+//            .combine(star_genomeIndex)
+//            .combine(gtf)
+//    )
 // 2. Fusioncatcher
-    Fusioncatcher(
-        Cutadapt.out
-            .combine(fusioncatcher_db)
-    )
+//    Fusioncatcher(
+//        Cutadapt.out
+//            .combine(fusioncatcher_db)
+//    )
 
 // 3. Star-Fusion
-// Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions -> 
-                other: true
-                    return( tuple(id, chimeric_junctions))} \
-                .set{Starfusion_input_tmp}
-    Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)                
+ // Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+//    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions -> 
+//                other: true
+//                    return( tuple(id, chimeric_junctions))} \
+//                .set{Starfusion_input_tmp}
+//    Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)                
     // Starfusion_input.view()
-    Starfusion(Starfusion_input)
+//    Starfusion(Starfusion_input)
 
-    Arriba.out
-        .combine(Fusioncatcher.out)
-        .combine(Starfusion.out)
-        .branch { id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, id2, fusioncatcher_final_list, fusioncatcher_summary, id3, starfusion_predictions_tsv ->
-            all_fusions: id1 == id2 == id3
-                return( tuple(id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, fusioncatcher_final_list, fusioncatcher_summary, starfusion_predictions_tsv))
-            other: true
-                return(tuple(id1,id2,id3))
-            } \
-            .set{merge_fusions_input}
-    merge_fusions_input.all_fusions.view()
+//    Arriba.out
+//        .combine(Fusioncatcher.out)
+//        .combine(Starfusion.out)
+//        .branch { id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, id2, fusioncatcher_final_list, fusioncatcher_summary, id3, starfusion_predictions_tsv ->
+//            all_fusions: id1 == id2 == id3
+//                return( tuple(id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, fusioncatcher_final_list, fusioncatcher_summary, starfusion_predictions_tsv))
+//            other: true
+//               return(tuple(id1,id2,id3))
+//            } \
+//            .set{merge_fusions_input}
+//    merge_fusions_input.all_fusions.view()
 
 // Mixcr
-    Mixcr_VCJtools (
-        Cutadapt.out
-            .combine(mixcr_license)
-    )
+//    Mixcr_VCJtools (
+//        Cutadapt.out
+//           .combine(mixcr_license)
+//    )
 
     // multiqc(fastqc.out)
     // Picard_AddReadgroups(star.out)    
@@ -207,5 +209,10 @@ workflow {
     //         .combine(Mills_and_1000g)
     // )
 
+// HLA prediction
+
+//  HLAminer(Cutadapt.out)
+
+  Seq2HLA(Cutadapt.out)
 }
 
