@@ -4,13 +4,13 @@ process Cutadapt {
 
         input:
         tuple val(dataset_id),
-        path(r1fq),
-        path(r2fq)
+            path(r1fq),
+            path(r2fq)
 
         output:
         tuple val("${dataset_id}"),
-        path("${dataset_id}_R1.trim.fastq.gz"),
-        path("${dataset_id}_R2.trim.fastq.gz")
+            path("${dataset_id}_R1.trim.fastq.gz"),
+            path("${dataset_id}_R2.trim.fastq.gz")
 
         // container 'nciccbr/ncigb_cutadapt_v1.18:latest'
 

@@ -211,8 +211,8 @@ workflow {
 
 // HLA prediction
 
-//  HLAminer(Cutadapt.out)
+  HLAminer(Cutadapt.out)
 
-  Seq2HLA(Cutadapt.out)
+//  Seq2HLA(Cutadapt.out)
 }
 
