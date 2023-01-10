@@ -244,6 +244,7 @@ workflow {
 
   HLAminer(Cutadapt.out)
 
+<<<<<<< HEAD
   Seq2HLA(Cutadapt.out)
 
 }
