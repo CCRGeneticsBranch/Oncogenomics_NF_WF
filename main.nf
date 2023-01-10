@@ -49,6 +49,10 @@ include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 include {Mixcr_VCJtools} from './modules/misc/mixcr'
 include {HLAminer} from './modules/neoantigens/hlaminer'
 include {Seq2HLA} from './modules/neoantigens/seq2hla.nf'
+include {Hotspot_Coverage} from './modules/qc/plots.nf'
+include {Hotspot_Boxplot} from './modules/qc/plots.nf'
+include {Flagstat} from './modules/qc/plots.nf'
+include {Bamutils} from './modules/qc/plots.nf'
 // working on Genotyping process
 // include {Genotyping} from  './modules/qc/qc'
 
@@ -60,9 +64,10 @@ workflow {
 
 // Genome specifics
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
-    // genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
-    // genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
+    genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
+    genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
+    chrom_sizes             = Channel.of(file(params.chrom_sizes, checkIfExists:true))
 
 // STAR and RSEM
     star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
@@ -85,13 +90,20 @@ workflow {
 
 // Picard and Genotyping
     // ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
-    // rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
-    // phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
-    // Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
-    // Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
+     rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
+     phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
+     Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
+     Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
     // vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
     // vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
-    
+
+// hotspot bed files
+
+     access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))    
+
+// scripts
+
+    boxplot_script            = Channel.of(file(params.boxplot_script, checkIfExists:true))
 
 // Trim away adapters
     Cutadapt(read_pairs)
@@ -111,11 +123,11 @@ workflow {
 //    Fastqc(fqc_inputs.fqc_input)
 
 // Align with STAR    
-//    Star(
-//        Cutadapt.out
-//            .combine(star_genomeIndex)
-//            .combine(gtf)
-//    )
+    Star(
+        Cutadapt.out
+            .combine(star_genomeIndex)
+            .combine(gtf)
+    )
 
 // Count with RSEM
 //    Rsem(
@@ -167,9 +179,9 @@ workflow {
 //    )
 
     // multiqc(fastqc.out)
-    // Picard_AddReadgroups(star.out)    
+     Picard_AddReadgroups(Star.out)    
     // Picard_CollectRNAseqmetrics(
-    //     Picard_AddReadgroups.out
+    //Picard_AddReadgroups.out
     //         .combine(ref_flat)
     //         .combine(rRNA_interval) 
     // )    
@@ -177,7 +189,7 @@ workflow {
     //     Picard_AddReadgroups.out
     //         .combine(genome)
     // )
-    // Picard_MarkDuplicates(Picard_AddReadgroups.out)
+     Picard_MarkDuplicates(Picard_AddReadgroups.out)
 //    Genotyping(
 //       Picard_AddReadgroups.out
 //            .combine(genome)
@@ -186,33 +198,53 @@ workflow {
 //            .combine(vcf2loh)
 //    )
 
-    // GATK_RNASeq_Trim(
-    //     Picard_MarkDuplicates.out
-    //         .combine(genome)
-    //         .combine(genome_fai)
-    //         .combine(genome_dict)
-    // )    
-    // GATK_RNASeq_RTC_IR(
-    //     GATK_RNASeq_Trim.out
-    //         .combine(genome)
-    //         .combine(genome_fai)
-    //         .combine(genome_dict)
-    //         .combine(phase1_1000g)
-    //         .combine(Mills_and_1000g)
-    // )
-    // GATK_RNASeq_BR_PR(
-    //     GATK_RNASeq_RTC_IR.out
-    //         .combine(genome)
-    //         .combine(genome_fai)
-    //         .combine(genome_dict)
-    //         .combine(phase1_1000g)
-    //         .combine(Mills_and_1000g)
-    // )
+    GATK_RNASeq_Trim(
+         Picard_MarkDuplicates.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+     )    
+     GATK_RNASeq_RTC_IR(
+         GATK_RNASeq_Trim.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+             .combine(phase1_1000g)
+             .combine(Mills_and_1000g)
+     )
+     GATK_RNASeq_BR_PR(
+         GATK_RNASeq_RTC_IR.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+             .combine(phase1_1000g)
+             .combine(Mills_and_1000g)
+     )
+
+     Hotspot_Coverage(
+        GATK_RNASeq_RTC_IR.out
+             .combine(chrom_sizes)
+             .combine(access_hotspot)
+     )
+
+     Flagstat(GATK_RNASeq_RTC_IR.out)
+
+//     Bamutils(
+//        GATK_RNASeq_RTC_IR.out
+//             .combine(genome)
+//     )
+
+
+//     Hotspot_Boxplot(
+//        Hotspot_Coverage.out
+//             .combine(boxplot_script)
+//     )
 
 // HLA prediction
 
 //  HLAminer(Cutadapt.out)
 
   Seq2HLA(Cutadapt.out)
+
 }
 
