@@ -59,6 +59,8 @@ process GATK_RNASeq_RTC_IR {
 process GATK_RNASeq_BR_PR {
         tag { dataset_id }
 
+        publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+
         input:
 	tuple val(dataset_id),
         path(bam),
