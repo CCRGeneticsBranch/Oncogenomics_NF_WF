@@ -222,15 +222,15 @@ workflow {
      )
 
      Hotspot_Coverage(
-        GATK_RNASeq_RTC_IR.out
+        GATK_RNASeq_BR_PR.out
              .combine(chrom_sizes)
              .combine(access_hotspot)
      )
 
-     Flagstat(GATK_RNASeq_RTC_IR.out)
+     Flagstat(GATK_RNASeq_BR_PR.out)
 
 //     Bamutils(
-//        GATK_RNASeq_RTC_IR.out
+//        GATK_RNASeq_BR_PR.out
 //             .combine(genome)
 //     )
 
@@ -244,7 +244,6 @@ workflow {
 
   HLAminer(Cutadapt.out)
 
-<<<<<<< HEAD
   Seq2HLA(Cutadapt.out)
 
 }
