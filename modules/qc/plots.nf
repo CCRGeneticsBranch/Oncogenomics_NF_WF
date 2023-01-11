@@ -86,7 +86,7 @@ process Flagstat {
      '''
 }
 
-process Bamutils {
+process Bamutil {
 
      tag { dataset_id }
 
@@ -96,7 +96,9 @@ process Bamutils {
      tuple val(dataset_id),
         path(bam),
         path(index),
-        path(genome)
+        path(genome),
+        path(genome_fai),
+        path(genome_dict)
 
      output:
      tuple val("${dataset_id}"),
@@ -110,8 +112,9 @@ process Bamutils {
      shell:
      '''
      set -exo pipefail
-     bam squeeze --in !{bam} --out !{dataset_id}.star.final.squeeze.bam --refFile !{genome}  > !{dataset_id}.star.flagstat.txt  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
+     bam squeeze --in !{bam} --out !{dataset_id}.star.final.squeeze.bam --refFile !{genome}  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
      samtools index !{dataset_id}.star.final.squeeze.bam
 
      '''
 }
+

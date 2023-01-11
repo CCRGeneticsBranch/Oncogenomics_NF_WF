@@ -52,8 +52,9 @@ include {Seq2HLA} from './modules/neoantigens/seq2hla.nf'
 include {Hotspot_Coverage} from './modules/qc/plots.nf'
 include {Hotspot_Boxplot} from './modules/qc/plots.nf'
 include {Flagstat} from './modules/qc/plots.nf'
-include {Bamutils} from './modules/qc/plots.nf'
+include {Bamutil} from './modules/qc/plots.nf'
 include {RNAseq_HaplotypeCaller} from './modules/RNAseq_GATK/GATK'
+include {MergeHLA} from './modules/neoantigens/mergeHLA.nf'
 // working on Genotyping process
 // include {Genotyping} from  './modules/qc/qc'
 
@@ -104,6 +105,7 @@ workflow {
 
 // scripts
 
+    mergeHLA_script           = Channel.of(file(params.mergeHLA_script, checkIfExists:true))
     boxplot_script            = Channel.of(file(params.boxplot_script, checkIfExists:true))
 
 // Trim away adapters
@@ -230,10 +232,12 @@ workflow {
 
      Flagstat(GATK_RNASeq_BR_PR.out)
 
-//     Bamutils(
-//        GATK_RNASeq_BR_PR.out
-//             .combine(genome)
-//     )
+     Bamutil(
+        GATK_RNASeq_BR_PR.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+     )
 
 
 //     Hotspot_Boxplot(
@@ -246,6 +250,12 @@ workflow {
   HLAminer(Cutadapt.out)
 
   Seq2HLA(Cutadapt.out)
+  
+//  MergeHLA(
+//       Seq2HLA.out
+//        .combine(HLAminer.out)
+//        .combine(mergeHLA_script)  
+//  )
 
   RNAseq_HaplotypeCaller(
         GATK_RNASeq_BR_PR.out
