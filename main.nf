@@ -53,6 +53,7 @@ include {Hotspot_Coverage} from './modules/qc/plots.nf'
 include {Hotspot_Boxplot} from './modules/qc/plots.nf'
 include {Flagstat} from './modules/qc/plots.nf'
 include {Bamutils} from './modules/qc/plots.nf'
+include {RNAseq_HaplotypeCaller} from './modules/RNAseq_GATK/GATK'
 // working on Genotyping process
 // include {Genotyping} from  './modules/qc/qc'
 
@@ -96,7 +97,7 @@ workflow {
      Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
     // vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
     // vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
-
+     dbsnp                   = Channel.of(file(params.dbsnp, checkIfExists:true))
 // hotspot bed files
 
      access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))    
@@ -245,6 +246,14 @@ workflow {
   HLAminer(Cutadapt.out)
 
   Seq2HLA(Cutadapt.out)
+
+  RNAseq_HaplotypeCaller(
+        GATK_RNASeq_BR_PR.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+             .combine(dbsnp)
+     )
 
 }
 
