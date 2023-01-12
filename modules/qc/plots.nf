@@ -118,3 +118,39 @@ process Bamutil {
      '''
 }
 
+
+process HotspotPileup {
+
+     tag { dataset_id }
+
+     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(dataset_id),
+        path(bam),
+        path(index),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict),
+        path(hg19_hotspot_pos)
+//        path(hotspot_mpileup_script)
+
+     output:
+     tuple val("${dataset_id}"),
+        path("${dataset_id}.star.pileup.txt")
+
+     stub:
+     """
+     touch "${dataset_id}.star.pileup.txt"
+     """
+
+     shell:
+     '''
+     set -exo pipefail
+     hotspot_mpileup.pl !{hg19_hotspot_pos} !{genome} !{bam} !{dataset_id} RNAseq access > !{dataset_id}.star.pileup.txt
+
+     '''
+}
+
+
+
