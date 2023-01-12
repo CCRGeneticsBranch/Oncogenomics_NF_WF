@@ -55,8 +55,8 @@ include {Flagstat} from './modules/qc/plots.nf'
 include {Bamutil} from './modules/qc/plots.nf'
 include {RNAseq_HaplotypeCaller} from './modules/RNAseq_GATK/GATK'
 include {MergeHLA} from './modules/neoantigens/mergeHLA.nf'
-// working on Genotyping process
-// include {Genotyping} from  './modules/qc/qc'
+include {HotspotPileup} from './modules/qc/plots.nf'
+//include {Genotyping} from  './modules/qc/qc'
 
 
 workflow {
@@ -96,17 +96,13 @@ workflow {
      phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
      Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
      Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
-    // vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
-    // vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
+     vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
+     vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
      dbsnp                   = Channel.of(file(params.dbsnp, checkIfExists:true))
 // hotspot bed files
-
+     hg19_hotspot_pos         = Channel.of(file(params.hg19_hotspot_pos, checkIfExists:true))
      access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))    
 
-// scripts
-
-    mergeHLA_script           = Channel.of(file(params.mergeHLA_script, checkIfExists:true))
-    boxplot_script            = Channel.of(file(params.boxplot_script, checkIfExists:true))
 
 // Trim away adapters
     Cutadapt(read_pairs)
@@ -239,11 +235,15 @@ workflow {
              .combine(genome_dict)
      )
 
+     HotspotPileup(
+        GATK_RNASeq_BR_PR.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+             .combine(hg19_hotspot_pos)
+     )
 
-//     Hotspot_Boxplot(
-//        Hotspot_Coverage.out
-//             .combine(boxplot_script)
-//     )
+//     Hotspot_Boxplot(Hotspot_Coverage.out)
 
 // HLA prediction
 
@@ -251,11 +251,9 @@ workflow {
 
   Seq2HLA(Cutadapt.out)
   
-//  MergeHLA(
-//       Seq2HLA.out
-//        .combine(HLAminer.out)
-//        .combine(mergeHLA_script)  
-//  )
+  MergeHLA(
+         Seq2HLA.out.combine(HLAminer.out, by:0)
+  )
 
   RNAseq_HaplotypeCaller(
         GATK_RNASeq_BR_PR.out
