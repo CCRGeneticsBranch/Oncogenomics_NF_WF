@@ -1,18 +1,20 @@
 process HLAminer {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/HLAminer", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/HLA", mode: "${params.publishDirMode}"
     input:
     tuple val(dataset_id),
         path(r1), 
         path(r2)
     
     output:
-        path "HLAminer_HPTASR.csv"
+    tuple val("${dataset_id}"),
+        path("${dataset_id}_HLAminer_HPTASR.csv")
+
 
     stub:
     """
-    touch "HLAminer_HPTASR.csv"
+    touch "${dataset_id}_HLAminer_HPTASR.csv"
     """
 
 
@@ -26,6 +28,6 @@ process HLAminer {
 
 
     HPTASRrnaseq_classI.sh .
-
+    mv HLAminer_HPTASR.csv !{dataset_id}_HLAminer_HPTASR.csv
     '''
 }
