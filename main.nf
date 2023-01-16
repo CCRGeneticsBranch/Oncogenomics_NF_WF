@@ -56,6 +56,9 @@ include {Bamutil} from './modules/qc/plots.nf'
 include {RNAseq_HaplotypeCaller} from './modules/RNAseq_GATK/GATK'
 include {MergeHLA} from './modules/neoantigens/mergeHLA.nf'
 include {HotspotPileup} from './modules/qc/plots.nf'
+include {SnpEff} from './modules/misc/snpEff'
+include {Bam2tdf} from './modules/qc/plots.nf'
+include {Vcf2txt} from './modules/misc/snpEff'
 //include {Genotyping} from  './modules/qc/qc'
 
 
@@ -96,14 +99,17 @@ workflow {
      phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
      Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
      Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
-     vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
-     vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
+//     vcf2genotype            = Channel.of(file(params.vcf2genotype, checkIfExists:true))
+//     vcf2loh                 = Channel.of(file(params.vcf2loh, checkIfExists:true))
      dbsnp                   = Channel.of(file(params.dbsnp, checkIfExists:true))
 // hotspot bed files
      hg19_hotspot_pos         = Channel.of(file(params.hg19_hotspot_pos, checkIfExists:true))
      access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))    
 
-
+// biowulf snpEff config file
+    Biowulf_snpEff_config = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
+    dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
+    dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
 // Trim away adapters
     Cutadapt(read_pairs)
 
@@ -189,12 +195,14 @@ workflow {
     //         .combine(genome)
     // )
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
+
+
 //    Genotyping(
 //       Picard_AddReadgroups.out
 //            .combine(genome)
+//             .combine(genome_fai)
+//             .combine(genome_dict)
 //            .combine(Sites1000g4genotyping)
-//            .combine(vcf2genotype)
-//            .combine(vcf2loh)
 //    )
 
     GATK_RNASeq_Trim(
@@ -243,6 +251,14 @@ workflow {
              .combine(hg19_hotspot_pos)
      )
 
+//     Bam2tdf(
+//        GATK_RNASeq_BR_PR.out
+//             .combine(genome)
+//             .combine(genome_fai)
+//             .combine(genome_dict)
+//     )
+
+
 //     Hotspot_Boxplot(Hotspot_Coverage.out)
 
 // HLA prediction
@@ -263,5 +279,11 @@ workflow {
              .combine(dbsnp)
      )
 
+  SnpEff(
+        RNAseq_HaplotypeCaller.out
+             .combine(dbNSFP2_4)
+             .combine(dbNSFP2_4_tbi)
+     )
+ Vcf2txt(SnpEff.out)
 }
 
