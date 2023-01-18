@@ -37,8 +37,7 @@ process Hotspot_Boxplot {
 
      input:
      tuple val(dataset_id),
-        path(hotspot),
-        path(boxplot_script)
+        path(hotspot)
 
      output:
      tuple val("${dataset_id}"),
@@ -52,7 +51,7 @@ process Hotspot_Boxplot {
      shell:
      '''
      set -exo pipefail
-     R --vanilla --slave --silent --args !{hotspot} !{dataset_id}.hotspot_coverage.png !{dataset_id} <!{boxplot_script}
+     boxplot.R !{hotspot} !{dataset_id}.hotspot_coverage.png !{dataset_id} 
 
      '''
 }
@@ -153,4 +152,34 @@ process HotspotPileup {
 }
 
 
+process Bam2tdf {
+
+     tag { dataset_id }
+
+     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(dataset_id),
+        path(bam),
+        path(index),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict)
+
+     output:
+     tuple val("${dataset_id}"),
+        path("${dataset_id}.star.final.bam.tdf")
+
+     stub:
+     """
+     touch "${dataset_id}.star.final.bam.tdf"
+     """
+
+     shell:
+     '''
+     set -exo pipefail
+     igvtools count !{bam} !{dataset_id}.star.final.bam.tdf  !{genome}
+
+     '''
+}
 
