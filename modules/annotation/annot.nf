@@ -79,3 +79,69 @@ process Annovar {
      sed -i '1s|.|_|g' AnnotationInput.gene
      '''
 }
+
+process Custom_annotation {
+
+     tag { dataset_id }
+
+     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(dataset_id),
+        path(annotation),
+        path(sift),
+        path(clinvar),
+        path(hgmd),
+        path(matchTrial),
+        path(mcg),
+        path(DoCM),
+        path(CanDL),
+        path(targetted_cancer_care),
+        path(civic)
+     output:
+     tuple val(dataset_id),
+        path("AnnotationInput.clinvar"),
+        path("AnnotationInput.hgmd"),
+        path("AnnotationInput.match"),
+        path("AnnotationInput.mcg"),
+        path("AnnotationInput.docm"),
+        path("AnnotationInput.candl"),
+        path("AnnotationInput.tcc"),
+        path("AnnotationInput.civic")
+     stub:
+     """
+     touch "AnnotationInput.clinvar"
+     touch "AnnotationInput.hgmd"
+     touch "AnnotationInput.match"
+     touch "AnnotationInput.mcg"
+     touch "AnnotationInput.docm"
+     touch "AnnotationInput.candl"
+     touch "AnnotationInput.tcc"
+     touch "AnnotationInput.civic"
+     """
+
+     shell:
+     '''
+       addAnnotation.pl !{clinvar} !{annotation} >AnnotationInput.clinvar
+       addAnnotation.pl !{hgmd} !{annotation} >AnnotationInput.hgmd
+       addAnnotation.pl !{matchTrial} !{annotation} >AnnotationInput.match
+       addAnnotation.pl !{mcg} !{annotation} >AnnotationInput.mcg
+       addAnnotation.pl !{DoCM} !{annotation} >AnnotationInput.docm
+       addAnnotation.pl !{CanDL} !{annotation} >AnnotationInput.candl
+       addAnnotation.pl	!{targetted_cancer_care} !{annotation} >AnnotationInput.tcc
+       addAnnotation.pl	!{civic} !{annotation} >AnnotationInput.civic
+     '''
+}
+
+
+//process SIFT {
+
+//     tag { dataset_id }
+
+//     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+
+//     input:
+//     tuple val(dataset_id),
+//        path(annotation),
+//        path(sift)
+
