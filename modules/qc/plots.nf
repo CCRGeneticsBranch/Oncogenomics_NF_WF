@@ -183,3 +183,32 @@ process Bam2tdf {
      '''
 }
 
+process CoveragePlot {
+    tag { dataset_id }
+
+    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(dataset_id),
+        path(bam),
+        path(index),
+        path(access_target)
+
+    output:
+    tuple val("${dataset_id}"),
+       path("${dataset_id}.star.coverage.txt")
+
+    stub:
+     """
+     touch "${dataset_id}.star.coverage.txt"
+     """
+
+    shell:
+     '''
+     bedtools coverage -abam !{bam} -b  !{access_target} -hist |grep "^all" > !{dataset_id}.star.coverage.txt
+     coverage.R  $PWD !{dataset_id}.coveragePlot.png !{dataset_id}     
+     '''
+
+}
+
+

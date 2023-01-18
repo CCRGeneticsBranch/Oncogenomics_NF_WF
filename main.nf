@@ -62,6 +62,7 @@ include {Vcf2txt} from './modules/misc/snpEff'
 include {FormatInput} from './modules/annotation/annot'
 include {Annovar} from './modules/annotation/annot'
 include {Custom_annotation} from './modules/annotation/annot'
+include {CoveragePlot} from  './modules/qc/plots'
 //include {Genotyping} from  './modules/qc/qc'
 
 
@@ -108,6 +109,9 @@ workflow {
 // hotspot bed files
      hg19_hotspot_pos         = Channel.of(file(params.hg19_hotspot_pos, checkIfExists:true))
      access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))    
+
+//  target design files
+    access_target            = Channel.of(file(params.access_target, checkIfExists:true))
 //  Annotation files
     annovar_data             = Channel.of(file(params.annovar_data, checkIfExists:true))    
     clinseq                  = Channel.of(file(params.clinseq, checkIfExists:true))
@@ -274,6 +278,11 @@ workflow {
              .combine(genome_dict)
      )
 
+     CoveragePlot(
+        GATK_RNASeq_BR_PR.out
+            .combine(access_target)
+
+     )
 
 //     Hotspot_Boxplot(Hotspot_Coverage.out)
 
