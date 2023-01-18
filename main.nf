@@ -59,6 +59,8 @@ include {HotspotPileup} from './modules/qc/plots.nf'
 include {SnpEff} from './modules/misc/snpEff'
 include {Bam2tdf} from './modules/qc/plots.nf'
 include {Vcf2txt} from './modules/misc/snpEff'
+include {FormatInput} from './modules/annotation/annot'
+include {Annovar} from './modules/annotation/annot'
 //include {Genotyping} from  './modules/qc/qc'
 
 
@@ -105,7 +107,11 @@ workflow {
 // hotspot bed files
      hg19_hotspot_pos         = Channel.of(file(params.hg19_hotspot_pos, checkIfExists:true))
      access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))    
-
+//  Annotation files
+    annovar_data             = Channel.of(file(params.annovar_data, checkIfExists:true))    
+    clinseq                  = Channel.of(file(params.clinseq, checkIfExists:true))
+    cosmic                   = Channel.of(file(params.cosmic, checkIfExists:true))
+    pcg                      = Channel.of(file(params.pcg, checkIfExists:true))
 // biowulf snpEff config file
     Biowulf_snpEff_config = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
@@ -285,5 +291,14 @@ workflow {
              .combine(dbNSFP2_4_tbi)
      )
  Vcf2txt(SnpEff.out)
+
+ FormatInput(Vcf2txt.out.combine(HotspotPileup.out, by:0))
+ Annovar(
+        FormatInput.out
+             .combine(annovar_data)
+             .combine(clinseq)
+             .combine(pcg)
+     )
+
 }
 
