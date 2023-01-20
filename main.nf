@@ -63,6 +63,7 @@ include {FormatInput} from './modules/annotation/annot'
 include {Annovar} from './modules/annotation/annot'
 include {Custom_annotation} from './modules/annotation/annot'
 include {CoveragePlot} from  './modules/qc/plots'
+include {Combine_annotation} from './modules/annotation/annot'
 //include {Genotyping} from  './modules/qc/qc'
 
 
@@ -125,7 +126,7 @@ workflow {
     CanDL                    = Channel.of(file(params.CanDL, checkIfExists:true))
     targetted_cancer_care    = Channel.of(file(params.targetted_cancer_care, checkIfExists:true))
     civic                    = Channel.of(file(params.civic, checkIfExists:true))
-
+    ACMG                     = Channel.of(file(params.ACMG, checkIfExists:true))
 // biowulf snpEff config file
     Biowulf_snpEff_config = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
@@ -284,7 +285,7 @@ workflow {
 
      )
 
-//     Hotspot_Boxplot(Hotspot_Coverage.out)
+     Hotspot_Boxplot(Hotspot_Coverage.out)
 
 // HLA prediction
 
@@ -329,5 +330,9 @@ workflow {
              .combine(targetted_cancer_care)
              .combine(civic)
     )
+// Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:0)
+//             .combine(ACMG)
+//    )
+             
 }
 

@@ -1,5 +1,6 @@
 process Hotspot_Coverage {
 
+//   this rule uses an older version of bedtools to generate output similar to ngs_pipeline_4.2
      tag { dataset_id }
 
      publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
@@ -23,8 +24,13 @@ process Hotspot_Coverage {
      shell:
      '''
      set -exo pipefail
+
      slopBed -i !{access_hotspot}  -g !{chrom_sizes} -b 50 > !{dataset_id}_Region.bed
-     samtools view -hF 0x400 -q 30 -L !{dataset_id}_Region.bed !{bam} | samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -abam - -b !{access_hotspot} > !{dataset_id}.star.hotspot.depth
+
+     ccbr_bam_filter_by_mapq.py -i !{bam} -o !{dataset_id}_filter.bam -q 30
+
+     /opt2/bedtools2/bin/bedtools coverage -abam !{dataset_id}_filter.bam  -b !{access_hotspot} > !{dataset_id}.star.hotspot.depth
+
      '''
 }
 
@@ -51,7 +57,7 @@ process Hotspot_Boxplot {
      shell:
      '''
      set -exo pipefail
-     boxplot.R !{hotspot} !{dataset_id}.hotspot_coverage.png !{dataset_id} 
+     boxplot.R $PWD/ !{dataset_id}.hotspot_coverage.png !{dataset_id} 
 
      '''
 }
