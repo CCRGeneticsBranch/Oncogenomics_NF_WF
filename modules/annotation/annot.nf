@@ -12,12 +12,13 @@ process FormatInput {
      output:
      tuple val(dataset_id),
         path("AnnotationInput.anno"),
-        path("AnnotationInput.sift")
-
+        path("AnnotationInput.sift"),
+        path("AnnotationInput")
      stub:
      """
      touch "AnnotationInput.anno"
      touch "AnnotationInput.sift"
+     touch "AnnotationInput"
      """
 
      shell:
@@ -40,6 +41,7 @@ process Annovar {
      tuple val(dataset_id),
         path(annotation),
         path(sift),
+        path(Anno_input),
         path(annovar_data),
         path(clinseq),
         path(pcg)
@@ -90,6 +92,7 @@ process Custom_annotation {
      tuple val(dataset_id),
         path(annotation),
         path(sift),
+        path(Anno_input),
         path(clinvar),
         path(hgmd),
         path(matchTrial),
@@ -107,7 +110,9 @@ process Custom_annotation {
         path("AnnotationInput.docm"),
         path("AnnotationInput.candl"),
         path("AnnotationInput.tcc"),
-        path("AnnotationInput.civic")
+        path("AnnotationInput.civic"),
+        path("AnnotationInput_final")
+
      stub:
      """
      touch "AnnotationInput.clinvar"
@@ -118,6 +123,7 @@ process Custom_annotation {
      touch "AnnotationInput.candl"
      touch "AnnotationInput.tcc"
      touch "AnnotationInput.civic"
+     touch "AnnotationInput"
      """
 
      shell:
@@ -130,18 +136,54 @@ process Custom_annotation {
        addAnnotation.pl !{CanDL} !{annotation} >AnnotationInput.candl
        addAnnotation.pl	!{targetted_cancer_care} !{annotation} >AnnotationInput.tcc
        addAnnotation.pl	!{civic} !{annotation} >AnnotationInput.civic
+       cp !{Anno_input} AnnotationInput_final
      '''
 }
 
 
-//process SIFT {
+process Combine_annotation {
 
-//     tag { dataset_id }
+     tag { dataset_id }
 
-//     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
 
-//     input:
-//     tuple val(dataset_id),
-//        path(annotation),
-//        path(sift)
+     input:
+     tuple val(dataset_id),
+        path(cosmic_out),
+        path(clinseq_out),
+        path(cadd_out),
+        path(pcg_out),
+        path(gene_out),
+       	path(clinvar_out),
+       	path(hgmd_out),
+       	path(match_out),
+       	path(mcg_out),
+       	path(docm_out),
+       	path(candl_out),
+       	path(tcc_out),
+       	path(civic_out),
+        path(Anno_input_final),
+        path(ACMG)
+     output:
+     tuple val(dataset_id),
+//        path("AnnotationInput.coding.rare.txt")
+        path("list")
+        path("AnnotationInput.annotations.final.txt")
+        
+     stub:
+     """
+//       touch "AnnotationInput.coding.rare.txt"
+       touch "list"
+       touch "AnnotationInput.annotations.final.txt"
+     """
+
+     shell:
+     '''
+     echo !{Anno_input_final} !{gene_out} !{clinseq_out} !{cadd_out} !{clinvar_out} !{cosmic_out} !{hgmd_out} !{match_out} !{docm_out} !{candl_out} !{tcc_out} !{mcg_out} !{pcg_out} !{civic_out} > list
+     
+     CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
+     GeneAnnotation.pl !{ACMG} AnnotationInput.annotations.final.txt.tmp > AnnotationInput.annotations.final.txt
+
+     '''
+}
 
