@@ -74,7 +74,6 @@ workflow {
 
 // Genome specifics
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
-    genome_test             = Channel.of(file(params.genome_test, checkIfExists:true))
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
@@ -222,7 +221,7 @@ workflow {
 /*    Genotyping(
        Picard_AddReadgroups.out
             .combine(Sites1000g4genotyping)
-            .combine(genome_test)
+            .combine(genome)
             .combine(genome_fai)
             .combine(genome_dict)
     )
