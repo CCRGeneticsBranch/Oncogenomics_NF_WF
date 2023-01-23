@@ -99,7 +99,7 @@ workflow {
     mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
 // Picard and Genotyping
-    // ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
+     ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
      rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
      phase1_1000g            = Channel.of(file(params.phase1_1000g, checkIfExists:true))
      Mills_and_1000g         = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
