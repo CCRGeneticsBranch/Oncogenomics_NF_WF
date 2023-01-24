@@ -165,6 +165,7 @@ process Combine_annotation {
        	path(tcc_out),
        	path(civic_out),
         path(Anno_input_final),
+        path(snpeff_txt),
         path(ACMG),
         path(hg19_BLsites),
         path(hg19_WLsites)
@@ -173,11 +174,13 @@ process Combine_annotation {
     tuple val("${dataset_id}"),
         path("${dataset_id}.Annotations.coding.rare.txt")
         path("${dataset_id}.Annotations.final.txt")
+        path("${dataset_id}.HC_RNASeq.annotated.txt")
         
      stub:
      """
        touch "${dataset_id}.Annotations.coding.rare.txt"
        touch "${dataset_id}.Annotations.final.txt"
+       touch "${dataset_id}.HC_RNASeq.annotated.txt"
      """
 
      shell:
@@ -200,7 +203,7 @@ process Combine_annotation {
      CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
      GeneAnnotation.pl !{ACMG} AnnotationInput.annotations.final.txt.tmp > !{dataset_id}.Annotations.final.txt
      ProteinCodingRare.pl !{hg19_BLsites} !{hg19_WLsites} !{dataset_id}.Annotations.final.txt 0.05 > !{dataset_id}.Annotations.coding.rare.txt
-
+     addAnnotations2vcf.pl !{dataset_id}.Annotations.coding.rare.txt !{snpeff_txt} > !{dataset_id}.HC_RNASeq.annotated.txt
      '''
 }
 

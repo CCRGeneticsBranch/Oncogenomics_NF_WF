@@ -347,10 +347,11 @@ workflow {
              .combine(civic)
     )
  Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:0)
+             .combine(Vcf2txt.out, by:0)
              .combine(ACMG)
              .combine(hg19_BLsites)
              .combine(hg19_WLsites)
     )
-             
+
 }
 
