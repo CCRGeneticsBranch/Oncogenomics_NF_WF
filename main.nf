@@ -64,7 +64,8 @@ include {Annovar} from './modules/annotation/annot'
 include {Custom_annotation} from './modules/annotation/annot'
 include {CoveragePlot} from  './modules/qc/plots'
 include {Combine_annotation} from './modules/annotation/annot'
-//include {Genotyping} from  './modules/qc/qc'
+//include {RNAseQC} from './modules/qc/qc'
+include {Genotyping} from  './modules/qc/qc'
 
 
 workflow {
@@ -77,6 +78,7 @@ workflow {
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
+    transcript_gtf          = Channel.of(file(params.transcript_gtf, checkIfExists:true))
     chrom_sizes             = Channel.of(file(params.chrom_sizes, checkIfExists:true))
 
 // STAR and RSEM
@@ -205,7 +207,17 @@ workflow {
 //    )
 
     // multiqc(fastqc.out)
-     Picard_AddReadgroups(Star.out)    
+     Picard_AddReadgroups(Star.out)
+
+/*     RNAseQC(
+        Picard_AddReadgroups.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+             .combine(rRNA_interval)
+             .combine(transcript_gtf)
+     )
+*/    
      Picard_CollectRNAseqmetrics(
      Picard_AddReadgroups.out
              .combine(ref_flat)
@@ -218,14 +230,14 @@ workflow {
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
 
 
-/*    Genotyping(
+    Genotyping(
        Picard_AddReadgroups.out
             .combine(Sites1000g4genotyping)
             .combine(genome)
             .combine(genome_fai)
             .combine(genome_dict)
     )
-*/
+
 
     GATK_RNASeq_Trim(
          Picard_MarkDuplicates.out
