@@ -41,7 +41,7 @@ process Multiqc {
 
 process Genotyping {
     tag { dataset_id }
-
+    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -54,13 +54,13 @@ process Genotyping {
 
     output:
     tuple val("${dataset_id}"),
-    path("${dataset_id}.star.samtools.vcf"),
     path("${dataset_id}.star.gt"),
     path("${dataset_id}.star.loh")
 
     stub:
     """
-    touch "${dataset_id}.star.samtools.vcf"
+    touch "${dataset_id}.star.gt"
+    touch "${dataset_id}.star.loh"
     """
 
     shell:
@@ -72,7 +72,33 @@ process Genotyping {
 
     vcf2loh.pl !{dataset_id}.star.samtools.vcf  > !{dataset_id}.star.loh
 
+
     '''
+}
+
+process CircosPlot {
+    tag { dataset_id }
+
+    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(dataset_id),
+        path(gt),
+        path(loh)
+
+    output:
+    tuple val("${dataset_id}"),
+        path("${dataset_id}.star.circos.png")    
+
+    stub:
+    """
+    touch "${dataset_id}.star.circos.png"
+    """
+
+    shell:
+     '''
+     circosLib.R  $PWD/ !{dataset_id}.star.circos.png !{dataset_id}
+     '''
 }
 
 

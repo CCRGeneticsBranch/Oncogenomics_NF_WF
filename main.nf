@@ -65,8 +65,8 @@ include {Custom_annotation} from './modules/annotation/annot'
 include {CoveragePlot} from  './modules/qc/plots'
 include {Combine_annotation} from './modules/annotation/annot'
 //include {RNAseQC} from './modules/qc/qc'
+include {CircosPlot} from  './modules/qc/qc'
 include {Genotyping} from  './modules/qc/qc'
-
 
 workflow {
     read_pairs              = Channel
@@ -129,6 +129,8 @@ workflow {
     targetted_cancer_care    = Channel.of(file(params.targetted_cancer_care, checkIfExists:true))
     civic                    = Channel.of(file(params.civic, checkIfExists:true))
     ACMG                     = Channel.of(file(params.ACMG, checkIfExists:true))
+    hg19_BLsites             = Channel.of(file(params.hg19_BLsites, checkIfExists:true))           
+    hg19_WLsites             = Channel.of(file(params.hg19_WLsites, checkIfExists:true))
 // biowulf snpEff config file
     Biowulf_snpEff_config = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
@@ -238,6 +240,7 @@ workflow {
             .combine(genome_dict)
     )
 
+    CircosPlot(Genotyping.out)
 
     GATK_RNASeq_Trim(
          Picard_MarkDuplicates.out
@@ -343,9 +346,11 @@ workflow {
              .combine(targetted_cancer_care)
              .combine(civic)
     )
-// Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:0)
-//             .combine(ACMG)
-//    )
+ Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:0)
+             .combine(ACMG)
+             .combine(hg19_BLsites)
+             .combine(hg19_WLsites)
+    )
              
 }
 
