@@ -78,7 +78,9 @@ process Annovar {
      head -1 !{annovar_data}/hg19_PCG_042616.txt >>AnnotationInput.pcg
      table_annovar.pl  !{annotation} !{annovar_data} -buildver hg19 -out AnnotationInput.anno.gene -remove -protocol refGene,cytoBand,snp138,1000g2014oct_all,1000g2014oct_eur,1000g2014oct_afr,1000g2014oct_amr,1000g2014oct_eas,1000g2014oct_sas,esp6500_all,esp6500_ea,esp6500_aa,exac03nontcga,exac03,cg69,nci60 -operation g,r,f,f,f,f,f,f,f,f,f,f,f,f,f,f -nastring "-1" -polish  --argument "-hgvs",,,,,,,,,,,,,,,
      mv AnnotationInput.anno.gene.hg19_multianno.txt AnnotationInput.gene
-     sed -i '1s|.|_|g' AnnotationInput.gene
+#     sed -i '1s|.|_|g' AnnotationInput.gene
+     sed -i '1s/[.]/_/g' AnnotationInput.gene
+
      '''
 }
 
@@ -163,26 +165,41 @@ process Combine_annotation {
        	path(tcc_out),
        	path(civic_out),
         path(Anno_input_final),
-        path(ACMG)
-     output:
-     tuple val(dataset_id),
-//        path("AnnotationInput.coding.rare.txt")
-        path("list")
-        path("AnnotationInput.annotations.final.txt")
+        path(ACMG),
+        path(hg19_BLsites),
+        path(hg19_WLsites)
+
+    output:
+    tuple val("${dataset_id}"),
+        path("${dataset_id}.Annotations.coding.rare.txt")
+        path("${dataset_id}.Annotations.final.txt")
         
      stub:
      """
-//       touch "AnnotationInput.coding.rare.txt"
-       touch "list"
-       touch "AnnotationInput.annotations.final.txt"
+       touch "${dataset_id}.Annotations.coding.rare.txt"
+       touch "${dataset_id}.Annotations.final.txt"
      """
 
      shell:
      '''
-     echo !{Anno_input_final} !{gene_out} !{clinseq_out} !{cadd_out} !{clinvar_out} !{cosmic_out} !{hgmd_out} !{match_out} !{docm_out} !{candl_out} !{tcc_out} !{mcg_out} !{pcg_out} !{civic_out} > list
+     echo "!{Anno_input_final}
+!{gene_out}
+!{clinseq_out}
+!{cadd_out}
+!{clinvar_out}
+!{cosmic_out}
+!{hgmd_out}
+!{match_out}
+!{docm_out}
+!{candl_out}
+!{tcc_out}
+!{mcg_out}
+!{pcg_out}
+!{civic_out}" > list
      
      CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
-     GeneAnnotation.pl !{ACMG} AnnotationInput.annotations.final.txt.tmp > AnnotationInput.annotations.final.txt
+     GeneAnnotation.pl !{ACMG} AnnotationInput.annotations.final.txt.tmp > !{dataset_id}.Annotations.final.txt
+     ProteinCodingRare.pl !{hg19_BLsites} !{hg19_WLsites} !{dataset_id}.Annotations.final.txt 0.05 > !{dataset_id}.Annotations.coding.rare.txt
 
      '''
 }
