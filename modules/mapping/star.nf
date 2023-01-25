@@ -43,6 +43,7 @@ process Star {
             --outSAMunmapped Within \
             --outFileNamePrefix "!{dataset_id}." \
             --chimSegmentMin 12 \
+            --chimOutJunctionFormat 1 \
             --chimJunctionOverhangMin 12 \
             --alignSJDBoverhangMin 10 \
             --alignMatesGapMax 100000 \
@@ -66,6 +67,7 @@ process Star {
             --outSAMunmapped Within \
             --outFileNamePrefix "!{dataset_id}." \
             --chimSegmentMin 12 \
+            --chimOutJunctionFormat 1 \
             --chimJunctionOverhangMin 12 \
             --alignSJDBoverhangMin 10 \
             --alignMatesGapMax 100000 \
