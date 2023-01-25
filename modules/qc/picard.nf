@@ -88,8 +88,7 @@ process Picard_MarkDuplicates {
         output:
         tuple val("${dataset_id}"),
         path("trim_${dataset_id}.star.dd.bam"),
-        path("trim_${dataset_id}.star.dd.bam.bai"),
-        path("trim_${dataset_id}.markdup.txt")
+        path("trim_${dataset_id}.star.dd.bam.bai")
 
 
         script:

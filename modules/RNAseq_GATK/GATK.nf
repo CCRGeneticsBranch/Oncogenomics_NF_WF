@@ -5,7 +5,6 @@ process GATK_RNASeq_Trim {
         tuple val(dataset_id),
         path(bam),
         path(index),
-        path(markdup),
         path(genome),
         path(genome_fai),
         path(genome_dict)
