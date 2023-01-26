@@ -23,7 +23,7 @@ process Fastqc {
 process Multiqc {
     tag { dataset_id }
     
-    publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
+    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -34,7 +34,7 @@ process Multiqc {
 
     script:
     """
-    multiqc -m fastqc .
+    multiqc -m fastqc ${params.resultsdir}/${dataset_id}
     """
 
 }
@@ -119,7 +119,7 @@ process RNAseQC {
         path(transcript_gtf)
 
     output:
-    path("report.html")
+    path("rnaseqc/report.html")
 
     stub:
      """
