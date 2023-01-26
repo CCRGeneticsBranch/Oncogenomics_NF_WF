@@ -10,11 +10,13 @@ process Starfusion{
     
     output:
     tuple val("${dataset_id}"),
-        path("${dataset_id}.fusion_predictions.tsv")
+        path("STAR-fusion.txt")
+//        path("${dataset_id}.fusion_predictions.tsv")
 
     stub:
     """
-    touch "${dataset_id}.fusion_predictions.tsv"
+    touch ("STAR-fusion.txt")
+//    touch "${dataset_id}.fusion_predictions.tsv"
     """
 
     shell:
@@ -24,6 +26,6 @@ process Starfusion{
         --genome_lib_dir !{genome_lib_dir} \
         --chimeric_junction !{chimeric_junctions} \
         --CPU !{task.cpus}
-    cp STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv !{dataset_id}.fusion_predictions.tsv
+    cp STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv STAR-fusion.txt
     '''
 }
