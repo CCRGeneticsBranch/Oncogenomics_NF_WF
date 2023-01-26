@@ -64,10 +64,10 @@ include {Annovar} from './modules/annotation/annot'
 include {Custom_annotation} from './modules/annotation/annot'
 include {CoveragePlot} from  './modules/qc/plots'
 include {Combine_annotation} from './modules/annotation/annot'
-//include {RNAseQC} from './modules/qc/qc'
+include {RNAseQC} from './modules/qc/qc'
 include {CircosPlot} from  './modules/qc/qc'
 include {Genotyping} from  './modules/qc/qc'
-
+include {Mergefusion} from './modules/fusion/merge'
 workflow {
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
@@ -139,18 +139,18 @@ workflow {
     Cutadapt(read_pairs)
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
-//    fastqc_input = Cutadapt.out.combine(read_pairs)
-//    fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
-//               fqc_input: id1 == id2
-//                   return ( tuple (id1,r1,r2,trimr1,trimr2) )
-//               other: true
-//                   return ( tuple (id1,id2) )
-//                  } \
-//               .set { fqc_inputs }
-    // fqc_inputs.fqc_input.view()
+    fastqc_input = Cutadapt.out.combine(read_pairs)
+    fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
+               fqc_input: id1 == id2
+                   return ( tuple (id1,r1,r2,trimr1,trimr2) )
+               other: true
+                   return ( tuple (id1,id2) )
+                  } \
+               .set { fqc_inputs }
+//     fqc_inputs.fqc_input.view()
 
 // QC with FastQC 
-//    Fastqc(fqc_inputs.fqc_input)
+    Fastqc(fqc_inputs.fqc_input)
 
 // Align with STAR    
     Star(
@@ -160,47 +160,52 @@ workflow {
     )
 
 // Count with RSEM
-//    Rsem(
-//        Star.out
-//           .combine(rsemIndex)
-//    )
+    Rsem(
+        Star.out
+           .combine(rsemIndex)
+    )
 
 
 // Fusion tools
 // 1. Arriba
-//    Arriba(
-//        Cutadapt.out
-//            .combine(genome)
-//            .combine(star_genomeIndex)
-//            .combine(gtf)
-//    )
+    Arriba(
+        Cutadapt.out
+            .combine(genome)
+            .combine(star_genomeIndex)
+            .combine(gtf)
+    )
 // 2. Fusioncatcher
-//    Fusioncatcher(
-//        Cutadapt.out
-//            .combine(fusioncatcher_db)
-//    )
+    Fusioncatcher(
+        Cutadapt.out
+            .combine(fusioncatcher_db)
+    )
 
 // 3. Star-Fusion
- // Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-//    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions -> 
-//                other: true
-//                    return( tuple(id, chimeric_junctions))} \
-//                .set{Starfusion_input_tmp}
-//    Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)                
-    // Starfusion_input.view()
-//    Starfusion(Starfusion_input)
+      Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions -> 
+                other: true
+                    return( tuple(id, chimeric_junctions))} \
+                .set{Starfusion_input_tmp}
+    Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)                
+//     Starfusion_input.view()
+    Starfusion(Starfusion_input)
 
-//    Arriba.out
-//        .combine(Fusioncatcher.out)
-//        .combine(Starfusion.out)
-//        .branch { id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, id2, fusioncatcher_final_list, fusioncatcher_summary, id3, starfusion_predictions_tsv ->
-//            all_fusions: id1 == id2 == id3
-//                return( tuple(id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, fusioncatcher_final_list, fusioncatcher_summary, starfusion_predictions_tsv))
-//            other: true
-//               return(tuple(id1,id2,id3))
-//            } \
-//            .set{merge_fusions_input}
+/*
+   merge_fusions_input =  Arriba.out
+        .combine(Fusioncatcher.out)
+        .combine(Starfusion.out)
+   merge_fusions_input.branch { id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, id2, fusioncatcher_final_list, fusioncatcher_summary, id3, starfusion_predictions_tsv ->
+            all_fusions: id1 == id2 == id3
+                return( tuple(id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, fusioncatcher_final_list, fusioncatcher_summary, starfusion_predictions_tsv))
+            other: true
+               return(tuple(id1,id2,id3))
+            } \
+            .set{merge_fusions_input}
 //    merge_fusions_input.all_fusions.view()
+
+*/
+  Mfinput = Arriba.out.join(Fusioncatcher.out).join(Starfusion.out)
+  Mergefusion(Mfinput)
 
 // Mixcr
 //    Mixcr_VCJtools (
@@ -208,18 +213,15 @@ workflow {
 //           .combine(mixcr_license)
 //    )
 
-    // multiqc(fastqc.out)
-     Picard_AddReadgroups(Star.out)
+    PicardARG_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions ->
+                other: true
+                    return( tuple(id, bam, bai))} \
+                .set{PicardARG_input}
+   //  PicardARG_input.view()
 
-/*     RNAseQC(
-        Picard_AddReadgroups.out
-             .combine(genome)
-             .combine(genome_fai)
-             .combine(genome_dict)
-             .combine(rRNA_interval)
-             .combine(transcript_gtf)
-     )
-*/    
+     Picard_AddReadgroups(PicardARG_input)
+    
      Picard_CollectRNAseqmetrics(
      Picard_AddReadgroups.out
              .combine(ref_flat)
@@ -231,7 +233,6 @@ workflow {
      )
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
 
-
     Genotyping(
        Picard_AddReadgroups.out
             .combine(Sites1000g4genotyping)
@@ -241,6 +242,14 @@ workflow {
     )
 
     CircosPlot(Genotyping.out)
+     RNAseQC(
+	Picard_MarkDuplicates.out
+             .combine(genome)
+             .combine(genome_fai)
+             .combine(genome_dict)
+             .combine(rRNA_interval)
+             .combine(transcript_gtf)
+     )
 
     GATK_RNASeq_Trim(
          Picard_MarkDuplicates.out
@@ -302,7 +311,7 @@ workflow {
      )
 
      Hotspot_Boxplot(Hotspot_Coverage.out)
-
+//     multiqc(Hotspot_Boxplot.out)
 // HLA prediction
 
   HLAminer(Cutadapt.out)
@@ -352,6 +361,7 @@ workflow {
              .combine(hg19_BLsites)
              .combine(hg19_WLsites)
     )
+
 
 }
 
