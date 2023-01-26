@@ -13,15 +13,17 @@ process Arriba{
     
     output:
     tuple val("${dataset_id}"),
-        path("${dataset_id}.fusions.tsv"),
-        path("${dataset_id}.fusions.discarded.tsv"),
-        path("${dataset_id}.fusions.pdf")
+        path("arriba-fusion.txt")
+//        path("${dataset_id}.fusions.tsv"),
+//        path("${dataset_id}.fusions.discarded.tsv"),
+//        path("${dataset_id}.fusions.pdf")
 
     stub:
     """
-    touch "${dataset_id}.fusions.tsv"
-    touch "${dataset_id}.fusions.discarded.tsv"
-    touch "${dataset_id}.fusions.pdf"
+      touch "arriba-fusion.txt"
+//    touch "${dataset_id}.fusions.tsv"
+//    touch "${dataset_id}.fusions.discarded.tsv"
+//    touch "${dataset_id}.fusions.pdf"
     """
 
     shell:
@@ -110,6 +112,7 @@ process Arriba{
         touch !{dataset_id}.fusions.pdf
     fi
 
+    mv !{dataset_id}.fusions.tsv arriba-fusion.txt
     '''
 
 }
