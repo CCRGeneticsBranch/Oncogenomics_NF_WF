@@ -47,14 +47,14 @@ include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 include {Mixcr_VCJtools} from './modules/misc/mixcr'
-include {HLAminer} from './modules/neoantigens/hlaminer'
-include {Seq2HLA} from './modules/neoantigens/seq2hla.nf'
+//include {HLAminer} from './modules/neoantigens/hlaminer'
+//include {Seq2HLA} from './modules/neoantigens/seq2hla.nf'
 include {Hotspot_Coverage} from './modules/qc/plots.nf'
 include {Hotspot_Boxplot} from './modules/qc/plots.nf'
 include {Flagstat} from './modules/qc/plots.nf'
 include {Bamutil} from './modules/qc/plots.nf'
 include {RNAseq_HaplotypeCaller} from './modules/RNAseq_GATK/GATK'
-include {MergeHLA} from './modules/neoantigens/mergeHLA.nf'
+//include {MergeHLA} from './modules/neoantigens/mergeHLA.nf'
 include {HotspotPileup} from './modules/qc/plots.nf'
 include {SnpEff} from './modules/misc/snpEff'
 include {Bam2tdf} from './modules/qc/plots.nf'
@@ -68,6 +68,7 @@ include {RNAseQC} from './modules/qc/qc'
 include {CircosPlot} from  './modules/qc/qc'
 include {Genotyping} from  './modules/qc/qc'
 include {Mergefusion} from './modules/fusion/merge'
+include {HLA_calls} from './modules/neoantigens/hla_calls'
 workflow {
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
@@ -137,6 +138,8 @@ workflow {
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
 // Trim away adapters
     Cutadapt(read_pairs)
+    HLA_calls(Cutadapt.out)
+
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
     fastqc_input = Cutadapt.out.combine(read_pairs)
@@ -148,6 +151,8 @@ workflow {
                   } \
                .set { fqc_inputs }
 //     fqc_inputs.fqc_input.view()
+
+
 
 // QC with FastQC 
     Fastqc(fqc_inputs.fqc_input)
@@ -190,20 +195,6 @@ workflow {
 //     Starfusion_input.view()
     Starfusion(Starfusion_input)
 
-/*
-   merge_fusions_input =  Arriba.out
-        .combine(Fusioncatcher.out)
-        .combine(Starfusion.out)
-   merge_fusions_input.branch { id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, id2, fusioncatcher_final_list, fusioncatcher_summary, id3, starfusion_predictions_tsv ->
-            all_fusions: id1 == id2 == id3
-                return( tuple(id1, arriba_fusions_tsv, arriba_discarded_fusions_tsv, arriba_pdf, fusioncatcher_final_list, fusioncatcher_summary, starfusion_predictions_tsv))
-            other: true
-               return(tuple(id1,id2,id3))
-            } \
-            .set{merge_fusions_input}
-//    merge_fusions_input.all_fusions.view()
-
-*/
   Mfinput = Arriba.out.join(Fusioncatcher.out).join(Starfusion.out)
   Mergefusion(Mfinput)
 
@@ -312,15 +303,18 @@ workflow {
 
      Hotspot_Boxplot(Hotspot_Coverage.out)
 //     multiqc(Hotspot_Boxplot.out)
+
+
 // HLA prediction
 
-  HLAminer(Cutadapt.out)
 
-  Seq2HLA(Cutadapt.out)
+//  HLAminer(Cutadapt.out)
+
+//  Seq2HLA(Cutadapt.out)
   
-  MergeHLA(
-         Seq2HLA.out.combine(HLAminer.out, by:0)
-  )
+//  MergeHLA(
+//         Seq2HLA.out.combine(HLAminer.out, by:0))
+
 
   RNAseq_HaplotypeCaller(
         GATK_RNASeq_BR_PR.out
