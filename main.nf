@@ -85,7 +85,7 @@ workflow {
 // STAR and RSEM
     star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
     rsemIndex               = Channel.of(file(params.rsem_index, checkIfExists:true))
-
+    strandedness            = Channel.fromPath(params.strandedness)
 // Arriba params
 // These are now coming from the docker (ccbr_starplus)
     //blacklist               = Channel.of(file(params.blacklist), checkIfExists:true)
@@ -168,6 +168,7 @@ workflow {
     Rsem(
         Star.out
            .combine(rsemIndex)
+           .combine(strandedness)
     )
 
 
