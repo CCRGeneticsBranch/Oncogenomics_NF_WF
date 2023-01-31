@@ -11,7 +11,7 @@ process Rsem {
         path(G_bai),
         path(chimeric_junction),
         path(genomeIndex),
-        path(strandedness)
+        val(strandedness)
 
         output:
         tuple val("${dataset_id}"),
