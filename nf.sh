@@ -11,8 +11,8 @@ fi
 # 
 
 # PROFILE="biowulf_test_run_local"
-PROFILE="biowulf_test_run_slurm"
-
+#PROFILE="biowulf_test_run_slurm"
+PROFILE="biowulf_test_s3_slurm"
 set -e
 
 SCRIPT_NAME="$0"
