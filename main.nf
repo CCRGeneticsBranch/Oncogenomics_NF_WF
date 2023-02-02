@@ -33,11 +33,6 @@ log.info """\
 
 include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
-//include {Star} from './modules/mapping/star'
-//include {Rsem} from './modules/quant/rsem'
-include {Arriba} from './modules/fusion/arriba'
-include {Fusioncatcher} from './modules/fusion/fusioncatcher'
-include {Starfusion} from './modules/fusion/starfusion'
 include {Multiqc} from './modules/qc/qc'
 include {Picard_AddReadgroups} from './modules/qc/picard'
 include {Picard_MarkDuplicates} from './modules/qc/picard'
@@ -47,14 +42,11 @@ include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
 include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
 include {Mixcr_VCJtools} from './modules/misc/mixcr'
-//include {HLAminer} from './modules/neoantigens/hlaminer'
-//include {Seq2HLA} from './modules/neoantigens/seq2hla.nf'
 include {Hotspot_Coverage} from './modules/qc/plots.nf'
 include {Hotspot_Boxplot} from './modules/qc/plots.nf'
 include {Flagstat} from './modules/qc/plots.nf'
 include {Bamutil} from './modules/qc/plots.nf'
 include {RNAseq_HaplotypeCaller} from './modules/RNAseq_GATK/GATK'
-//include {MergeHLA} from './modules/neoantigens/mergeHLA.nf'
 include {HotspotPileup} from './modules/qc/plots.nf'
 include {SnpEff} from './modules/misc/snpEff'
 include {Bam2tdf} from './modules/qc/plots.nf'
@@ -67,10 +59,9 @@ include {Combine_annotation} from './modules/annotation/annot'
 include {RNAseQC} from './modules/qc/qc'
 include {CircosPlot} from  './modules/qc/qc'
 include {Genotyping} from  './modules/qc/qc'
-include {Mergefusion} from './modules/fusion/merge'
-//include {HLA_calls} from './modules/neoantigens/hla_calls'
 include {HLA_calls} from './workflows/hla_calls'
 include {Star_rsem} from './workflows/star-rsem'
+include {Fusion_calling} from './workflows/Fusion_calling'
 
 workflow {
     read_pairs              = Channel
@@ -143,7 +134,6 @@ workflow {
 // Trim away adapters
     Cutadapt(read_pairs)
 //    HLA_calls(Cutadapt.out)
-    Star_rsem(Cutadapt.out)
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
     fastqc_input = Cutadapt.out.combine(read_pairs)
@@ -154,63 +144,34 @@ workflow {
                    return ( tuple (id1,id2) )
                   } \
                .set { fqc_inputs }
-//     fqc_inputs.fqc_input.view()
 
 
 
 // QC with FastQC 
-    Fastqc(fqc_inputs.fqc_input)
+Fastqc(fqc_inputs.fqc_input)
 
-// Align with STAR    
-/*    Star(
-        Cutadapt.out
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
+Star_rsem(Cutadapt.out)
 
-// Count with RSEM
-    Rsem(
-        Star.out
-           .combine(rsemIndex)
-           .combine(strandedness)
-    )
-
-*/
-
-// Fusion tools
-// 1. Arriba
-    Arriba(
-        Cutadapt.out
-            .combine(genome)
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
-// 2. Fusioncatcher
-    Fusioncatcher(
-        Cutadapt.out
-            .combine(fusioncatcher_db)
-    )
-
-// 3. Star-Fusion
-//      Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
     Starfusion_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
     Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions -> 
                 other: true
                     return( tuple(id, chimeric_junctions))} \
                 .set{Starfusion_input_tmp}
     Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)                
-//     Starfusion_input.view()
-    Starfusion(Starfusion_input)
 
-  Mfinput = Arriba.out.join(Fusioncatcher.out).join(Starfusion.out)
-  Mergefusion(Mfinput)
+Fusion_calling (
+       Cutadapt.out,
+       Starfusion_input          
+   )
+
 
 // Mixcr
 //    Mixcr_VCJtools (
-//        Cutadapt.out
+//        Cutadapt.out()
 //           .combine(mixcr_license)
 //    )
 
+/*
     PicardARG_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
     Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions ->
                 other: true
@@ -312,16 +273,6 @@ workflow {
 //     multiqc(Hotspot_Boxplot.out)
 
 
-// HLA prediction
-
-
-//  HLAminer(Cutadapt.out)
-
-//  Seq2HLA(Cutadapt.out)
-  
-//  MergeHLA(
-//         Seq2HLA.out.combine(HLAminer.out, by:0))
-
 
   RNAseq_HaplotypeCaller(
         GATK_RNASeq_BR_PR.out
@@ -363,6 +314,6 @@ workflow {
              .combine(hg19_WLsites)
     )
 
-
+*/
 }
 
