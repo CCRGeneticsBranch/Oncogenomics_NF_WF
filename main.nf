@@ -33,8 +33,8 @@ log.info """\
 
 include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
-include {Star} from './modules/mapping/star'
-include {Rsem} from './modules/quant/rsem'
+//include {Star} from './modules/mapping/star'
+//include {Rsem} from './modules/quant/rsem'
 include {Arriba} from './modules/fusion/arriba'
 include {Fusioncatcher} from './modules/fusion/fusioncatcher'
 include {Starfusion} from './modules/fusion/starfusion'
@@ -68,7 +68,10 @@ include {RNAseQC} from './modules/qc/qc'
 include {CircosPlot} from  './modules/qc/qc'
 include {Genotyping} from  './modules/qc/qc'
 include {Mergefusion} from './modules/fusion/merge'
-include {HLA_calls} from './modules/neoantigens/hla_calls'
+//include {HLA_calls} from './modules/neoantigens/hla_calls'
+include {HLA_calls} from './workflows/hla_calls'
+include {Star_rsem} from './workflows/star-rsem'
+
 workflow {
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
@@ -139,8 +142,8 @@ workflow {
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
 // Trim away adapters
     Cutadapt(read_pairs)
-    HLA_calls(Cutadapt.out)
-
+//    HLA_calls(Cutadapt.out)
+    Star_rsem(Cutadapt.out)
 
     // combine raw fastqs and trimmed fastqs as input to fastqc
     fastqc_input = Cutadapt.out.combine(read_pairs)
@@ -159,7 +162,7 @@ workflow {
     Fastqc(fqc_inputs.fqc_input)
 
 // Align with STAR    
-    Star(
+/*    Star(
         Cutadapt.out
             .combine(star_genomeIndex)
             .combine(gtf)
@@ -172,6 +175,7 @@ workflow {
            .combine(strandedness)
     )
 
+*/
 
 // Fusion tools
 // 1. Arriba
@@ -188,8 +192,9 @@ workflow {
     )
 
 // 3. Star-Fusion
-      Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions -> 
+//      Starfusion_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+    Starfusion_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+    Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions -> 
                 other: true
                     return( tuple(id, chimeric_junctions))} \
                 .set{Starfusion_input_tmp}
@@ -206,8 +211,8 @@ workflow {
 //           .combine(mixcr_license)
 //    )
 
-    PicardARG_input = Star.out.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-    Star.out.branch{ id, tbam, bam, bai, chimeric_junctions ->
+    PicardARG_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+    Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions ->
                 other: true
                     return( tuple(id, bam, bai))} \
                 .set{PicardARG_input}
