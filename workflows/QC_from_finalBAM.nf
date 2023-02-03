@@ -51,6 +51,8 @@ workflow QC_from_finalBAM {
      )
      Hotspot_Boxplot(Hotspot_Coverage.out)
 
-//    emit:
+    emit:
+
+         hotspot_pileup = HotspotPileup.out
 
 }
