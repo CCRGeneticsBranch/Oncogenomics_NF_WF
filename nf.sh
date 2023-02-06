@@ -1,9 +1,10 @@
 #!/bin/bash
 
-if [[ "$#" -ne "1" ]];then
-	echo "TAG argument is required!"
+if [[ "$#" -ne "2" ]];then
+	echo "Provide Tag argument and Run_upto_counts_only argument true/false value"
 	exit
 fi
+
 
 # list of profiles
 # biowulf_test_run_local -> get interactive node and run there
@@ -11,8 +12,8 @@ fi
 # 
 
 # PROFILE="biowulf_test_run_local"
-#PROFILE="biowulf_test_run_slurm"
-PROFILE="biowulf_test_s3_slurm"
+PROFILE="biowulf_test_run_slurm"
+#PROFILE="biowulf_test_s3_slurm"
 set -e
 
 SCRIPT_NAME="$0"
@@ -48,7 +49,7 @@ nf_cmd="nextflow"
 nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
-nf_cmd="$nf_cmd $WF_HOME/main.nf -resume "
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $1"
 # nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
 nf_cmd="$nf_cmd -with-timeline $RESULTSDIR/timeline.html"
