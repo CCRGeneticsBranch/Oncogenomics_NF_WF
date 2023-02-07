@@ -1,7 +1,7 @@
 process Fastqc {
     tag { dataset_id }
 
-    publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
+    publishDir "$params.resultsdir/$dataset_id/qc/", mode: 'copy'
 
     input:
     tuple val(dataset_id),
@@ -11,7 +11,8 @@ process Fastqc {
         path(trim_r2)
 
     output:
-    path(fastqc)
+    tuple val("$dataset_id"),
+         path("fastqc")
 
     script:
     """
@@ -20,21 +21,23 @@ process Fastqc {
     """
 }
 
+
 process Multiqc {
     tag { dataset_id }
-    
+    cache false
     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
-        path(qc)
+        path("*")
+ 
 
     output:
-    path "multiqc_report.html"
+    path("multiqc_report.html")
 
     script:
     """
-    multiqc -m fastqc ${params.resultsdir}/${dataset_id}
+    multiqc . -f
     """
 
 }
@@ -119,7 +122,8 @@ process RNAseQC {
         path(transcript_gtf)
 
     output:
-    path("rnaseqc/report.html")
+    tuple val("${dataset_id}"),
+        path("rnaseqc/report.html")
 
     stub:
      """
