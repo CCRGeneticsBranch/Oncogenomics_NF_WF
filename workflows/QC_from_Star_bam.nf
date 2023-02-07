@@ -33,5 +33,8 @@ workflow QC_from_Star_bam {
              .combine(rRNA_interval)
              .combine(transcript_gtf)
      )
+    emit:
+         rnaseqc = RNAseQC.out
+         circos = CircosPlot.out
 
 }
