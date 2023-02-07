@@ -42,7 +42,6 @@ workflow {
     starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
     mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
-
 // Trim away adapters
 Cutadapt(read_pairs)
 
@@ -58,22 +57,15 @@ fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
 
 // QC with FastQC 
 Fastqc(fqc_inputs.fqc_input)
-Star_rsem(Cutadapt.out)
-HLA_calls(Cutadapt.out)
 
-/*
-Run_upto_counts_only     = Channel.value("false")
-
-
-if (Run_upto_counts_only) {
+if (params.run_upto_counts) {
  
   Star_rsem(Cutadapt.out)
-
 }  else {
 
-  Star_rsem(Cutadapt.out)
-  Starfusion_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-  Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions -> 
+  Star_rsem(Cutadapt.out) 
+  Starfusion_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+  Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
               other: true
                   return( tuple(id, chimeric_junctions))} \
               .set{Starfusion_input_tmp}
@@ -82,50 +74,39 @@ if (Run_upto_counts_only) {
          Cutadapt.out,
          Starfusion_input
      )
-
-  }
-*/
-
-// Mixcr
-//    Mixcr_VCJtools (
-//        Cutadapt.out()
-//           .combine(mixcr_license)
-//    )
-
-  Starfusion_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-  Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions ->
-              other: true
-                  return( tuple(id, chimeric_junctions))} \
-              .set{Starfusion_input_tmp}
-  Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)
-  Fusion_calling (
-         Cutadapt.out,
-         Starfusion_input
-     )
-
-  PicardARG_input = Star_rsem.out.Star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-  Star_rsem.out.Star.branch{ id, tbam, bam, bai, chimeric_junctions ->
+  PicardARG_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+  Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
               other: true
                   return( tuple(id, bam, bai))} \
               .set{PicardARG_input}  
-//  PicardARG_input.view()
+ // PicardARG_input.view()
 
   Star_bam_processing(PicardARG_input)
-
+  HLA_calls(Cutadapt.out)
   QC_from_Star_bam(
-      Star_bam_processing.out.Picard_ARG,
-      Star_bam_processing.out.Picard_MD
+      Star_bam_processing.out.picard_ARG,
+      Star_bam_processing.out.picard_MD
   )
-  RNAseq_GATK(Star_bam_processing.out.Picard_MD)
+  RNAseq_GATK(Star_bam_processing.out.picard_MD)
   QC_from_finalBAM(RNAseq_GATK.out.GATK_RNAseq_bam)
   Annotation(
       RNAseq_GATK.out.SnpEff_vcf.combine(QC_from_finalBAM.out.hotspot_pileup, by:0),
       RNAseq_GATK.out.SnpEff_vcf
 )
+  }
+  if (params.run_upto_counts) {
 
-//     multiqc(Hotspot_Boxplot.out)
-
+    multiqc_input = Fastqc.out.join(Star_rsem.out.star).join(Star_rsem.out.rsem)
+    Multiqc(multiqc_input)
+  }  else {  
+    multiqc_input = Fastqc.out \
+                       .join(QC_from_finalBAM.out.hotspot_pileup) \
+                       .join(QC_from_finalBAM.out.coverageplot) \
+                       .join(Star_rsem.out.star) \
+                       .join(Star_rsem.out.rsem).join(QC_from_Star_bam.out.rnaseqc) \
+                       .join(QC_from_Star_bam.out.circos) 
+    multiqc_input.view() 
+    Multiqc(multiqc_input)
+  }
 
 }
-
-
