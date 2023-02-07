@@ -1,9 +1,15 @@
 #!/bin/bash
 
 if [[ "$#" -ne "2" ]];then
-	echo "Provide Tag argument and Run_upto_counts_only argument true/false value"
+	echo "This script takes two inputs"
+	echo "Provide Tag argument - This will add a tag to your resultsdir."
+	echo "Provide Run_upto_counts_only argument. It takes value true/false"
+        echo "example: sh nf.sh projectname true #this will run upto RSEM and generates counts "
+	echo "example: sh nf.sh projectname fasle #this will run the complete pipeline "
+
 	exit
 fi
+
 
 
 # list of profiles
@@ -49,7 +55,7 @@ nf_cmd="nextflow"
 nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
-nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $1"
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2"
 # nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
 nf_cmd="$nf_cmd -with-timeline $RESULTSDIR/timeline.html"

@@ -105,7 +105,6 @@ if (params.run_upto_counts) {
                        .join(Star_rsem.out.star) \
                        .join(Star_rsem.out.rsem).join(QC_from_Star_bam.out.rnaseqc) \
                        .join(QC_from_Star_bam.out.circos) 
-    multiqc_input.view() 
     Multiqc(multiqc_input)
   }
 
