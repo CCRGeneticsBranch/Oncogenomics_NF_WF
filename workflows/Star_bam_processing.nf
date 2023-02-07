@@ -26,8 +26,9 @@ workflow Star_bam_processing {
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
 
     emit:
-     Picard_ARG = Picard_AddReadgroups.out
-     Picard_MD =  Picard_MarkDuplicates.out
+     
+     picard_ARG = Picard_AddReadgroups.out
+     picard_MD =  Picard_MarkDuplicates.out
 
 }
 
