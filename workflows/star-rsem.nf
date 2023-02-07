@@ -22,8 +22,8 @@ workflow Star_rsem {
             .combine(strandedness)
     )
     emit:
-     Star =  Star.out
-     Rsem =  Rsem.out
+     star =  Star.out
+     rsem =  Rsem.out
  
 }
 
