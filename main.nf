@@ -39,8 +39,8 @@ workflow {
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
                                 .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
-    starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
-    mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
+//    starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+//    mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
 // Trim away adapters
 Cutadapt(read_pairs)
@@ -62,6 +62,9 @@ if (params.run_upto_counts) {
  
   Star_rsem(Cutadapt.out)
 }  else {
+
+  starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+  mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
   Star_rsem(Cutadapt.out) 
   Starfusion_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
