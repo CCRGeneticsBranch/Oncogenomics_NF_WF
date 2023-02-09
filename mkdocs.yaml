@@ -1,39 +1,99 @@
-## Overview of the workflow
-This is Nextflow based RNAseq workflow that performs read trimming, paired end STAR alignement, quantification of transcript abundances, Fusion calling, GATK based 
-variant analysis, Annotation using Annovar and comprehensive QC. 
-![RNAseq_workflow](/Applications/Projects/DAG_rnaseq.png)
+# Project Information
+site_name: khanlab-NGS-Pipeline
+site_author: Vineela Gangalapudi
+site_description: >-
+  The space will be used to provided documentation for khanlab NGS pipeline. 
 
-# Installation
-Please clone this repository to your local filesystem using the following command:
+# Repository
+repo_name: AWS_POC_Nextflow
+repo_url: https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow
+edit_uri: https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow/edit
 
-```
-        git clone https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow.git
-        cd AWS_POC_Nextflow/ 
-        git checkout feature/mvp
-```
+# Copyright
+copyright: Copyright &copy; 2022 CCR Genetics
 
-# Setting up the workflow to run upto quants. 
-1. Download the References folder from [box](https://nih.app.box.com/folder/193831680410) to a accessable location and untar `index-STAR_2.7.9a.tar.gz` and 
-`rsem_1.3.2.tar.gz` file.
-2. Edit the references config file  `AWS_POC_Nextflow/config/Run_upto_quants_references.config` and update the file paths of the references and path to the input 
-directory. This worflow expects all the fastq files in same directory.
-3. Edit the resources config file `AWS_POC_Nextflow/config/Run_upto_quants_cluster.config` and update the cluster requirements for the processes.
-4. Singulairty config is set up `AWS_POC_Nextflow/config/biowulf_singularity.config` please update the `runOptions` as per your cluster environment.
-5. `nextflow.config` has a profile `Run_upto_quants` to uses the config files listed in steps 2,3,4. 
+# Configuration
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.indexes
+    - toc.integrate 
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  logo: assets/images/doc-book.svg
+  favicon: assets/images/favicon.png
+
+# Plugins
+plugins:
+  - search
+  - git-revision-date
+  - minify:
+      minify_html: true
 
 
-# Running the workflow.
+# Customization
+extra:
+  social:
+    - icon: fontawesome/solid/users
+      link: http://bioinformatics.cancer.gov
+    - icon: fontawesome/brands/github
+      link: https://github.com/CCRGeneticsBranch
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/orgs/nciccbr/repositories
+  version:
+    provider: mike
 
- The workflow can be launched using the Run_upto_quants.sh script. 
- ```
-This script takes two inputs
-Provide Tag argument - This will add a tag to your resultsdir.
-Provide Run_upto_counts_only argument - It takes value true/false
-example: sh nf.sh projectname true #this will run upto RSEM and generates counts 
-example: sh nf.sh projectname fasle #this will run the complete pipeline 
 
- ```
-The following command should kick start the pipeline and display the status.
+# Extensions
+markdown_extensions:
+  - markdown.extensions.admonition
+  - markdown.extensions.attr_list
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
 
-`sh Run_upto_quants.sh Neuroblastoma_MAQC-III_SEQC true`
+# Page Tree
+nav:
+  - Run_upto_quants : index.md
 
