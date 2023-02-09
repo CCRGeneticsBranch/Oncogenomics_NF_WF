@@ -1,12 +1,14 @@
 ## Overview of the workflow
-This is Nextflow based RNAseq workflow that performs read trimming, paired end STAR alignment, quantification of transcript abundances, Fusion calling, GATK based 
-variant analysis, Annotation using Annovar and comprehensive QC. 
-![RNAseq_workflow](DAG_rnaseq.png)
+This RNAseq workflow, based on Nextflow, performs a series of tasks to analyze transcript abundances, identify variants, and perform quality control. It includes 
+read trimming, paired-end alignment using STAR, quantification of transcript abundances, fusion calling, variant analysis using GATK, and annotation using Annovar. 
+![RNAseq_workflow](/Applications/Projects/DAG_rnaseq.png)
 
 # Prerequisites
 
-This workflow requires modules Nextflow, Singularity and graphviz
-
+To run this workflow, you will need the following software:
+	•	Nextflow >= 22.04.0
+	•	Singularity 3.10.5
+	•	Graphviz 2.40
 
 # Installation
 Please clone this repository to your local filesystem using the following command:
@@ -17,36 +19,35 @@ Please clone this repository to your local filesystem using the following comman
         git checkout feature/mvp
 ```
 
-# Setting up the workflow to run upto quants. 
-1. Download the References folder from [box](https://nih.app.box.com/folder/193831680410) to a accessable location and untar `index-STAR_2.7.9a.tar.gz` and 
-`rsem_1.3.2.tar.gz` file.
-2. Edit the references config file  `AWS_POC_Nextflow/config/Run_upto_quants_references.config` and update the file paths of the references and path to the input 
-directory. This workflow expects all the fastq files in same directory.
-3. Edit the resources config file `AWS_POC_Nextflow/config/Run_upto_quants_cluster.config` and update the cluster requirements for the processes.
-4. Singularity config is set up `AWS_POC_Nextflow/config/biowulf_singularity.config` please update the `runOptions` as per your cluster environment.
-5. `nextflow.config` has a profile `Run_upto_quants` that use the config files listed in steps 2,3,4. This profile will run Cutadapt, fastqc, STAR, RSEM and 
-multiqc 
-on all the samples.  
-6. Finally update the path for the variable `export OUTDIR` in the script `Run_upto_quants.sh`. 
+# Setting up the workflow for Read Trimming and Quantification
 
+1. Obtain the References folder from [box](https://nih.app.box.com/folder/193831680410) and save it to a location that is accessible. Extract the 
+`index-STAR_2.7.9a.tar.gz` and `rsem_1.3.2.tar.gz` files. 
+2. Modify the references configuration file, `AWS_POC_Nextflow/config/Run_upto_quants_references.config`, by updating the file paths for the references and the 
+input directory. The workflow requires all fastq files to be in the same directory.
+3. Adjust the cluster requirements in the resources configuration file, `AWS_POC_Nextflow/config/Run_upto_quants_cluster.config`.
+4. Update the `runOptions` in the Singularity configuration file, `AWS_POC_Nextflow/config/biowulf_singularity.config`, as appropriate for your cluster 
+environment. 
+6. Finally, modify the path for the `export OUTDIR` variable in the script `Run_upto_quants.sh`. 
 
 # Running the workflow.
 
- The workflow can be launched using the Run_upto_quants.sh script. 
+ The workflow can be started by executing the `Run_upto_quants.sh` script. 
  ```
-This script takes two inputs
-Provide Tag argument - This will add a tag to your resultsdir.
-Provide Run_upto_counts_only argument - It takes value true/false
-example: sh nf.sh projectname true #this will run upto RSEM and generates counts 
-example: sh nf.sh projectname false #this will run the complete pipeline 
+        This script takes two inputs
+        Provide Tag argument - This will add a tag to your resultsdir.
+        Provide Run_upto_counts_only argument - It takes value true/false
+        example: sh nf.sh projectname true #this will run upto RSEM and generates counts 
+        example: sh nf.sh projectname false #this will run the complete pipeline 
 
  ```
-The following command should kick start the pipeline and display the status.
+The following command should kick initiate the pipeline and display the status.
 
 `sh Run_upto_quants.sh Neuroblastoma_MAQC-III_SEQC true`
 
-On launching the workflow,it prints out a similar log with information on the command line used to run the pipeline, Nextflow version, input folder path, results 
-directory and work directory
+When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of 
+Nextflow, the input folder path, the results directory, and the work directory.
+
 
 ```
 +] Loading singularity  3.10.5  on cn4271 
@@ -80,5 +81,4 @@ reads        : /data/khanlab/projects/fastq/*_{R1,R2}.fastq.gz
 [70/1fd193] process > Fastqc (Test3_R_T)         [100%] 3 of 3, cached: 3 ✔
 
 ```
-
 
