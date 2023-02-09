@@ -24,7 +24,7 @@ process Fastqc {
 
 process Multiqc {
     tag { dataset_id }
-    cache false
+
     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
     input:
