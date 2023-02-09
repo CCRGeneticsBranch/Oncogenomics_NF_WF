@@ -5,7 +5,7 @@ if [[ "$#" -ne "2" ]];then
 	echo "Provide Tag argument - This will add a tag to your resultsdir."
 	echo "Provide Run_upto_counts_only argument. It takes value true/false"
         echo "example: sh nf.sh projectname true #this will run upto RSEM and generates counts "
-	echo "example: sh nf.sh projectname fasle #this will run the complete pipeline "
+	echo "example: sh nf.sh projectname false #this will run the complete pipeline "
 
 	exit
 fi
