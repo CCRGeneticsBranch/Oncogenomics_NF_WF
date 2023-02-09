@@ -1,5 +1,1 @@
-**/.koparde*
-site/**
-**/.nextflow*
-work/**
-**/.nfs*
+site/
