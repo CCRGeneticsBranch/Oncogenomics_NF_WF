@@ -95,5 +95,5 @@ markdown_extensions:
 
 # Page Tree
 nav:
-  - Run_upto_quants : index.md
+  - Profile-Run_upto_quants : index.md
 

@@ -24,7 +24,9 @@ Please clone this repository to your local filesystem using the following comman
 directory. This workflow expects all the fastq files in same directory.
 3. Edit the resources config file `AWS_POC_Nextflow/config/Run_upto_quants_cluster.config` and update the cluster requirements for the processes.
 4. Singularity config is set up `AWS_POC_Nextflow/config/biowulf_singularity.config` please update the `runOptions` as per your cluster environment.
-5. `nextflow.config` has a profile `Run_upto_quants` that use the config files listed in steps 2,3,4. 
+5. `nextflow.config` has a profile `Run_upto_quants` that use the config files listed in steps 2,3,4. This profile will run Cutadapt, fastqc, STAR, RSEM and 
+multiqc 
+on all the samples.  
 6. Finally update the path for the variable `export OUTDIR` in the script `Run_upto_quants.sh`. 
 
 
