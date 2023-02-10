@@ -11,11 +11,15 @@ data:
     readOnly: true
 contexts:
     nfmvp:
-        requestSpotInstances: true
+        requestSpotInstances: false
         instanceTypes:
           - "m5.large"
           - "c5.9xlarge"
-          - "m5.large"
+          - "m5.xlarge"
+          - "m5.12xlarge"
+          - "m6a.8xlarge"
+          - "m5a.8xlarge"
+          - "r5.8xlarge"
         engines:
             - type: nextflow
               engine: nextflow
