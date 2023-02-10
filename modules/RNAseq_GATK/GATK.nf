@@ -5,7 +5,6 @@ process GATK_RNASeq_Trim {
         tuple val(dataset_id),
         path(bam),
         path(index),
-        path(markdup),
         path(genome),
         path(genome_fai),
         path(genome_dict)
@@ -59,6 +58,8 @@ process GATK_RNASeq_RTC_IR {
 process GATK_RNASeq_BR_PR {
         tag { dataset_id }
 
+        publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+
         input:
 	tuple val(dataset_id),
         path(bam),
@@ -86,3 +87,38 @@ process GATK_RNASeq_BR_PR {
 
         """
 }
+
+
+process RNAseq_HaplotypeCaller {
+
+     tag { dataset_id }
+
+     publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(dataset_id),
+        path(bam),
+        path(index),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict),
+        path(dbsnp)
+
+     output:
+     tuple val("${dataset_id}"),
+        path("${dataset_id}.HC_RNASeq.raw.vcf")
+
+     stub:
+     """
+     touch "${dataset_id}.HC_RNASeq.raw.vcf"
+     """
+
+     shell:
+     '''
+     set -exo pipefail
+     java -jar \$GATK_JAR -T HaplotypeCaller -R !{genome} -I !{bam} -o !{dataset_id}.vcf --dbsnp !{dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -nct !{task.cpus}
+     java -jar \$GATK_JAR -T VariantFiltration -R !{genome} -V !{dataset_id}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o !{dataset_id}.HC_RNASeq.raw.vcf
+     '''
+}
+
+

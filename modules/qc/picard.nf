@@ -5,8 +5,8 @@ process Picard_AddReadgroups {
         input:
 
         tuple val(dataset_id),
-        path(T_bam),
-        path(G_bam)
+        path(bam),
+        path(index)
 
         output:
         tuple val("${dataset_id}"),	
@@ -19,7 +19,7 @@ process Picard_AddReadgroups {
         set -exo pipefail
         printenv
           
-        java  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $G_bam  -OUTPUT trim_${dataset_id}_star.bam -SORT_ORDER coordinate -RGLB trim_${dataset_id} -RGPU trim_${dataset_id} -RGPL ILLUMINA -RGSM trim_${dataset_id} -RGCN khanlab
+        java  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $bam  -OUTPUT trim_${dataset_id}_star.bam -SORT_ORDER coordinate -RGLB trim_${dataset_id} -RGPU trim_${dataset_id} -RGPL ILLUMINA -RGSM trim_${dataset_id} -RGCN khanlab
 
         java  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${dataset_id}_star.bam -OUTPUT trim_${dataset_id}_star.bam.bai
         """
@@ -88,8 +88,7 @@ process Picard_MarkDuplicates {
         output:
         tuple val("${dataset_id}"),
         path("trim_${dataset_id}.star.dd.bam"),
-        path("trim_${dataset_id}.star.dd.bam.bai"),
-        path("trim_${dataset_id}.markdup.txt")
+        path("trim_${dataset_id}.star.dd.bam.bai")
 
 
         script:

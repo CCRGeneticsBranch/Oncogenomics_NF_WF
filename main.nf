@@ -2,108 +2,113 @@
 // Using DSL-2
 nextflow.enable.dsl=2
 
-
-//Print out log
 log.info """\
-         R N A S E Q - N F   P I P E L I N E    
+         R N A S E Q - N F   P I P E L I N E  
          ===================================
+         NF version   : $nextflow.version
+         runName      : $workflow.runName
+         username     : $workflow.userName
+         configs      : $workflow.configFiles
+         profile      : $workflow.profile
+         cmd line     : $workflow.commandLine
+         start time   : $workflow.start
+         projectDir   : $workflow.projectDir
+         launchDir    : $workflow.launchDir
+         workdDir     : $workflow.workDir
+         homeDir      : $workflow.homeDir
          reads        : ${params.reads}
          """
          .stripIndent()
 
-//import modules
+//import workflows
 
-include {cutadapt} from './modules/cutadapt/cutadapt'
-include {fastqc} from './modules/qc/qc'
-include {star} from './modules/mapping/star'
-include {rsem} from './modules/quant/rsem'
-include {multiqc} from './modules/qc/qc'
-include {Picard_AddReadgroups} from './modules/qc/picard'
-include {Picard_MarkDuplicates} from './modules/qc/picard'
-include {GATK_RNASeq_Trim} from './modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_RTC_IR} from './modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_BR_PR} from './modules/RNAseq_GATK/GATK'
-include {Picard_CollectRNAseqmetrics} from './modules/qc/picard'
-include {Picard_CollectAlignmentSummaryMetrics} from './modules/qc/picard'
-//working on Genotyping process
-//include {Genotyping} from  './modules/qc/qc'
-//include {fusioncatcher} from './modules/fusion/fusion'
+include {Cutadapt} from './modules/cutadapt/cutadapt'
+include {Fastqc} from './modules/qc/qc'
+include {Multiqc} from './modules/qc/qc'
+include {Mixcr_VCJtools} from './modules/misc/mixcr'
+include {HLA_calls} from './workflows/hla_calls'
+include {Star_rsem} from './workflows/star-rsem'
+include {Fusion_calling} from './workflows/Fusion_calling'
+include {Star_bam_processing} from './workflows/Star_bam_processing'
+include {RNAseq_GATK} from './workflows/RNAseq_GATK'
+include {QC_from_finalBAM} from './workflows/QC_from_finalBAM'
+include {Annotation} from './workflows/Annotation'
+include {QC_from_Star_bam} from './workflows/QC_from_Star_bam'
 
-// check input files
+workflow {
+    read_pairs              = Channel
+                                .fromFilePairs(params.reads, flat: true)
+                                .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
+//    starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+//    mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
-workflow{
-    read_pairs = Channel
-        .fromFilePairs(params.reads, flat: true)
-        .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
-    star_genomeIndex = Channel.of(file(params.star_genome_index, checkIfExists:true))
-    genome = Channel.of(file(params.genome, checkIfExists:true))
-    genome_fai = Channel.of(file(params.genome_fai, checkIfExists:true))
-    genome_dict = Channel.of(file(params.genome_dict, checkIfExists:true))
-    gtf = Channel.of(file(params.gtf, checkIfExists:true))
-    ref_flat = Channel.of(file(params.ref_flat, checkIfExists:true))
-    rRNA_interval = Channel.of(file(params.rRNA_interval, checkIfExists:true))    
-    rsemIndex = Channel.of(file(params.rsem_index, checkIfExists:true))
-    phase1_1000g = Channel.of(file(params.phase1_1000g, checkIfExists:true))
-    Mills_and_1000g = Channel.of(file(params.Mills_and_1000g, checkIfExists:true))
-    Sites1000g4genotyping = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
-    vcf2genotype = Channel.of(file(params.vcf2genotype, checkIfExists:true))
-    vcf2loh = Channel.of(file(params.vcf2loh, checkIfExists:true))
-    
-// Assigning inputs to all the process
+// Trim away adapters
+Cutadapt(read_pairs)
 
-    cutadapt(read_pairs)
-    fastqc(cutadapt.out)
-    star(
-        cutadapt.out
-            .combine(star_genomeIndex)
-            .combine(gtf)
-    )
-    rsem(
-        star.out
-            .combine(rsemIndex)
-    )
-    multiqc(fastqc.out)
-    Picard_AddReadgroups(star.out)    
-    Picard_CollectRNAseqmetrics(
-        Picard_AddReadgroups.out
-            .combine(ref_flat)
-            .combine(rRNA_interval) 
-    )    
-    Picard_CollectAlignmentSummaryMetrics(
-        Picard_AddReadgroups.out
-            .combine(genome)
-    )
-    Picard_MarkDuplicates(Picard_AddReadgroups.out)
-//    Genotyping(
-//       Picard_AddReadgroups.out
-//            .combine(genome)
-//            .combine(Sites1000g4genotyping)
-//            .combine(vcf2genotype)
-//            .combine(vcf2loh)
-//    )
+// combine raw fastqs and trimmed fastqs as input to fastqc
+fastqc_input = Cutadapt.out.combine(read_pairs)
+fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
+           fqc_input: id1 == id2
+               return ( tuple (id1,r1,r2,trimr1,trimr2) )
+           other: true
+               return ( tuple (id1,id2) )
+              } \
+           .set { fqc_inputs }
 
-    GATK_RNASeq_Trim(
-        Picard_MarkDuplicates.out
-            .combine(genome)
-            .combine(genome_fai)
-            .combine(genome_dict)
-    )    
-    GATK_RNASeq_RTC_IR(
-        GATK_RNASeq_Trim.out
-            .combine(genome)
-            .combine(genome_fai)
-            .combine(genome_dict)
-            .combine(phase1_1000g)
-            .combine(Mills_and_1000g)
-    )
-    GATK_RNASeq_BR_PR(
-        GATK_RNASeq_RTC_IR.out
-            .combine(genome)
-            .combine(genome_fai)
-            .combine(genome_dict)
-            .combine(phase1_1000g)
-            .combine(Mills_and_1000g)
-    )
+// QC with FastQC 
+Fastqc(fqc_inputs.fqc_input)
+
+if (params.run_upto_counts) {
+ 
+  Star_rsem(Cutadapt.out)
+}  else {
+
+  starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+  mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
+
+  Star_rsem(Cutadapt.out) 
+  Starfusion_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+  Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
+              other: true
+                  return( tuple(id, chimeric_junctions))} \
+              .set{Starfusion_input_tmp}
+  Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)
+  Fusion_calling (
+         Cutadapt.out,
+         Starfusion_input
+     )
+  PicardARG_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
+  Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
+              other: true
+                  return( tuple(id, bam, bai))} \
+              .set{PicardARG_input}  
+ // PicardARG_input.view()
+
+  Star_bam_processing(PicardARG_input)
+  HLA_calls(Cutadapt.out)
+  QC_from_Star_bam(
+      Star_bam_processing.out.picard_ARG,
+      Star_bam_processing.out.picard_MD
+  )
+  RNAseq_GATK(Star_bam_processing.out.picard_MD)
+  QC_from_finalBAM(RNAseq_GATK.out.GATK_RNAseq_bam)
+  Annotation(
+      RNAseq_GATK.out.SnpEff_vcf.combine(QC_from_finalBAM.out.hotspot_pileup, by:0),
+      RNAseq_GATK.out.SnpEff_vcf
+)
+  }
+  if (params.run_upto_counts) {
+
+    multiqc_input = Fastqc.out.join(Star_rsem.out.star).join(Star_rsem.out.rsem)
+    Multiqc(multiqc_input)
+  }  else {  
+    multiqc_input = Fastqc.out \
+                       .join(QC_from_finalBAM.out.hotspot_pileup) \
+                       .join(QC_from_finalBAM.out.coverageplot) \
+                       .join(Star_rsem.out.star) \
+                       .join(Star_rsem.out.rsem).join(QC_from_Star_bam.out.rnaseqc) \
+                       .join(QC_from_Star_bam.out.circos) 
+    Multiqc(multiqc_input)
+  }
 
 }
-
