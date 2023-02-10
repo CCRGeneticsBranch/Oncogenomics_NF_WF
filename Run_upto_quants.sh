@@ -5,7 +5,7 @@ if [[ "$#" -ne "2" ]];then
 	echo "Provide Tag argument - This will add a tag to your resultsdir."
 	echo "Provide Run_upto_counts_only argument. It takes value true/false"
         echo "example: sh Run_upto_quants.sh projectname true #this will run upto RSEM and generates counts "
-	echo "example: sh Run_upto_quants.sh projectname false #this will run the complete pipeline "
+	echo "example: sh Run_upto_quants.sh projectname false #this will run the complete pipeline if all the references are added to the config "
 
 	exit
 fi
