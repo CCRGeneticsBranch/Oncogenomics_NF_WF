@@ -7,7 +7,7 @@ read trimming, paired-end alignment using STAR, quantification of transcript abu
 # Prerequisites
 To run this workflow, you will need the following software:
 ```	
-	Nextflow >= 22.04.0
+	Nextflow >= 21.04.3
 	Singularity 3.10.5
 	Graphviz 2.40
 ```
