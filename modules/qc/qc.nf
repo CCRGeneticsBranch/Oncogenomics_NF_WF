@@ -1,7 +1,7 @@
 process Fastqc {
     tag { dataset_id }
 
-    publishDir "$params.resultsdir/$dataset_id/qc/", mode: 'copy'
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc/", mode: 'copy'
 
     input:
     tuple val(dataset_id),
@@ -25,7 +25,7 @@ process Fastqc {
 process Multiqc {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -44,7 +44,7 @@ process Multiqc {
 
 process Genotyping {
     tag { dataset_id }
-    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -82,7 +82,7 @@ process Genotyping {
 process CircosPlot {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
@@ -107,7 +107,7 @@ process CircosPlot {
 
 process RNAseQC {
 
-    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
     tag { dataset_id }
 

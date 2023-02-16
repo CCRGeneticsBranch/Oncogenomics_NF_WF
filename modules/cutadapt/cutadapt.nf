@@ -1,8 +1,10 @@
 process Cutadapt {
         tag { dataset_id }
-        publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
+//        tag { sample } { dataset_id }
+        publishDir "$params.resultsdir/$dataset_id/${params.casename}/Cutadapt", mode: 'copy'
 
         input:
+
         tuple val(dataset_id),
             path(r1fq),
             path(r2fq)

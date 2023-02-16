@@ -2,7 +2,7 @@ process FormatInput {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/annotation", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -35,7 +35,7 @@ process Annovar {
  
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/annotation", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -88,7 +88,7 @@ process Custom_annotation {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/annotation", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -147,7 +147,7 @@ process Combine_annotation {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/annotation", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/annotation", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),

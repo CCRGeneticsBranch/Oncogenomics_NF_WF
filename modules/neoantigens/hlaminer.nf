@@ -1,7 +1,7 @@
 process HLAminer {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/HLA/HLAminer", mode: "${params.publishDirMode}"
     input:
     tuple val(dataset_id),
         path(r1), 

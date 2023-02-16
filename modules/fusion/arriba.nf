@@ -1,7 +1,7 @@
 process Arriba{
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/Arriba", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/Arriba", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),

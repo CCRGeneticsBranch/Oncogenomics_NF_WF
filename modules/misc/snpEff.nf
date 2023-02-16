@@ -2,7 +2,7 @@ process SnpEff {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/calls", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -33,7 +33,7 @@ process Vcf2txt {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/calls", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),

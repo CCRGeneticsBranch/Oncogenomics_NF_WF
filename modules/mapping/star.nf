@@ -1,7 +1,7 @@
 process Star {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/STAR", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),

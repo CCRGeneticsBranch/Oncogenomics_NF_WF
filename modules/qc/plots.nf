@@ -3,7 +3,7 @@ process Hotspot_Coverage {
 //   this rule uses an older version of bedtools to generate output similar to ngs_pipeline_4.2
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -39,7 +39,7 @@ process Hotspot_Boxplot {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -67,7 +67,7 @@ process Flagstat {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -95,7 +95,7 @@ process Bamutil {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -128,7 +128,7 @@ process HotspotPileup {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -162,7 +162,7 @@ process Bam2tdf {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
@@ -192,7 +192,7 @@ process Bam2tdf {
 process CoveragePlot {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),

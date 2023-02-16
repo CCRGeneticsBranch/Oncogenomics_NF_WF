@@ -1,7 +1,7 @@
 process MergeHLA {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/HLA", mode: "${params.publishDirMode}"
     input:
 //    path(mergeHLA_script)
     tuple val(dataset_id),
