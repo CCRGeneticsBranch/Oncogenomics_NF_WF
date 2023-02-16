@@ -2,6 +2,7 @@
 // Using DSL-2
 nextflow.enable.dsl=2
 
+
 log.info """\
          R N A S E Q - N F   P I P E L I N E  
          ===================================
@@ -17,6 +18,7 @@ log.info """\
          workdDir     : $workflow.workDir
          homeDir      : $workflow.homeDir
          reads        : ${params.reads}
+         casename     : ${params.casename}
          """
          .stripIndent()
 

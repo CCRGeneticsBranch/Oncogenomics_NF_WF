@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "$#" -ne "2" ]];then
+if [[ "$#" -ne "3" ]];then
 	echo "This script takes two inputs"
 	echo "Provide Tag argument - This will add a tag to your resultsdir."
 	echo "Provide Run_upto_counts_only argument. It takes value true/false"
@@ -29,6 +29,20 @@ WF_HOME=$SCRIPT_DIRNAME
 
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
+#adding casename parameter
+case="$3"
+
+if [[ "${case//*=*/}" != "$case" ]]; then
+  export CASENAME=`echo $case |cut -f2 -d "="`
+elif [[ "${case//*_*/}" != "$case" ]]; then
+  export CASENAME=`echo $case |sed -e 's/_/\t/' |sed -e 's/.json//g' |cut -f2`
+else
+  echo "The json file does not contain '=' or '_'.Cannot determine casename"
+  exit
+fi
+
+
+
 # load singularity and nextflow modules
 module load singularity nextflow graphviz
 
@@ -55,7 +69,7 @@ nf_cmd="nextflow"
 nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
-nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2"
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME"
 # nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
 nf_cmd="$nf_cmd -with-timeline $RESULTSDIR/timeline.html"
