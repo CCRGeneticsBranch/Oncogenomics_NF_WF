@@ -19,7 +19,7 @@ process Strandedness {
 
      script:
      """
-     ngsderive strandedness -g $gtf_sorted $G_bam > ${dataset_id}_strandedness.txt
+     ngsderive strandedness -g $gtf_sorted $G_bam -n 10000 > ${dataset_id}_strandedness.txt
 
      """
 }
