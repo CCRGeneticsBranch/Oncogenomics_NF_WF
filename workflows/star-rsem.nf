@@ -1,7 +1,7 @@
 
 include {Star} from '../modules/mapping/star'
 include {Rsem} from '../modules/quant/rsem'
-
+include {Strandedness} from '../modules/quant/rsem'
 
 workflow Star_rsem {
 
@@ -9,21 +9,28 @@ workflow Star_rsem {
     rsemIndex               = Channel.of(file(params.rsem_index, checkIfExists:true))
     strandedness            = Channel.value(params.strandedness)
     gtf                     = Channel.of(file(params.gtf, checkIfExists:true))
+    gtf_sorted               = Channel.of(file(params.gtf_sorted, checkIfExists:true))
+    gtf_sorted_index         = Channel.of(file(params.gtf_sorted_index, checkIfExists:true))
+
     take: trimmed_fq
+
     main:
 	Star(
             trimmed_fq
             .combine(star_genomeIndex)
             .combine(gtf)
     )
-        Rsem(
-	    Star.out
+        Strandedness(
+            Star.out
+            .combine(gtf_sorted)
+            .combine(gtf_sorted_index)
+    )
+        Rsem(Star.out.combine(Strandedness.out, by:0)
             .combine(rsemIndex)
-            .combine(strandedness)
     )
     emit:
      star =  Star.out
      rsem =  Rsem.out
- 
+     strandedness = Strandedness.out 
 }
 

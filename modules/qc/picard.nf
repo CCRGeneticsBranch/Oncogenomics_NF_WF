@@ -1,4 +1,3 @@
-
 process Picard_AddReadgroups {
         tag { dataset_id }
 
@@ -38,6 +37,7 @@ process Picard_CollectRNAseqmetrics {
         tuple val(dataset_id),
         path(bam),
         path(index),
+        path(strandedness),
         path(ref_flat),
         path(rRNA_interval)
 
@@ -49,8 +49,8 @@ process Picard_CollectRNAseqmetrics {
 
         script:
         """
-
-        java  -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=NONE VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=trim_${dataset_id}.RnaSeqMetrics.txt CHART_OUTPUT=trim_${dataset_id}.RnaSeqMetrics.pdf
+        STRAND=`strandedness.py ${dataset_id}_strandedness.txt picard`
+        java  -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=\$STRAND VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=trim_${dataset_id}.RnaSeqMetrics.txt CHART_OUTPUT=trim_${dataset_id}.RnaSeqMetrics.pdf
 
         """
 }

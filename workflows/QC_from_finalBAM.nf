@@ -6,7 +6,6 @@ include {HotspotPileup} from '../modules/qc/plots'
 include {Bam2tdf} from '../modules/qc/plots'
 include {CoveragePlot} from  '../modules/qc/plots'
 
-
 workflow QC_from_finalBAM {
 
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
@@ -16,7 +15,6 @@ workflow QC_from_finalBAM {
     hg19_hotspot_pos         = Channel.of(file(params.hg19_hotspot_pos, checkIfExists:true))
     access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))
     access_target            = Channel.of(file(params.access_target, checkIfExists:true))
-
     take: GATK_RNASeq_BR_PR_bam
     main:
 
@@ -52,8 +50,6 @@ workflow QC_from_finalBAM {
      Hotspot_Boxplot(Hotspot_Coverage.out)
 
     emit:
-
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out
-
 }

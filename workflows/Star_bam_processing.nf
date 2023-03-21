@@ -11,14 +11,16 @@ workflow Star_bam_processing {
      genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
 
     take: Coord_bam
+          strandedness
     main:
      Picard_AddReadgroups(Coord_bam)
-
-     Picard_CollectRNAseqmetrics(
-     Picard_AddReadgroups.out
-             .combine(ref_flat)
-             .combine(rRNA_interval)
-     )
+     PicardCRS_input = Picard_AddReadgroups.out.combine(strandedness, by:0).combine(ref_flat).combine(rRNA_interval)
+//     PicardCRS_input.view()
+     Picard_CollectRNAseqmetrics(PicardCRS_input)
+//     Picard_AddReadgroups.out
+//             .combine(ref_flat)
+//             .combine(rRNA_interval)
+//     )
      Picard_CollectAlignmentSummaryMetrics(
          Picard_AddReadgroups.out
              .combine(genome)
