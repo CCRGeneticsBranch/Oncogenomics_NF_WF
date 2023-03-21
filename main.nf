@@ -89,7 +89,6 @@ if (params.run_upto_counts) {
               other: true
                   return( tuple(id, bam, bai))} \
               .set{PicardARG_input}
-//  PicardARG_input = PicardARG_input_tmp.combine(Star_rsem.out.strandedness, by:0)  
 
   Star_bam_processing(
       PicardARG_input,

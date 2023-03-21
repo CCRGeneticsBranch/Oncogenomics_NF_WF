@@ -50,6 +50,9 @@ module load singularity nextflow graphviz
 # this can also be set using "workDir" in nextflow.config
 # export NXF_WORK="/data/khanlab2/kopardevn/AWS_MVP_test/work"
 export OUTDIR="/data/khanlab3/kopardevn/AWS_MVP_test"
+export JSONPATH="/data/khanlab/projects/Nextflow_dev/json_files"
+
+export JSON="$JSONPATH/$3"
 # export OUTTAG="9" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
 export OUTTAG=$1
 export RESULTSDIR="$OUTDIR/results.$OUTTAG"
@@ -69,7 +72,7 @@ nf_cmd="nextflow"
 nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
-nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME"
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME --json $JSON " 
 # nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
 nf_cmd="$nf_cmd -with-timeline $RESULTSDIR/timeline.html"
