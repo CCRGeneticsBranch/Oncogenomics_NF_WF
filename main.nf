@@ -1,7 +1,7 @@
 
 // Using DSL-2
 nextflow.enable.dsl=2
-
+import groovy.json.JsonSlurper
 
 log.info """\
          R N A S E Q - N F   P I P E L I N E  
@@ -23,7 +23,6 @@ log.info """\
          .stripIndent()
 
 //import workflows
-
 include {Cutadapt} from './modules/cutadapt/cutadapt'
 include {Fastqc} from './modules/qc/qc'
 include {Multiqc} from './modules/qc/qc'
@@ -37,12 +36,18 @@ include {QC_from_finalBAM} from './workflows/QC_from_finalBAM'
 include {Annotation} from './workflows/Annotation'
 include {QC_from_Star_bam} from './workflows/QC_from_Star_bam'
 
+
+
 workflow {
+
     read_pairs              = Channel
                                 .fromFilePairs(params.reads, flat: true)
                                 .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
+
 //    starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
 //    mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
+
+
 
 // Trim away adapters
 Cutadapt(read_pairs)
@@ -83,10 +88,14 @@ if (params.run_upto_counts) {
   Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
               other: true
                   return( tuple(id, bam, bai))} \
-              .set{PicardARG_input}  
- // PicardARG_input.view()
+              .set{PicardARG_input}
+//  PicardARG_input = PicardARG_input_tmp.combine(Star_rsem.out.strandedness, by:0)  
 
-  Star_bam_processing(PicardARG_input)
+  Star_bam_processing(
+      PicardARG_input,
+      Star_rsem.out.strandedness
+  )
+
   HLA_calls(Cutadapt.out)
   QC_from_Star_bam(
       Star_bam_processing.out.picard_ARG,
