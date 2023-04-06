@@ -30,7 +30,7 @@ process Picard_CollectRNAseqmetrics {
 
         tag { dataset_id }
 
-       publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+       publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
         input:
 
@@ -59,7 +59,7 @@ process Picard_CollectAlignmentSummaryMetrics {
 
         tag { dataset_id }
 
-        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
         input:
 

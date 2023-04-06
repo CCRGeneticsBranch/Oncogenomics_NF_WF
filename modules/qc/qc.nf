@@ -1,7 +1,7 @@
 process Fastqc {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc/", mode: 'copy'
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/qc/", mode: 'copy'
 
     input:
     tuple val(dataset_id),
@@ -79,6 +79,7 @@ process Genotyping {
     '''
 }
 
+
 process CircosPlot {
     tag { dataset_id }
 
@@ -90,24 +91,24 @@ process CircosPlot {
         path(loh)
 
     output:
-    tuple val("${dataset_id}"),
-        path("${dataset_id}.star.circos.png")    
+    tuple val("${dataset_id.split('_')[0]}"),
+        path("${dataset_id.split('_')[0]}.star.circos.png")    
 
     stub:
     """
-    touch "${dataset_id}.star.circos.png"
+    touch "${dataset_id.split('_')[0]}.star.circos.png"
     """
 
     shell:
      '''
-     circosLib.R  $PWD/ !{dataset_id}.star.circos.png !{dataset_id}
+     circosLib.R  $PWD/ !{dataset_id.split('_')[0]}.star.circos.png !{dataset_id}
      '''
 }
 
 
 process RNAseQC {
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/qc", mode: "${params.publishDirMode}"
 
     tag { dataset_id }
 
