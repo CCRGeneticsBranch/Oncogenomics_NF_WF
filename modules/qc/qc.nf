@@ -69,7 +69,7 @@ process Genotyping {
     shell:
      '''
 
-    bcftools mpileup -R !{Sites1000g4genotyping} -C50 -Oz  -f !{genome} !{bam} | bcftools call --ploidy GRCh37 -mv -Ov -o !{dataset_id}.star.samtools.vcf
+    bcftools mpileup -R !{Sites1000g4genotyping} -C50 -Oz -d 1000 -f !{genome} !{bam} | bcftools call --ploidy GRCh37 -mv -Ov -o !{dataset_id}.star.samtools.vcf
 
     vcf2genotype.pl !{dataset_id}.star.samtools.vcf > !{dataset_id}.star.gt
 
