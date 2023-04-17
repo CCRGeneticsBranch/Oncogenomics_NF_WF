@@ -2,10 +2,11 @@ process Strandedness {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
 
      input:
         tuple val(dataset_id),
+        val(library),
         path(T_bam),
         path(G_bam),
         path(G_bai),
@@ -15,11 +16,12 @@ process Strandedness {
 
      output:
      tuple val("${dataset_id}"),
-       path("${dataset_id}_strandedness.txt")
+       val("${library}"),
+       path("${library}_strandedness.txt")
 
      script:
      """
-     ngsderive strandedness -g $gtf_sorted $G_bam -n 10000 > ${dataset_id}_strandedness.txt
+     ngsderive strandedness -g $gtf_sorted $G_bam -n 10000 > ${library}_strandedness.txt
 
      """
 }
@@ -27,11 +29,12 @@ process Strandedness {
 process Rsem {
         tag { dataset_id }
 
-        publishDir "$params.resultsdir/$dataset_id/${params.casename}/$dataset_id/RSEM_ENS", mode: 'copy'
+        publishDir "$params.resultsdir/$dataset_id/${params.casename}/${library}/RSEM_ENS", mode: 'copy'
 
         input:
 
         tuple val(dataset_id),
+        val(library),
         path(T_bam),
         path(G_bam),
         path(G_bai),
@@ -41,14 +44,15 @@ process Rsem {
 
         output:
         tuple val("${dataset_id}"),
-		path("${dataset_id}.genes.results")
-        
+                val(library),
+                path("${library}.genes.results")
+
 
         script:
         """
-        STRAND=`strandedness.py ${dataset_id}_strandedness.txt rsem`
+        STRAND=`strandedness.py ${library}_strandedness.txt rsem`
         echo "strandedness is  \$STRAND"
-        rsem-calculate-expression --no-bam-output --paired-end --strandedness \$STRAND -p ${task.cpus} --estimate-rspd --bam $T_bam ${genomeIndex}/rsem_1.3.2 $dataset_id 
+        rsem-calculate-expression --no-bam-output --paired-end --strandedness \$STRAND -p ${task.cpus} --estimate-rspd --bam $T_bam ${genomeIndex}/rsem_1.3.2 $library
         """
 
 }

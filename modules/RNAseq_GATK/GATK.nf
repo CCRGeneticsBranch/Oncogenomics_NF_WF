@@ -3,6 +3,7 @@ process GATK_RNASeq_Trim {
 
         input:
         tuple val(dataset_id),
+        val(library),
         path(bam),
         path(index),
         path(genome),
@@ -11,14 +12,15 @@ process GATK_RNASeq_Trim {
 
         output:
         tuple val("${dataset_id}"),
-        path("trim_${dataset_id}.star.trim.bam"),
-        path("trim_${dataset_id}.star.trim.bai")
+        val("$library"),
+        path("${library}.star.trim.bam"),
+        path("${library}.star.trim.bai")
 
 
         script:
         """
 
-        java -jar \$GATK_JAR -T SplitNCigarReads -R $genome -I $bam -o trim_${dataset_id}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
+        java -jar \$GATK_JAR -T SplitNCigarReads -R $genome -I $bam -o ${library}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
 
         """
 }
@@ -29,6 +31,7 @@ process GATK_RNASeq_RTC_IR {
 
         input:
 	tuple val(dataset_id),
+        val(library),
         path(bam),
         path(index),
         path(genome),
@@ -39,16 +42,17 @@ process GATK_RNASeq_RTC_IR {
 
         output:
         tuple val("${dataset_id}"),
-        path("trim_${dataset_id}.star.Ir.bam"),
-        path("trim_${dataset_id}.star.Ir.bai")
+        val("$library"),
+        path("${library}.star.Ir.bam"),
+        path("${library}.star.Ir.bai")
 
 
         script:
         """
 
-	java -jar \$GATK_JAR -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.realignment.intervals
+	java -jar \$GATK_JAR -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o ${library}.star.realignment.intervals
 
-        java -jar \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals trim_${dataset_id}.star.realignment.intervals -o trim_${dataset_id}.star.Ir.bam        
+        java -jar \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals ${library}.star.realignment.intervals -o ${library}.star.Ir.bam        
 
         """
 }
@@ -58,10 +62,11 @@ process GATK_RNASeq_RTC_IR {
 process GATK_RNASeq_BR_PR {
         tag { dataset_id }
 
-        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}", mode: "${params.publishDirMode}"
+        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}", mode: "${params.publishDirMode}"
 
         input:
 	tuple val(dataset_id),
+        val(library),
         path(bam),
         path(index),
         path(genome),
@@ -72,18 +77,19 @@ process GATK_RNASeq_BR_PR {
 
         output:
         tuple val("${dataset_id}"),
-        path("trim_${dataset_id}.star.final.bam"),
-        path("trim_${dataset_id}.star.final.bam.bai")
+        val("$library"),
+        path("${library}.star.final.bam"),
+        path("${library}.star.final.bam.bai")
 
 
         script:
         """
 
-        java -jar \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o trim_${dataset_id}.star.recalibration.matrix.txt 
+        java -jar \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o ${library}.star.recalibration.matrix.txt 
 
-        java -jar \$GATK_JAR -T PrintReads -R $genome -I $bam -o trim_${dataset_id}.star.final.bam -BQSR trim_${dataset_id}.star.recalibration.matrix.txt
+        java -jar \$GATK_JAR -T PrintReads -R $genome -I $bam -o ${library}.star.final.bam -BQSR ${library}.star.recalibration.matrix.txt
 
-        mv trim_${dataset_id}.star.final.bai trim_${dataset_id}.star.final.bam.bai
+        mv ${library}.star.final.bai ${library}.star.final.bam.bai
 
         """
 }
@@ -93,10 +99,11 @@ process RNAseq_HaplotypeCaller {
 
      tag { dataset_id }
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/calls", mode: "${params.publishDirMode}"
 
      input:
      tuple val(dataset_id),
+        val(library),
         path(bam),
         path(index),
         path(genome),
@@ -106,18 +113,19 @@ process RNAseq_HaplotypeCaller {
 
      output:
      tuple val("${dataset_id}"),
-        path("${dataset_id}.HC_RNASeq.raw.vcf")
+        val("$library"),
+        path("${library}.HC_RNASeq.raw.vcf")
 
      stub:
      """
-     touch "${dataset_id}.HC_RNASeq.raw.vcf"
+     touch "${library}.HC_RNASeq.raw.vcf"
      """
 
      shell:
      '''
      set -exo pipefail
-     java -jar \$GATK_JAR -T HaplotypeCaller -R !{genome} -I !{bam} -o !{dataset_id}.vcf --dbsnp !{dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -nct !{task.cpus}
-     java -jar \$GATK_JAR -T VariantFiltration -R !{genome} -V !{dataset_id}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o !{dataset_id}.HC_RNASeq.raw.vcf
+     java -jar \$GATK_JAR -T HaplotypeCaller -R !{genome} -I !{bam} -o !{library}.vcf --dbsnp !{dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -nct !{task.cpus}
+     java -jar \$GATK_JAR -T VariantFiltration -R !{genome} -V !{library}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o !{library}.HC_RNASeq.raw.vcf
      '''
 }
 

@@ -14,13 +14,9 @@ workflow Star_bam_processing {
           strandedness
     main:
      Picard_AddReadgroups(Coord_bam)
-     PicardCRS_input = Picard_AddReadgroups.out.combine(strandedness, by:0).combine(ref_flat).combine(rRNA_interval)
-//     PicardCRS_input.view()
+     PicardCRS_input = Picard_AddReadgroups.out.combine(strandedness, by:[0,1]).combine(ref_flat).combine(rRNA_interval)
      Picard_CollectRNAseqmetrics(PicardCRS_input)
-//     Picard_AddReadgroups.out
-//             .combine(ref_flat)
-//             .combine(rRNA_interval)
-//     )
+
      Picard_CollectAlignmentSummaryMetrics(
          Picard_AddReadgroups.out
              .combine(genome)

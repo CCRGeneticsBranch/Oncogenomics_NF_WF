@@ -1,10 +1,11 @@
 process Fastqc {
     tag { dataset_id }
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/qc/", mode: 'copy'
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc/", mode: 'copy'
 
     input:
     tuple val(dataset_id),
+        val(library),
         path(r1),
         path(r2),
         path(trim_r1),
@@ -12,6 +13,7 @@ process Fastqc {
 
     output:
     tuple val("$dataset_id"),
+         val("$library"),
          path("fastqc")
 
     script:
@@ -29,6 +31,7 @@ process Multiqc {
 
     input:
     tuple val(dataset_id),
+        val(library),
         path("*")
  
 
@@ -44,10 +47,11 @@ process Multiqc {
 
 process Genotyping {
     tag { dataset_id }
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(dataset_id),
+        val(library),
         path(bam),
         path(index),
         path(Sites1000g4genotyping),
@@ -57,23 +61,24 @@ process Genotyping {
 
     output:
     tuple val("${dataset_id}"),
-    path("${dataset_id}.star.gt"),
-    path("${dataset_id}.star.loh")
+    val("${library}"),
+    path("${library}.star.gt"),
+    path("${library}.star.loh")
 
     stub:
     """
-    touch "${dataset_id}.star.gt"
-    touch "${dataset_id}.star.loh"
+    touch "${library}.star.gt"
+    touch "${library}.star.loh"
     """
 
     shell:
      '''
 
-    bcftools mpileup -R !{Sites1000g4genotyping} -C50 -Oz -d 1000 -f !{genome} !{bam} | bcftools call --ploidy GRCh37 -mv -Ov -o !{dataset_id}.star.samtools.vcf
+    bcftools mpileup -R !{Sites1000g4genotyping} -C50 -Oz -d 1000 -f !{genome} !{bam} | bcftools call --ploidy GRCh37 -mv -Ov -o !{library}.star.samtools.vcf
 
-    vcf2genotype.pl !{dataset_id}.star.samtools.vcf > !{dataset_id}.star.gt
+    vcf2genotype.pl !{library}.star.samtools.vcf > !{library}.star.gt
 
-    vcf2loh.pl !{dataset_id}.star.samtools.vcf  > !{dataset_id}.star.loh
+    vcf2loh.pl !{library}.star.samtools.vcf  > !{library}.star.loh
 
 
     '''
@@ -87,33 +92,36 @@ process CircosPlot {
 
     input:
     tuple val(dataset_id),
+        val(library),
         path(gt),
         path(loh)
 
     output:
-    tuple val("${dataset_id.split('_')[0]}"),
-        path("${dataset_id.split('_')[0]}.star.circos.png")    
+    tuple val("${dataset_id}"),
+        val("${library}"),
+        path("${dataset_id}.circos.png")
 
     stub:
     """
-    touch "${dataset_id.split('_')[0]}.star.circos.png"
+    touch "${dataset_id}.circos.png"
     """
 
     shell:
      '''
-     circosLib.R  $PWD/ !{dataset_id.split('_')[0]}.star.circos.png !{dataset_id}
+     circosLib.R  $PWD/ !{dataset_id}.circos.png !{library}
      '''
 }
 
 
 process RNAseQC {
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
 
     tag { dataset_id }
 
     input:
     tuple val(dataset_id),
+        val(library),
         path(bam),
         path(index),
         path(genome),
@@ -124,6 +132,7 @@ process RNAseQC {
 
     output:
     tuple val("${dataset_id}"),
+        val("${library}"),
         path("rnaseqc/report.html")
 
     stub:
@@ -133,7 +142,7 @@ process RNAseQC {
 
     shell:
      '''
-     java -jar $RNASEQCJAR -r !{genome} -rRNA !{rRNA_interval} -o rnaseqc -s "!{dataset_id}|!{bam}|!{dataset_id}" -t !{transcript_gtf}
+     java -jar $RNASEQCJAR -r !{genome} -rRNA !{rRNA_interval} -o rnaseqc -s "!{library}|!{bam}|!{library}" -t !{transcript_gtf}
  
      '''
 

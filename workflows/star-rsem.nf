@@ -25,7 +25,8 @@ workflow Star_rsem {
             .combine(gtf_sorted)
             .combine(gtf_sorted_index)
     )
-        Rsem(Star.out.combine(Strandedness.out, by:0)
+
+        Rsem(Star.out.join(Strandedness.out, by: [0,1])
             .combine(rsemIndex)
     )
     emit:

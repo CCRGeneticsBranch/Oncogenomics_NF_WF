@@ -6,11 +6,13 @@ process FormatInput {
 
      input:
      tuple val(dataset_id),
+        val(library),
         path(vcf2txt),
         path(hotspotpileup)
 
      output:
      tuple val(dataset_id),
+        val("${library}"),
         path("AnnotationInput.anno"),
         path("AnnotationInput.sift"),
         path("AnnotationInput")
@@ -24,8 +26,8 @@ process FormatInput {
      shell:
      '''
      set -exo pipefail
-     cat  !{hotspotpileup} |sort > !{dataset_id}.hotspot
-     cut -f 1-5 !{vcf2txt} !{dataset_id}.hotspot |sort |uniq > AnnotationInput
+     cat  !{hotspotpileup} |sort > !{library}.hotspot
+     cut -f 1-5 !{vcf2txt} !{library}.hotspot |sort |uniq > AnnotationInput
      MakeAnnotationInputs.pl AnnotationInput
 
      '''
@@ -39,6 +41,7 @@ process Annovar {
 
      input:
      tuple val(dataset_id),
+        val(library),
         path(annotation),
         path(sift),
         path(Anno_input),
@@ -47,6 +50,7 @@ process Annovar {
         path(pcg)
      output:
      tuple val(dataset_id),
+        val("${library}"),
         path("AnnotationInput.cosmic"),
         path("AnnotationInput.clinseq"),
         path("AnnotationInput.cadd"),
@@ -92,6 +96,7 @@ process Custom_annotation {
 
      input:
      tuple val(dataset_id),
+        val(library),
         path(annotation),
         path(sift),
         path(Anno_input),
@@ -105,6 +110,7 @@ process Custom_annotation {
         path(civic)
      output:
      tuple val(dataset_id),
+        val("${library}"),
         path("AnnotationInput.clinvar"),
         path("AnnotationInput.hgmd"),
         path("AnnotationInput.match"),
@@ -151,6 +157,7 @@ process Combine_annotation {
 
      input:
      tuple val(dataset_id),
+        val(library),
         path(cosmic_out),
         path(clinseq_out),
         path(cadd_out),
@@ -172,15 +179,16 @@ process Combine_annotation {
 
     output:
     tuple val("${dataset_id}"),
+        val("${library}"),
         path("${dataset_id}.Annotations.coding.rare.txt")
         path("${dataset_id}.Annotations.final.txt")
-        path("${dataset_id}.HC_RNASeq.annotated.txt")
+        path("${library}.HC_RNASeq.annotated.txt")
         
      stub:
      """
        touch "${dataset_id}.Annotations.coding.rare.txt"
        touch "${dataset_id}.Annotations.final.txt"
-       touch "${dataset_id}.HC_RNASeq.annotated.txt"
+       touch "${library}.HC_RNASeq.annotated.txt"
      """
 
      shell:
@@ -203,7 +211,7 @@ process Combine_annotation {
      CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
      GeneAnnotation.pl !{ACMG} AnnotationInput.annotations.final.txt.tmp > !{dataset_id}.Annotations.final.txt
      ProteinCodingRare.pl !{hg19_BLsites} !{hg19_WLsites} !{dataset_id}.Annotations.final.txt 0.05 > !{dataset_id}.Annotations.coding.rare.txt
-     addAnnotations2vcf.pl !{dataset_id}.Annotations.coding.rare.txt !{snpeff_txt} > !{dataset_id}.HC_RNASeq.annotated.txt
+     addAnnotations2vcf.pl !{dataset_id}.Annotations.coding.rare.txt !{snpeff_txt} > !{library}.HC_RNASeq.annotated.txt
      '''
 }
 

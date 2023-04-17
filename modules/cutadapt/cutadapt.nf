@@ -1,20 +1,20 @@
 process Cutadapt {
         tag { dataset_id }
-//        tag { sample } { dataset_id }
-        publishDir "$params.resultsdir/$dataset_id/${params.casename}/Cutadapt", mode: 'copy'
+        publishDir "$params.resultsdir/$dataset_id/${params.casename}/$library/Cutadapt", mode: 'copy'
 
         input:
 
         tuple val(dataset_id),
+            val(library),
             path(r1fq),
             path(r2fq)
 
         output:
         tuple val("${dataset_id}"),
-            path("${dataset_id}_R1.trim.fastq.gz"),
-            path("${dataset_id}_R2.trim.fastq.gz")
+            val("${library}"),
+            path("${library}_R1.trim.fastq.gz"),
+            path("${library}_R2.trim.fastq.gz")
 
-        // container 'nciccbr/ncigb_cutadapt_v1.18:latest'
 
         script:
         """
@@ -26,8 +26,8 @@ process Cutadapt {
 	-b file:/opt2/TruSeq_and_nextera_adapters.consolidated.fa \\
 	-B file:/opt2/TruSeq_and_nextera_adapters.consolidated.fa \\
 	-j $task.cpus \\
-        -o ${dataset_id}_R1.trim.fastq.gz \\
-        -p ${dataset_id}_R2.trim.fastq.gz \\
+        -o ${library}_R1.trim.fastq.gz \\
+        -p ${library}_R2.trim.fastq.gz \\
 	$r1fq $r2fq      
         """
 

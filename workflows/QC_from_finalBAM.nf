@@ -16,6 +16,8 @@ workflow QC_from_finalBAM {
     access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))
     access_target            = Channel.of(file(params.access_target, checkIfExists:true))
     take: GATK_RNASeq_BR_PR_bam
+          target_capture
+
     main:
 
      Hotspot_Coverage(
@@ -44,8 +46,7 @@ workflow QC_from_finalBAM {
              .combine(genome_dict)
      )
      CoveragePlot(
-        GATK_RNASeq_BR_PR_bam
-            .combine(access_target)
+        GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0,1])
      )
      Hotspot_Boxplot(Hotspot_Coverage.out)
 
