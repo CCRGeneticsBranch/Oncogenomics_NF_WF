@@ -36,13 +36,8 @@ include {QC_from_finalBAM} from './workflows/QC_from_finalBAM'
 include {Annotation} from './workflows/Annotation'
 include {QC_from_Star_bam} from './workflows/QC_from_Star_bam'
 
-params.samplesheet = "/data/khanlab/projects/Nextflow_dev/testing/20_samplesheet.csv"
 
 workflow {
-
-    read_pairs              = Channel
-                                .fromFilePairs(params.reads, flat: true)
-                                .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
 
 
 // Reading the samplesheet
