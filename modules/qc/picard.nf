@@ -22,9 +22,9 @@ process Picard_AddReadgroups {
         set -exo pipefail
         printenv
           
-        java  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $bam  -OUTPUT trim_${library}_star.bam -SORT_ORDER coordinate -RGLB trim_${library} -RGPU trim_${library} -RGPL ILLUMINA -RGSM trim_${library} -RGCN khanlab
+        java -Xmx10g  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $bam  -OUTPUT trim_${library}_star.bam -SORT_ORDER coordinate -RGLB trim_${library} -RGPU trim_${library} -RGPL ILLUMINA -RGSM trim_${library} -RGCN khanlab
 
-        java  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${library}_star.bam -OUTPUT trim_${library}_star.bam.bai
+        java -Xmx10g  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${library}_star.bam -OUTPUT trim_${library}_star.bam.bai
         """
 }
 
@@ -54,7 +54,7 @@ process Picard_CollectRNAseqmetrics {
         script:
         """
         STRAND=`strandedness.py ${library}_strandedness.txt picard`
-        java  -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=\$STRAND VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=${library}.RnaSeqMetrics.txt CHART_OUTPUT=${library}.RnaSeqMetrics.pdf
+        java -Xmx10g -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=\$STRAND VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=${library}.RnaSeqMetrics.txt CHART_OUTPUT=${library}.RnaSeqMetrics.pdf
 
         """
 }
@@ -82,7 +82,7 @@ process Picard_CollectAlignmentSummaryMetrics {
         script:
         """
 
-	java  -jar \$PICARDJAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE=$genome INPUT=$bam OUTPUT=${library}.AlignmentSummaryMetrics.txt ADAPTER_SEQUENCE=null
+	java  -Xmx10g -jar \$PICARDJAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE=$genome INPUT=$bam OUTPUT=${library}.AlignmentSummaryMetrics.txt ADAPTER_SEQUENCE=null
 
         """
 }
@@ -110,9 +110,9 @@ process Picard_MarkDuplicates {
         script:
         """
 
-        java  -jar \$PICARDJAR MarkDuplicates AS=true M=trim_${library}.markdup.txt INPUT=$bam OUTPUT=trim_${library}.star.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
+        java  -jar -Xmx10g \$PICARDJAR MarkDuplicates AS=true M=trim_${library}.markdup.txt INPUT=$bam OUTPUT=trim_${library}.star.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
 
-        java  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${library}.star.dd.bam -OUTPUT trim_${library}.star.dd.bam.bai
+        java  -jar -Xmx10g \$PICARDJAR BuildBamIndex  -INPUT trim_${library}.star.dd.bam -OUTPUT trim_${library}.star.dd.bam.bai
 
         """
 }
