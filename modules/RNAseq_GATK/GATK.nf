@@ -20,7 +20,7 @@ process GATK_RNASeq_Trim {
         script:
         """
 
-        java -jar \$GATK_JAR -T SplitNCigarReads -R $genome -I $bam -o ${library}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
+        java -jar -Xmx10g \$GATK_JAR -T SplitNCigarReads -R $genome -I $bam -o ${library}.star.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
 
         """
 }
@@ -50,9 +50,9 @@ process GATK_RNASeq_RTC_IR {
         script:
         """
 
-	java -jar \$GATK_JAR -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o ${library}.star.realignment.intervals
+	java -jar -Xmx10g \$GATK_JAR -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o ${library}.star.realignment.intervals
 
-        java -jar \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals ${library}.star.realignment.intervals -o ${library}.star.Ir.bam        
+        java -jar -Xmx10g \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals ${library}.star.realignment.intervals -o ${library}.star.Ir.bam        
 
         """
 }
@@ -85,9 +85,9 @@ process GATK_RNASeq_BR_PR {
         script:
         """
 
-        java -jar \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o ${library}.star.recalibration.matrix.txt 
+        java -jar -Xmx10g \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o ${library}.star.recalibration.matrix.txt 
 
-        java -jar \$GATK_JAR -T PrintReads -R $genome -I $bam -o ${library}.star.final.bam -BQSR ${library}.star.recalibration.matrix.txt
+        java -jar -Xmx10g \$GATK_JAR -T PrintReads -R $genome -I $bam -o ${library}.star.final.bam -BQSR ${library}.star.recalibration.matrix.txt
 
         mv ${library}.star.final.bai ${library}.star.final.bam.bai
 
@@ -124,8 +124,8 @@ process RNAseq_HaplotypeCaller {
      shell:
      '''
      set -exo pipefail
-     java -jar \$GATK_JAR -T HaplotypeCaller -R !{genome} -I !{bam} -o !{library}.vcf --dbsnp !{dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -nct !{task.cpus}
-     java -jar \$GATK_JAR -T VariantFiltration -R !{genome} -V !{library}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o !{library}.HC_RNASeq.raw.vcf
+     java -jar -Xmx10g \$GATK_JAR -T HaplotypeCaller -R !{genome} -I !{bam} -o !{library}.vcf --dbsnp !{dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -nct !{task.cpus}
+     java -jar -Xmx10g \$GATK_JAR -T VariantFiltration -R !{genome} -V !{library}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o !{library}.HC_RNASeq.raw.vcf
      '''
 }
 
