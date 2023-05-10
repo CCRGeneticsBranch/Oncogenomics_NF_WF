@@ -13,13 +13,11 @@ contexts:
     nfmvp:
         requestSpotInstances: false
         instanceTypes:
-          - "m5.large"
-          - "c5.9xlarge"
-          - "m5.xlarge"
-          - "m5.12xlarge"
+          - "m5a.large"
+          - "m5a.xlarge"
           - "m6a.8xlarge"
+          - "m5a.4xlarge"
           - "m5a.8xlarge"
-          - "r5.8xlarge"
         engines:
             - type: nextflow
               engine: nextflow
