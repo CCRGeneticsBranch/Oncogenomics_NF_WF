@@ -3,6 +3,8 @@ process Mergefusion {
 
     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/Actionable", mode: "${params.publishDirMode}"
 
+    cache 'lenient'
+
     input:
     tuple val(dataset_id),
         val(library),
