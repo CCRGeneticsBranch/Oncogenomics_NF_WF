@@ -35,7 +35,7 @@ include {RNAseq_GATK} from './workflows/RNAseq_GATK'
 include {QC_from_finalBAM} from './workflows/QC_from_finalBAM'
 include {Annotation} from './workflows/Annotation'
 include {QC_from_Star_bam} from './workflows/QC_from_Star_bam'
-
+include {Allstepscomplete} from './modules/misc/Allstepscomplete'
 
 workflow {
 
@@ -103,23 +103,34 @@ if (params.run_upto_counts) {
 
   Star_rsem(Cutadapt.out) 
 
-
+/*
   Starfusion_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[5]]}
   Star_rsem.out.star.branch{ id, lib, tbam, bam, bai, chimeric_junctions ->
               other: true
                   return( tuple(id, lib, chimeric_junctions))} \
               .set{Starfusion_input_tmp}
-  Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)
+     transcriptome_bam =  Star.out.transcriptome_bam
+     genome_bam	= Star.out.genome_bam
+     genome_bai	= Star.out.genome_bai
+     chimeric_junction = Star.out.chimeric_junction
+*/
+
+  Starfusion_input = Star_rsem.out.chimeric_junction.combine(starfusion_db)
+
+//  Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)
   Fusion_calling (
          Cutadapt.out,
          Starfusion_input
      )
 
+/*
   PicardARG_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[5]]}
   Star_rsem.out.star.branch{ id, lib, tbam, bam, bai, chimeric_junctions ->
               other: true
                   return( tuple(id, lib, bam, bai))} \
               .set{PicardARG_input}
+*/
+  PicardARG_input = Star_rsem.out.genome_bam.combine(Star_rsem.out.genome_bai,by:[0,1])
 
   Star_bam_processing(
       PicardARG_input,
@@ -128,7 +139,7 @@ if (params.run_upto_counts) {
 
 
 
-//  HLA_calls(Cutadapt.out)
+//  HLA_calls(Cutadapt.out)  docker needs to be fixed
 
 
 
@@ -156,29 +167,17 @@ if (params.run_upto_counts) {
 
 multiqc_input = Fastqc.out.join(QC_from_finalBAM.out.hotspot_pileup, by: [0, 1])
                           .join(QC_from_finalBAM.out.coverageplot, by: [0, 1])
-                          .join(Star_rsem.out.star, by: [0, 1])
+                          .join(Star_rsem.out.chimeric_junction, by: [0, 1])
                           .join(Star_rsem.out.rsem, by: [0, 1]).join(QC_from_Star_bam.out.rnaseqc, by: [0, 1])
                           .join(QC_from_Star_bam.out.circos, by: [0, 1])
 Multiqc(multiqc_input)
 
-/*
+final_inputs = Fusion_calling.out.merge_fusion.join(Annotation.out.final_annotation,by:[0,1])
 
-  }
-  if (params.run_upto_counts) {
-
-    multiqc_input = Fastqc.out.join(Star_rsem.out.star).join(Star_rsem.out.rsem)
-    Multiqc(multiqc_input)
-  }  else {  
-
-    multiqc_input = Fastqc.out \
-                       .join(QC_from_finalBAM.out.hotspot_pileup) \
-                       .join(QC_from_finalBAM.out.coverageplot) \
-                       .join(Star_rsem.out.star) \
-                       .join(Star_rsem.out.rsem).join(QC_from_Star_bam.out.rnaseqc) 
-//                       .join(QC_from_Star_bam.out.circos) 
-    Multiqc(multiqc_input)
-  }
-
-*/
+Allstepscomplete(final_inputs)
 
 }
+
+
+
+

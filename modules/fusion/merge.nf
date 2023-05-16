@@ -8,11 +8,11 @@ process Mergefusion {
     input:
     tuple val(dataset_id),
         val(library),
-        path(arriba), 
+        path(arriba),
         path(FC),
         path(FC_summary),
         path(SF)
-    
+
     output:
     tuple val("${dataset_id}"),
         val("${library}"),

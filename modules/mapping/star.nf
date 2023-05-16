@@ -12,12 +12,10 @@ process Star {
         path(gtf)
     
     output:
-    tuple val("${dataset_id}"),
-        val("${library}"),
-        path("${library}.Aligned.toTranscriptome.out.bam"),
-        path("${library}.Aligned.sortedByCoord.out.bam"),
-        path("${library}.Aligned.sortedByCoord.out.bam.bai"),
-        path("${library}.Chimeric.out.junction")
+    tuple val("${dataset_id}"), val("${library}"), path("${library}.Aligned.toTranscriptome.out.bam") , emit: transcriptome_bam
+    tuple val("${dataset_id}"), val("${library}"), path("${library}.Aligned.sortedByCoord.out.bam"), emit: genome_bam
+    tuple val("${dataset_id}"), val("${library}"), path("${library}.Aligned.sortedByCoord.out.bam.bai"), emit: genome_bai
+    tuple val("${dataset_id}"), val("${library}"), path("${library}.Chimeric.out.junction"), emit: chimeric_junction
 
     stub:
     """

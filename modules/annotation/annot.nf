@@ -178,12 +178,19 @@ process Combine_annotation {
         path(hg19_WLsites)
 
     output:
+/*
     tuple val("${dataset_id}"),
         val("${library}"),
-        path("${dataset_id}.Annotations.coding.rare.txt")
-        path("${dataset_id}.Annotations.final.txt")
-        path("${library}.HC_RNASeq.annotated.txt")
-        
+        path("${dataset_id}.Annotations.coding.rare.txt") into  rare_annotation
+        path("${dataset_id}.Annotations.final.txt") into final_annotation
+        path("${library}.HC_RNASeq.annotated.txt") into HC_RNAseq
+ */
+
+   tuple val("${dataset_id}"),val("${library}"), path("${dataset_id}.Annotations.coding.rare.txt") , emit: rare_annotation       
+   tuple val("${dataset_id}"),val("${library}"), path("${dataset_id}.Annotations.final.txt") , emit: final_annotation
+   tuple val("${dataset_id}"),val("${library}"), path("${library}.HC_RNASeq.annotated.txt") , emit: hc_RNAseq
+
+
      stub:
      """
        touch "${dataset_id}.Annotations.coding.rare.txt"

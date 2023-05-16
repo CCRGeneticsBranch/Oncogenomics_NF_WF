@@ -21,16 +21,19 @@ workflow Star_rsem {
             .combine(gtf)
     )
         Strandedness(
-            Star.out
+            Star.out.genome_bam.join(Star.out.genome_bai, by: [0,1])
             .combine(gtf_sorted)
             .combine(gtf_sorted_index)
     )
 
-        Rsem(Star.out.join(Strandedness.out, by: [0,1])
+        Rsem(Star.out.transcriptome_bam.join(Strandedness.out, by: [0,1])
             .combine(rsemIndex)
     )
     emit:
-     star =  Star.out
+     transcriptome_bam =  Star.out.transcriptome_bam
+     genome_bam = Star.out.genome_bam
+     genome_bai = Star.out.genome_bai
+     chimeric_junction = Star.out.chimeric_junction
      rsem =  Rsem.out
      strandedness = Strandedness.out 
 }

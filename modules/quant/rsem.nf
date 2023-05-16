@@ -7,10 +7,8 @@ process Strandedness {
      input:
         tuple val(dataset_id),
         val(library),
-        path(T_bam),
         path(G_bam),
         path(G_bai),
-        path(chimeric_junction),
         path(gtf_sorted),
         path(gtf_index)
 
@@ -36,9 +34,6 @@ process Rsem {
         tuple val(dataset_id),
         val(library),
         path(T_bam),
-        path(G_bam),
-        path(G_bai),
-        path(chimeric_junction),
         path(strandedness),
         path(genomeIndex)
 

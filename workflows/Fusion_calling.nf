@@ -33,6 +33,6 @@ workflow Fusion_calling {
   
 
     emit:
-     Merge_fusion =  Mergefusion.out
+     merge_fusion =  Mergefusion.out
  
 }
