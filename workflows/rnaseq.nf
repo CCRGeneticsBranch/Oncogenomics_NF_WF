@@ -17,7 +17,6 @@ include {RNAseq_GATK} from '../subworkflows/RNAseq_GATK'
 include {QC_from_finalBAM} from '../subworkflows/QC_from_finalBAM'
 include {Annotation} from '../subworkflows/Annotation'
 include {QC_from_Star_bam} from '../subworkflows/QC_from_Star_bam'
-include {test} from '../modules/test'
 
 
 workflow RNASEQ {
@@ -36,7 +35,6 @@ samples_ch = Channel.fromPath(params.samplesheet)
 }
 samples_ch.view()
 
-test(samples_ch)
 // Reading the samplesheet
 
 subject = Channel.fromPath(params.samplesheet)
