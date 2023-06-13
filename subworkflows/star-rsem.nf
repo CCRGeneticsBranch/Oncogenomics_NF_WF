@@ -21,12 +21,12 @@ workflow Star_rsem {
             .combine(gtf)
     )
         Strandedness(
-            Star.out.genome_bam.join(Star.out.genome_bai, by: [0,1])
+            Star.out.genome_bam.join(Star.out.genome_bai, by: [0])
             .combine(gtf_sorted)
             .combine(gtf_sorted_index)
     )
 
-        Rsem(Star.out.transcriptome_bam.join(Strandedness.out, by: [0,1])
+        Rsem(Star.out.transcriptome_bam.join(Strandedness.out, by: [0])
             .combine(rsemIndex)
     )
     emit:

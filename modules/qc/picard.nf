@@ -1,43 +1,35 @@
 process Picard_AddReadgroups {
-        tag { dataset_id }
-
-//        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+        tag "$meta.lib"
 
         input:
-
-        tuple val(dataset_id),
-        val(library),
-        path(bam),
-        path(index)
+        tuple val(meta), path(bam),path(index)
 
         output:
-        tuple val("${dataset_id}"),	
-        val("${library}"),
-        path("trim_${library}_star.bam"),
-        path("trim_${library}_star.bam.bai")
+        tuple val(meta),
+        path("trim_${meta.lib}_star.bam"),
+        path("trim_${meta.lib}_star.bam.bai")
 
 
         script:
+        def prefix = task.ext.prefix ?: "${meta.lib}"
         """
         set -exo pipefail
         printenv
           
-        java -Xmx10g  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $bam  -OUTPUT trim_${library}_star.bam -SORT_ORDER coordinate -RGLB trim_${library} -RGPU trim_${library} -RGPL ILLUMINA -RGSM trim_${library} -RGCN khanlab
+        java -Xmx10g  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $bam  -OUTPUT trim_${prefix}_star.bam -SORT_ORDER coordinate -RGLB trim_${prefix} -RGPU trim_${prefix} -RGPL ILLUMINA -RGSM trim_${prefix} -RGCN khanlab
 
-        java -Xmx10g  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${library}_star.bam -OUTPUT trim_${library}_star.bam.bai
+        java -Xmx10g  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${prefix}_star.bam -OUTPUT trim_${prefix}_star.bam.bai
         """
 }
 
 process Picard_CollectRNAseqmetrics {
 
-        tag { dataset_id }
+        tag "$meta.lib"
 
-       publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
+       publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
         input:
-
-        tuple val(dataset_id),
-        val(library),
+        tuple val(meta),
         path(bam),
         path(index),
         path(strandedness),
@@ -45,74 +37,67 @@ process Picard_CollectRNAseqmetrics {
         path(rRNA_interval)
 
         output:
-        tuple val("${dataset_id}"),
-        val("${library}"),
-        path("${library}.RnaSeqMetrics.txt"),
-        path("${library}.RnaSeqMetrics.pdf")
+        tuple val(meta),
+        path("${meta.lib}.RnaSeqMetrics.txt"),
+        path("${meta.lib}.RnaSeqMetrics.pdf")
 
 
         script:
+        def prefix = task.ext.prefix ?: "${meta.lib}"
         """
-        STRAND=`strandedness.py ${library}_strandedness.txt picard`
-        java -Xmx10g -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=\$STRAND VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=${library}.RnaSeqMetrics.txt CHART_OUTPUT=${library}.RnaSeqMetrics.pdf
+        STRAND=`strandedness.py ${prefix}_strandedness.txt picard`
+        java -Xmx10g -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=\$STRAND VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=${prefix}.RnaSeqMetrics.txt CHART_OUTPUT=${prefix}.RnaSeqMetrics.pdf
 
         """
 }
 
 process Picard_CollectAlignmentSummaryMetrics {
 
-        tag { dataset_id }
+        tag "$meta.lib"
 
-        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
+        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
         input:
 
-        tuple val(dataset_id),
-        val(library),
+        tuple val(meta),
         path(bam),
         path(index),
         path(genome)
 
         output:
-        tuple val("${dataset_id}"),
-        val("${library}"),
-        path("${library}.AlignmentSummaryMetrics.txt")
+        tuple val(meta),
+        path("${meta.lib}.AlignmentSummaryMetrics.txt")
 
 
         script:
         """
-
-	java  -Xmx10g -jar \$PICARDJAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE=$genome INPUT=$bam OUTPUT=${library}.AlignmentSummaryMetrics.txt ADAPTER_SEQUENCE=null
+	java  -Xmx10g -jar \$PICARDJAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE=$genome INPUT=$bam OUTPUT=${meta.lib}.AlignmentSummaryMetrics.txt ADAPTER_SEQUENCE=null
 
         """
 }
 
 
 process Picard_MarkDuplicates {
-        tag { dataset_id }
-
-//        publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+        tag "$meta.lib"
 
         input:
 
-        tuple val(dataset_id),
-        val(library),
+        tuple val(meta),
         path(bam),
         path(index)
 
         output:
-        tuple val("${dataset_id}"),
-        val("${library}"),
-        path("trim_${library}.star.dd.bam"),
-        path("trim_${library}.star.dd.bam.bai")
+        tuple val(meta),
+        path("trim_${meta.lib}.dd.bam"),
+        path("trim_${meta.lib}.dd.bam.bai")
 
 
         script:
+        def prefix = task.ext.prefix ?: "${meta.lib}"
         """
+        java  -jar -Xmx10g \$PICARDJAR MarkDuplicates AS=true M=trim_${prefix}.markdup.txt INPUT=$bam OUTPUT=trim_${prefix}.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
 
-        java  -jar -Xmx10g \$PICARDJAR MarkDuplicates AS=true M=trim_${library}.markdup.txt INPUT=$bam OUTPUT=trim_${library}.star.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
-
-        java  -jar -Xmx10g \$PICARDJAR BuildBamIndex  -INPUT trim_${library}.star.dd.bam -OUTPUT trim_${library}.star.dd.bam.bai
+        java  -jar -Xmx10g \$PICARDJAR BuildBamIndex  -INPUT trim_${prefix}.dd.bam -OUTPUT trim_${prefix}.dd.bam.bai
 
         """
 }

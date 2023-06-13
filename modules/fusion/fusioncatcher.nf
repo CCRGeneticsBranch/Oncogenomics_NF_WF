@@ -1,57 +1,52 @@
 
 
 
-process Fusioncatcher{
-    tag { dataset_id }
+process Fusioncatcher {
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/fusion", mode: "${params.publishDirMode}"
-
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}"
+ 
     input:
-    tuple val(dataset_id),
-        val(library),
-        path(r1), 
-        path(r2),
-        path(db)
-    
+    tuple val(meta),path(trim),path(db)
+        
     output:
-    tuple val("${dataset_id}"),
-        val("${library}"),
-        path("${library}.fusion-catcher.txt"),
-        path("${library}.summary_candidate_fusions.txt")
-
+    tuple val(meta),path("${meta.lib}.fusion-catcher.txt"),  emit : fc_output
+    tuple val(meta),path("${meta.lib}.summary_candidate_fusions.txt"), emit : fc_summary
+    
     stub:
     """
-    touch "${library}.fusion-catcher.txt"
-    touch "${library}.summary_candidate_fusions.txt"
+    touch "${meta.lib}.fusion-catcher.txt"
+    touch "${meta.lib}.summary_candidate_fusions.txt"
     """
 
-    shell:
-    '''
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
     # if running on biowulf SLURM
     if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
-        TMPDIR="/lscratch/${SLURM_JOB_ID}/!{library}_STAR"
-        if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR};fi
+        TMPDIR="/lscratch/${SLURM_JOB_ID}/${prefix}_STAR"
+        if [ -d \${TMPDIR} ];then rm -rf \${TMPDIR};fi
 
         fusioncatcher.py \
-            -p !{task.cpus} \
-            -d !{db} \
-            -i !{r1},!{r2} \
-            -o ${TMPDIR}
+            -p ${task.cpus} \
+            -d ${db} \
+            -i ${trim[0]},${trim[1]} \
+            -o \${TMPDIR}
         
-        cp ${TMPDIR}/final-list_candidate-fusion-genes.hg19.txt !{library}.fusion-catcher.txt
-        cp ${TMPDIR}/summary_candidate_fusions.txt !{library}.summary_candidate_fusions.txt
+        cp \${TMPDIR}/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
+        cp \${TMPDIR}/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt
     else
         mkdir fusioncatcher/
         fusioncatcher.py \
-            -p !{task.cpus} \
-            -d !{db} \
-            -i !{r1},!{r2} \
+            -p ${task.cpus} \
+            -d ${db} \
+            -i ${trim[0]},${trim[1]} \
             -o fusioncatcher/
 
-        cp fusioncatcher/final-list_candidate-fusion-genes.hg19.txt !{library}.fusion-catcher.txt
-        cp fusioncatcher/summary_candidate_fusions.txt !{library}.summary_candidate_fusions.txt       
+        cp fusioncatcher/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
+        cp fusioncatcher/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt       
     fi
 
-    '''
+    """
 
 }

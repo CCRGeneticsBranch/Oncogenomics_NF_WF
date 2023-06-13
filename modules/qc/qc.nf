@@ -1,57 +1,54 @@
 process Fastqc {
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc/", mode: 'copy'
-
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy'
+    
     input:
-    tuple val(dataset_id),
-        val(library),
-        path(r1),
-        path(r2),
-        path(trim_r1),
-        path(trim_r2)
-
+    tuple val(meta), path(trim), path(r1fq), path(r2fq)
+    
     output:
-    tuple val("$dataset_id"),
-         val("$library"),
-         path("fastqc")
-
+    tuple val(meta), path("fastqc") 
+    
     script:
+    def args = task.ext.args   ?: ''
+    def prefix   = task.ext.prefix ?: "${meta.lib}"
+    
     """
     if [ ! -d fastqc ];then mkdir -p fastqc;fi
-    fastqc $r1 $r2 $trim_r1 $trim_r2 -t $task.cpus -o fastqc
+    fastqc  ${trim[0]} ${trim[1]} $r1fq $r2fq -t $task.cpus -o fastqc
     """
 }
 
 
 process Multiqc {
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        val(library),
+    tuple val(meta),
         path("*")
  
 
     output:
-    path("multiqc_report.html")
+    tuple val(meta),path("multiqc_report.html")
+    //path "versions.yml"
 
     script:
     """
     multiqc . -f
+
+    
     """
 
 }
 
 process Genotyping {
-    tag { dataset_id }
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        val(library),
+    tuple val(meta),
         path(bam),
         path(index),
         path(Sites1000g4genotyping),
@@ -60,68 +57,64 @@ process Genotyping {
         path(genome_dict)
 
     output:
-    tuple val("${dataset_id}"),
-    val("${library}"),
-    path("${library}.star.gt"),
-    path("${library}.star.loh")
+    tuple val(meta),
+    path("${meta.lib}.gt"),
+    path("${meta.lib}.loh")
 
     stub:
     """
-    touch "${library}.star.gt"
-    touch "${library}.star.loh"
+    touch "${meta.lib}.gt"
+    touch "${meta.lib}.loh"
     """
 
-    shell:
-     '''
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+    bcftools mpileup -R ${Sites1000g4genotyping} -C50 -Oz -d 1000 -f ${genome} ${bam} | bcftools call --ploidy GRCh37 -mv -Ov -o ${prefix}.samtools.vcf
 
-    bcftools mpileup -R !{Sites1000g4genotyping} -C50 -Oz -d 1000 -f !{genome} !{bam} | bcftools call --ploidy GRCh37 -mv -Ov -o !{library}.star.samtools.vcf
+    vcf2genotype.pl ${prefix}.samtools.vcf > ${prefix}.gt
 
-    vcf2genotype.pl !{library}.star.samtools.vcf > !{library}.star.gt
-
-    vcf2loh.pl !{library}.star.samtools.vcf  > !{library}.star.loh
+    vcf2loh.pl ${prefix}.samtools.vcf  > ${prefix}.loh
 
 
-    '''
+    """
 }
 
 
 process CircosPlot {
-    tag { dataset_id }
-
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+    
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        val(library),
+    tuple val(meta),
         path(gt),
         path(loh)
 
     output:
-    tuple val("${dataset_id}"),
-        val("${library}"),
-        path("${dataset_id}.circos.png")
+    tuple val(meta),
+        path("${meta.lib}.circos.png")
 
     stub:
     """
-    touch "${dataset_id}.circos.png"
+    touch "${meta.lib}.circos.png"
     """
 
-    shell:
-     '''
-     circosLib.R  $PWD/ !{dataset_id}.circos.png !{library}
-     '''
+    script:
+
+     """
+     circosLib.R  \$PWD/ ${meta.lib}.circos.png ${meta.lib}
+     """
 }
 
 
 process RNAseQC {
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
-
-    tag { dataset_id }
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        val(library),
+    tuple val(meta),
         path(bam),
         path(index),
         path(genome),
@@ -131,8 +124,7 @@ process RNAseQC {
         path(transcript_gtf)
 
     output:
-    tuple val("${dataset_id}"),
-        val("${library}"),
+    tuple val(meta),
         path("rnaseqc/report.html")
 
     stub:
@@ -140,10 +132,11 @@ process RNAseQC {
      touch "report.html"
      """
 
-    shell:
-     '''
-     java -jar $RNASEQCJAR -r !{genome} -rRNA !{rRNA_interval} -o rnaseqc -s "!{library}|!{bam}|!{library}" -t !{transcript_gtf}
+    script:
+     """
+     java -jar \$RNASEQCJAR -r ${genome} -rRNA ${rRNA_interval} -o rnaseqc -s "${meta.lib}|${bam}|${meta.lib}" -t ${transcript_gtf}
  
-     '''
+     """
 
 }
+

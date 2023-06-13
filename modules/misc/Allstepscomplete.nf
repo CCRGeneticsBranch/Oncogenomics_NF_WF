@@ -1,19 +1,18 @@
 process Allstepscomplete {
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}", mode: "${params.publishDirMode}"
 
     cache 'lenient'
 
     input:
-    tuple val(dataset_id),
-        val(library),
+    tuple val(meta),
         path(fusion),
-        path(annotation)
+        path(annotation),
+        path(multiqc)
 
     output:
-    tuple val("${dataset_id}"),
-        val("${library}"),
+    tuple val(meta),
         path("successful.txt")
 
     stub:
@@ -21,11 +20,11 @@ process Allstepscomplete {
     touch "successful.txt"
     """
 
-    shell:
-    '''
+    script:
+    """
      touch "successful.txt"
 
-    '''
+    """
 }
 
 

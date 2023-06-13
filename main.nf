@@ -20,10 +20,46 @@ log.info """\
          """
          .stripIndent()
 
+
+
 //import workflows
 include { RNASEQ } from './workflows/rnaseq'
+include {EXOME} from './workflows/exome'
 
-workflow {
-    RNASEQ ()
+workflow  {
+//launch Exome workflow
+EXOME ()
+
+//launch RNASEQ workflow
+RNASEQ ()
+
+
 }
 
+
+/*
+workflow {
+    // Check if Tumor_lib.csv is present
+    if (fileExists("Tumor_lib.csv")) {
+        // Launch Exome workflow
+        EXOME()
+    } else {
+        // Print a message indicating that Tumor_lib.csv is not present
+        println("No Exome workflow to run. Tumor_lib.csv is missing.")
+    }
+
+    // Check if RNAseq.csv is present
+    if (fileExists("RNAseq.csv")) {
+        // Launch RNASEQ workflow
+        RNASEQ()
+    } else {
+        // Print a message indicating that RNAseq.csv is not present
+        println("No RNASEQ workflow to run. RNAseq.csv is missing.")
+    }
+}
+
+def fileExists(String filePath) {
+    new File(filePath).exists()
+}
+
+*/

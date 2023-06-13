@@ -1,6 +1,6 @@
 include {GATK_RNASeq_Trim} from '../modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_RTC_IR} from '../modules/RNAseq_GATK/GATK'
-include {GATK_RNASeq_BR_PR} from '../modules/RNAseq_GATK/GATK'
+include {GATK_RTC_IR} from '../modules/RNAseq_GATK/GATK'
+include {GATK_BR_PR} from '../modules/RNAseq_GATK/GATK'
 include {RNAseq_HaplotypeCaller} from '../modules/RNAseq_GATK/GATK'
 include {SnpEff} from '../modules/misc/snpEff'
 include {Vcf2txt} from '../modules/misc/snpEff'
@@ -24,7 +24,7 @@ workflow RNAseq_GATK {
              .combine(genome_fai)
              .combine(genome_dict)
      )
-     GATK_RNASeq_RTC_IR(
+     GATK_RTC_IR(
          GATK_RNASeq_Trim.out
              .combine(genome)
              .combine(genome_fai)
@@ -32,8 +32,8 @@ workflow RNAseq_GATK {
              .combine(phase1_1000g)
              .combine(Mills_and_1000g)
      )
-     GATK_RNASeq_BR_PR(
-         GATK_RNASeq_RTC_IR.out
+     GATK_BR_PR(
+         GATK_RTC_IR.out
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
@@ -41,7 +41,7 @@ workflow RNAseq_GATK {
              .combine(Mills_and_1000g)
      )
       RNAseq_HaplotypeCaller(
-        GATK_RNASeq_BR_PR.out
+        GATK_BR_PR.out
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
@@ -54,6 +54,6 @@ workflow RNAseq_GATK {
      )
        Vcf2txt(SnpEff.out)
     emit:
-     GATK_RNAseq_bam =  GATK_RNASeq_BR_PR.out
+     GATK_RNAseq_bam =  GATK_BR_PR.out
      SnpEff_vcf      = Vcf2txt.out
 }

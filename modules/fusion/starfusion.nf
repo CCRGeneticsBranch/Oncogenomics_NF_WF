@@ -1,31 +1,27 @@
 process Starfusion{
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/fusion", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        val(library),
-        path(chimeric_junctions),
-        path(genome_lib_dir)
+    tuple val(meta),path(chimeric_junctions),path(genome_lib_dir)
 
     output:
-    tuple val("${dataset_id}"),
-        val("${library}"),
-        path("${library}.STAR-fusion.txt")
+    tuple val(meta),path("${meta.lib}.STAR-fusion.txt")
 
     stub:
     """
-    touch ("$library}.STAR-fusion.txt")
+    touch ("${meta.lib}.STAR-fusion.txt")
     """
 
-    shell:
-    '''
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
     set -exo pipefail
         STAR-Fusion \
-        --genome_lib_dir !{genome_lib_dir} \
-        --chimeric_junction !{chimeric_junctions} \
-        --CPU !{task.cpus}
-    cp STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv !{library}.STAR-fusion.txt
-    '''
+        --genome_lib_dir ${genome_lib_dir} \
+        --chimeric_junction ${chimeric_junctions} \
+        --CPU ${task.cpus}
+    cp STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv ${prefix}.STAR-fusion.txt
+    """
 }

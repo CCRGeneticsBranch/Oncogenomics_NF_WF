@@ -46,7 +46,7 @@ workflow QC_from_finalBAM {
              .combine(genome_dict)
      )
      CoveragePlot(
-        GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0,1])
+        GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0])
      )
      Hotspot_Boxplot(Hotspot_Coverage.out)
 

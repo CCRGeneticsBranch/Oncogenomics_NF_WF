@@ -22,10 +22,11 @@ workflow Annotation {
     hg19_WLsites             = Channel.of(file(params.hg19_WLsites, checkIfExists:true))
 
     take: 
-        vc2txt_pileup_out
+        hotspot_pileup_out
         vcf2txt_out
     main:
-    FormatInput(vc2txt_pileup_out)
+    format_input_ch = vcf2txt_out.combine(hotspot_pileup_out, by:[0])
+    FormatInput(format_input_ch)
     Annovar(
         FormatInput.out
              .combine(annovar_data)
@@ -43,8 +44,8 @@ workflow Annotation {
              .combine(targetted_cancer_care)
              .combine(civic)
     )
-    Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:[0,1])
-             .combine(vcf2txt_out, by:[0,1])
+    Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:[0])
+             .combine(vcf2txt_out, by:[0])
              .combine(ACMG)
              .combine(hg19_BLsites)
              .combine(hg19_WLsites)

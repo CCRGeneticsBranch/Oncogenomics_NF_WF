@@ -1,112 +1,105 @@
 process Hotspot_Coverage {
 
 //   this rule uses an older version of bedtools to generate output similar to ngs_pipeline_4.2
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        val(library),
+     tuple val(meta),
         path(bam),
         path(index),
         path(chrom_sizes),
         path(access_hotspot)
 
      output:
-     tuple val("${dataset_id}"),
-        val("$library"),
-        path("${library}.star.hotspot.depth")
+     tuple val(meta),
+        path("${meta.lib}.hotspot.depth")
 
      stub:
      """
-     touch "${library}.star.hotspot.depth"
+     touch "${meta.lib}.hotspot.depth"
      """
 
-     shell:
-     '''
+    script:
+      def prefix = task.ext.prefix ?: "${meta.lib}"
+      """
      set -exo pipefail
 
-     slopBed -i !{access_hotspot}  -g !{chrom_sizes} -b 50 > !{library}_Region.bed
+     slopBed -i ${access_hotspot}  -g ${chrom_sizes} -b 50 > ${prefix}_Region.bed
 
-     ccbr_bam_filter_by_mapq.py -i !{bam} -o !{library}_filter.bam -q 30
+     ccbr_bam_filter_by_mapq.py -i ${bam} -o ${prefix}_filter.bam -q 30
 
-     /opt2/bedtools2/bin/bedtools coverage -abam !{library}_filter.bam  -b !{access_hotspot} > !{library}.star.hotspot.depth
+     /opt2/bedtools2/bin/bedtools coverage -abam ${prefix}_filter.bam  -b ${access_hotspot} > ${prefix}.hotspot.depth
 
-     '''
+     """
 }
 
 
 process Hotspot_Boxplot {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        val(library),
+     tuple val(meta),
         path(hotspot)
 
      output:
-     tuple val("${dataset_id}"),
-        val("$library"),
-        path("${dataset_id}.hotspot_coverage.png")
+     tuple val(meta),
+        path("${meta.id}.hotspot_coverage.png")
 
      stub:
      """
-     touch "${dataset_id}.hotspot_coverage.png"
+     touch "${meta.id}.hotspot_coverage.png"
      """
 
-     shell:
-     '''
+     script:
+     """
      set -exo pipefail
-     boxplot.R $PWD/ !{dataset_id}.hotspot_coverage.png !{library} 
+     boxplot.R \$PWD/ ${meta.id}.hotspot_coverage.png ${meta.lib} 
 
-     '''
+     """
 }
-
 
 process Flagstat {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        val(library),
+     tuple val(meta),
         path(bam),
         path(index)
 
      output:
-     tuple val("${dataset_id}"),
-        val("$library"),
-        path("${library}.star.flagstat.txt")
+     tuple val(meta),
+        path("${meta.lib}.flagstat.txt")
 
      stub:
      """
-     touch "${library}.star.flagstat.txt"
+     touch "${meta.lib}.flagstat.txt"
      """
 
-     shell:
-     '''
+     script:
+     """
      set -exo pipefail
-     samtools flagstat !{bam} > !{library}.star.flagstat.txt
+     samtools flagstat ${bam} > ${meta.lib}.flagstat.txt
 
-     '''
+     """
 }
 
 
 process Bamutil {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        val(library),
+     tuple val(meta),
         path(bam),
         path(index),
         path(genome),
@@ -114,70 +107,68 @@ process Bamutil {
         path(genome_dict)
 
      output:
-     tuple val("${dataset_id}"),
-        val("$library"),
-        path("${library}.star.final.squeeze.bam")
+     tuple val(meta),
+        path("${meta.lib}.final.squeeze.bam")
 
      stub:
      """
-     touch "${library}.star.final.squeeze.bam"
+     touch "${meta.lib}.final.squeeze.bam"
      """
 
-     shell:
-     '''
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+      """
      set -exo pipefail
-     bam squeeze --in !{bam} --out !{library}.star.final.squeeze.bam --refFile !{genome}  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
-     samtools index !{library}.star.final.squeeze.bam
-
-     '''
+     bam squeeze --in ${bam} --out ${prefix}.final.squeeze.bam --refFile ${genome}  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
+     samtools index ${prefix}.final.squeeze.bam
+    
+     """
 }
 
 
 process HotspotPileup {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        val(library),
+     tuple val(meta),
         path(bam),
         path(index),
         path(genome),
         path(genome_fai),
         path(genome_dict),
         path(hg19_hotspot_pos)
-//        path(hotspot_mpileup_script)
+
 
      output:
-     tuple val("${dataset_id}"),
-        val("$library"),
-        path("${library}.star.pileup.txt")
+     tuple val(meta),
+        path("${meta.lib}.pileup.txt")
 
      stub:
      """
-     touch "${library}.star.pileup.txt"
+     touch "${meta.lib}.pileup.txt"
      """
 
-     shell:
-     '''
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
      set -exo pipefail
-     hotspot_mpileup.pl !{hg19_hotspot_pos} !{genome} !{bam} !{library} RNAseq access > !{library}.star.pileup.txt
+     hotspot_mpileup.pl ${hg19_hotspot_pos} ${genome} ${bam} ${prefix} RNAseq access > ${prefix}.pileup.txt
 
-     '''
+     """
 }
 
 
 process Bam2tdf {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        val(library),
+     tuple val(meta),
         path(bam),
         path(index),
         path(genome),
@@ -185,51 +176,131 @@ process Bam2tdf {
         path(genome_dict)
 
      output:
-     tuple val("${dataset_id}"),
-        val("$library"),
-        path("${library}.star.final.bam.tdf")
+     tuple val(meta),
+        path("${meta.lib}.final.bam.tdf")
 
      stub:
      """
-     touch "${library}.star.final.bam.tdf"
+     touch "${meta.lib}.final.bam.tdf"
      """
 
-     shell:
-     '''
+     script:
+     """
      set -exo pipefail
-     igvtools count !{bam} !{library}.star.final.bam.tdf  !{genome}
+     igvtools count ${bam} ${meta.lib}.final.bam.tdf  ${genome}
 
-     '''
+     """
 }
 
 process CoveragePlot {
-    tag { dataset_id }
-
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${library}/qc", mode: "${params.publishDirMode}"
+   
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        val(library),
+    tuple val(meta),
         path(bam),
         path(index),
-        path(access_target)
+        path(targetcapture)
 
     output:
-    tuple val("${dataset_id}"),
-       val("$library"),
-       path("${library}.star.coverage.txt")
+    tuple val(meta),
+       path("${meta.lib}.coverage.txt"),
+       path("${meta.lib}.coveragePlot.png")
 
     stub:
      """
-     touch "${library}.star.coverage.txt"
+     touch "${meta.lib}.coverage.txt"
+     touch "${meta.lib}.coveragePlot.png"
      """
 
-    shell:
-     '''
-     bedtools coverage -abam !{bam} -b  !{access_target} -hist |grep "^all" > !{library}.star.coverage.txt
-     coverage.R  $PWD !{library}.coveragePlot.png !{library}     
-     '''
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     bedtools coverage -abam ${bam} -b  ${targetcapture} -hist |grep "^all" > ${prefix}.coverage.txt
+     coverage.R  \$PWD ${prefix}.coveragePlot.png ${prefix}     
+     """
 
 }
 
+process Read_depth {
+   
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
+    input:
+    tuple val(meta),
+        path(bam),
+        path(index),
+        path(targetcapture)
+
+   output:
+    tuple val(meta),
+       path("${meta.lib}.depth_per_base")
+   stub:
+     """
+     touch "${meta.lib}.depth_per_base"
+     """
+   script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+   """
+   echo -e "chr\tstart\tend\tgene\tposition\tdepth" >  ${prefix}.depth_per_base
+   cut -f1-4 ${targetcapture} > intervals.bed
+   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -abam - -b intervals.bed -d >> ${prefix}.depth_per_base
+
+   """
+
+}
+
+process VerifyBamID {
+    
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/verifyBamID", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(bam),
+        path(index),
+        path(recode_vcf)
+
+    output:
+    tuple val(meta),
+        path("${meta.lib}.selfSM")
+
+    stub:
+    """
+    touch "${meta.lib}.selfSM"
+    """
+
+    script:
+
+     """
+     verifyBamID --vcf ${recode_vcf} --bam ${bam} --maxDepth 3000 --ignoreRG --site --chip-none --precise --minMapQ 30 --minQ 20 --minAF 0.05 --out \$PWD/${meta.lib}
+     """
+}
+
+process FailedExons_Genes {
+   
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(depth_per_base)
+
+   output:
+    tuple val(meta),
+       path("${meta.lib}.failExons"),
+       path("${meta.lib}.failGenes")
+
+   stub:
+     """
+     touch "${meta.lib}.failExons"
+     touch "${meta.lib}.failGenes"
+     """
+   script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+   """
+   failed_Exon_Final.pl ${depth_per_base} 10 ${prefix}.failExons ${prefix}.failGenes
+   """
+}
