@@ -37,42 +37,6 @@ samples_rnaseq = Channel.fromPath(params.samplesheet1)
 
     return fastq_meta
 }
-<<<<<<< Updated upstream
-samples_ch.view()
-
-// Reading the samplesheet
-
-subject = Channel.fromPath(params.samplesheet)
-          | splitCsv(header:true)
-          | map { row-> tuple("${row.sample}","${row.library}","${row.read1}","${row.read2}", "${row.sample_captures}", "${row.Diagnosis}") }
-
-
-//Creating tuple for read_pairs
-pairs=    Channel.fromPath(params.samplesheet)
-          | splitCsv(header:true)
-          | map { row-> tuple("${row.sample}","${row.library}","${row.read1}","${row.read2}") }
-
-
-//Creating target_captures_channel
-capture_channel = subject.map { sample, library, read1, read2, sample_captures, diagnosis ->
-    // set the hotspot file based on the capture type
-    def target_file = ''
-    if (sample_captures == 'access') {
-        target_file = params.access_target
-    } else if (sample_captures == 'polya_stranded') {
-        target_file = params.polya_stranded_target
-     } else if (sample_captures == 'polya') {
-        target_file = params.polya_target
-    }  else if (sample_captures == 'ribozero') {
-        target_file = params.ribozero_target
-    }  else if (sample_captures == 'SmartRNA') {
-        target_file = params.smartrna_target
-    }
-    // return a tuple with the sample name and hotspot file
-    tuple(sample, library, target_file)
-}
-
-=======
 //.ifEmpty {exit 0, "No RNAseq samples found!" }
 if (samples_rnaseq.count() == 0) {
     // Handle the case when samples_rnaseq channel is empty
@@ -80,7 +44,6 @@ if (samples_rnaseq.count() == 0) {
     
 } else {
     // Proceed with the workflow using the non-empty samples_rnaseq channel
->>>>>>> Stashed changes
 
 Cutadapt(samples_rnaseq)
 
