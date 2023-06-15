@@ -2,6 +2,7 @@ include {Picard_AddReadgroups} from '../modules/qc/picard'
 include {Picard_MarkDuplicates} from '../modules/qc/picard'
 include {Picard_CollectRNAseqmetrics} from '../modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from '../modules/qc/picard'
+include {RNAlibrary_QC} from '../modules/qc/picard'
 
 workflow Star_bam_processing {
      ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
@@ -12,6 +13,7 @@ workflow Star_bam_processing {
 
     take: Coord_bam
           strandedness
+          Fastqc_out
     main:
      Picard_AddReadgroups(Coord_bam)
      PicardCRS_input = Picard_AddReadgroups.out.combine(strandedness, by:[0]).combine(ref_flat).combine(rRNA_interval)
@@ -22,6 +24,10 @@ workflow Star_bam_processing {
              .combine(genome)
      )
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
+     RNAlib_qc_input = Picard_CollectRNAseqmetrics.out
+                            .combine(Picard_CollectAlignmentSummaryMetrics.out, by:[0])
+                            .combine(Fastqc_out, by:[0])
+     RNAlibrary_QC(RNAlib_qc_input)
 
     emit:
      

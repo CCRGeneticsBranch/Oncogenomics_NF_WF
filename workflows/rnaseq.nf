@@ -3,6 +3,7 @@
 //import modules
 include {Cutadapt} from '../modules/cutadapt/cutadapt'
 include {Fastqc} from '../modules/qc/qc'
+include {Fastq_screen} from '../modules/qc/qc'
 include {Multiqc} from '../modules/qc/qc'
 include {Mixcr_VCJtools} from '../modules/misc/mixcr'
 include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
@@ -32,11 +33,14 @@ samples_rnaseq = Channel.fromPath(params.samplesheet1)
     meta.sc    =  row.sample_captures
     meta.casename  = row.casename 
     meta.type     = row.type
+    meta.diagnosis =row.Diagnosis
     def fastq_meta = []
     fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
 
     return fastq_meta
 }
+
+/*
 //.ifEmpty {exit 0, "No RNAseq samples found!" }
 if (samples_rnaseq.count() == 0) {
     // Handle the case when samples_rnaseq channel is empty
@@ -44,7 +48,7 @@ if (samples_rnaseq.count() == 0) {
     
 } else {
     // Proceed with the workflow using the non-empty samples_rnaseq channel
-
+*/
 Cutadapt(samples_rnaseq)
 
 
@@ -55,7 +59,14 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq, by:[0])
 
 
   Fastqc(fastqc_input)
-
+  fastq_screen_config         = Channel.of(file(params.fastq_screen_config, checkIfExists:true))
+  //fqs_human =   Channel.of(file(params.fqs_human, checkIfExists:true))
+  //Fastq_screen_input = Cutadapt.out.trim_reads.combine(fastq_screen_config).combine(fqs_human)
+  //Fastq_screen_input.view()
+  //Fastq_screen(Fastq_screen_input)
+   
+  
+ 
   Star_rsem(Cutadapt.out.trim_reads) 
 
   starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
@@ -71,7 +82,8 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq, by:[0])
   
   Star_bam_processing(
       PicardARG_input,
-      Star_rsem.out.strandedness
+      Star_rsem.out.strandedness,
+      Fastqc.out
   )
 
 
@@ -85,6 +97,7 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq, by:[0])
       Star_bam_processing.out.picard_MD
   )
 
+/*
   RNAseq_GATK(Star_bam_processing.out.picard_MD)
 
   capture_ch = RNAseq_GATK.out.GATK_RNAseq_bam
@@ -132,7 +145,8 @@ final_inputs = Fusion_calling.out.merge_fusion.join(Annotation.out.final_annotat
 
 Allstepscomplete(final_inputs)
 
-}
+//}
+*/
 
 }
 

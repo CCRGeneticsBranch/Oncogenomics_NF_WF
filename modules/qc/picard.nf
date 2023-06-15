@@ -103,3 +103,28 @@ process Picard_MarkDuplicates {
 }
 
 
+process RNAlibrary_QC {
+        tag "$meta.lib"
+
+        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+        input:
+
+        tuple val(meta),
+        path(picard_rnametrics_txt),
+        path(picard_rnametrics_pdf),
+        path(picard_alignmentsummarymetrics),
+        path(fastqc)
+
+        output:
+        tuple val(meta),
+        path("${meta.lib}.RnaSeqQC.txt")
+
+
+        script:
+        def prefix = task.ext.prefix ?: "${meta.lib}"
+        """
+        rnaseqQC.pl ${fastqc}/${prefix}_R1.trim_fastqc/fastqc_data.txt ${picard_alignmentsummarymetrics} ${picard_rnametrics_txt} ${meta.id} ${prefix} ${meta.diagnosis} > ${prefix}.RnaSeqQC.txt
+        
+        """
+}
