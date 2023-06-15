@@ -2,7 +2,7 @@ include {Picard_AddReadgroups} from '../modules/qc/picard'
 include {Picard_MarkDuplicates} from '../modules/qc/picard'
 include {Picard_CollectRNAseqmetrics} from '../modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from '../modules/qc/picard'
-include {RNAlibrary_QC} from '../modules/qc/picard'
+include {RNAlibrary_customQC} from '../modules/qc/picard'
 
 workflow Star_bam_processing {
      ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
@@ -27,7 +27,7 @@ workflow Star_bam_processing {
      RNAlib_qc_input = Picard_CollectRNAseqmetrics.out
                             .combine(Picard_CollectAlignmentSummaryMetrics.out, by:[0])
                             .combine(Fastqc_out, by:[0])
-     RNAlibrary_QC(RNAlib_qc_input)
+     RNAlibrary_customQC(RNAlib_qc_input)
 
     emit:
      
