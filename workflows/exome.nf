@@ -2,7 +2,7 @@
 include {BWA_picard} from '../subworkflows/Bwa_picard_bam_processing'
 include {Exome_GATK} from '../subworkflows/Exome_GATK'
 include {QC_exome_bam} from '../subworkflows/QC_exome_bam'
-
+include {Annotation} from '../subworkflows/Annotation'
 workflow EXOME {
   
 //params.exome = "/data/khanlab/projects/Nextflow_dev/testing/exome_samplesheet.csv"
@@ -24,9 +24,9 @@ samples_exome = Channel.fromPath(params.samplesheet1)
 //samples_exome.view()
 BWA_picard(samples_exome)
 
-Exome_GATK(BWA_picard.out.picard_MD)
 
-capture_ch = Exome_GATK.out.GATK_Exome_bam
+
+capture_ch = BWA_picard.out.picard_MD
     .map { tuple ->
         def meta = tuple[0]
         def bam = tuple[1]
@@ -50,11 +50,20 @@ capture_ch = Exome_GATK.out.GATK_Exome_bam
 
 //capture_ch.view()
 
+Exome_GATK(BWA_picard.out.picard_MD,
+           capture_ch
+)
+
 QC_exome_bam(
 
     Exome_GATK.out.GATK_Exome_bam,
     BWA_picard.out.bwa_bam,
     capture_ch
+)
+
+  Annotation(
+      QC_exome_bam.out.hotspot_pileup,
+      Exome_GATK.out.SnpEff_vcf
 )
 
 }
