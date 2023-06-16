@@ -54,7 +54,7 @@ workflow Annotation {
     emit:
     rare_annotation	= Combine_annotation.out.rare_annotation
     final_annotation	= Combine_annotation.out.final_annotation
-    hc_RNAseq		= Combine_annotation.out.hc_RNAseq
+    hc_annot		= Combine_annotation.out.hc_anno_txt
 
 }       
  
