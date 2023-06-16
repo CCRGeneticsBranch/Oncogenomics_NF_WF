@@ -155,7 +155,7 @@ process HotspotPileup {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      set -exo pipefail
-     hotspot_mpileup.pl ${hg19_hotspot_pos} ${genome} ${bam} ${prefix} RNAseq access > ${prefix}.pileup.txt
+     hotspot_mpileup.pl ${hg19_hotspot_pos} ${genome} ${bam} ${prefix} ${meta.type} ${meta.sc} > ${prefix}.pileup.txt
 
      """
 }
@@ -192,7 +192,7 @@ process Bam2tdf {
      """
 }
 
-process CoveragePlot {
+process Coverage {
    
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
@@ -205,8 +205,7 @@ process CoveragePlot {
 
     output:
     tuple val(meta),
-       path("${meta.lib}.coverage.txt"),
-       path("${meta.lib}.coveragePlot.png")
+       path("${meta.lib}.coverage.txt")
 
     stub:
      """
@@ -218,7 +217,34 @@ process CoveragePlot {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      bedtools coverage -abam ${bam} -b  ${targetcapture} -hist |grep "^all" > ${prefix}.coverage.txt
-     coverage.R  \$PWD ${prefix}.coveragePlot.png ${prefix}     
+         
+     """
+
+}
+
+process CoveragePlot {
+   
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(coverage)
+
+    output:
+    tuple val(meta),
+       path("${meta.lib}.coveragePlot.png")
+
+    stub:
+     """
+     touch "${meta.lib}.coveragePlot.png"
+     """
+
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     coverage.R  \$PWD ${prefix}.coveragePlot.png ${prefix}
+
      """
 
 }

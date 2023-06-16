@@ -4,6 +4,7 @@ include {Flagstat} from '../modules/qc/plots'
 include {Bamutil} from '../modules/qc/plots'
 include {HotspotPileup} from '../modules/qc/plots'
 include {Bam2tdf} from '../modules/qc/plots'
+include {Coverage} from  '../modules/qc/plots'
 include {CoveragePlot} from  '../modules/qc/plots'
 
 workflow QC_from_finalBAM {
@@ -45,9 +46,10 @@ workflow QC_from_finalBAM {
              .combine(genome_fai)
              .combine(genome_dict)
      )
-     CoveragePlot(
+     Coverage(
         GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0])
      )
+     CoveragePlot(Coverage.out)
      Hotspot_Boxplot(Hotspot_Coverage.out)
 
     emit:

@@ -8,6 +8,8 @@ include {Genotyping} from '../modules/qc/qc'
 include {CircosPlot} from '../modules/qc/qc'
 include {VerifyBamID} from '../modules/qc/plots'
 include {FailedExons_Genes} from '../modules/qc/plots'
+include {Coverage} from  '../modules/qc/plots'
+include {CoveragePlot} from  '../modules/qc/plots'
 
 workflow QC_exome_bam {
 
@@ -58,6 +60,12 @@ workflow QC_exome_bam {
           GATK_exome_bam
              .combine(recode_vcf)
         )
+        Coverage(
+        GATK_exome_bam.combine(capture_ch, by:[0])
+        )
+        CoveragePlot(Coverage.out)
         
-
+   emit:
+         hotspot_pileup = HotspotPileup.out
+         coverageplot = CoveragePlot.out
 }
