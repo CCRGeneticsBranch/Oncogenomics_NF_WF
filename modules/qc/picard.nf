@@ -129,25 +129,33 @@ process RNAlibrary_customQC {
         """
 }
 
-process RNAqc_TrancriptCoverage {
+process Lib1_RNAqc_TrancriptCoverage {
         tag "$meta.lib"
 
-        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
         input:
 
         tuple val(meta),
-        path(RNA_customQC),
+        path(RNA_customQC_out),
+        path(picard_rnametrics_txt),
+        path(picard_rnametrics_pdf)
+
  
         output:
         tuple val(meta),
-        path("${meta.lib}.RnaSeqQC.txt")
+        path("${meta.id}.RnaSeqQC.txt")
+        path("${meta.id}.transcriptCoverage.png")
 
 
         script:
-        def prefix = task.ext.prefix ?: "${meta.lib}"
+        
         """
-        rnaseqQC.pl ${fastqc}/${prefix}_R1.trim_fastqc/fastqc_data.txt ${picard_alignmentsummarymetrics} ${picard_rnametrics_txt} ${meta.id} ${prefix} ${meta.diagnosis} > ${prefix}.RnaSeqQC.txt
+        export LC_ALL=C
+        cat ${RNA_customQC_out} |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
+        list=`echo ${RNA_customQC_out}|sed -e 's/RnaSeqQC/RnaSeqMetrics/g'`
+        transcript_coverage.R -f \$list -s "CL0082" -o ${meta.id}.transcriptCoverage.png
+
         
         """
 }
