@@ -37,9 +37,8 @@ process Picard_CollectRNAseqmetrics {
         path(rRNA_interval)
 
         output:
-        tuple val(meta),
-        path("${meta.lib}.RnaSeqMetrics.txt"),
-        path("${meta.lib}.RnaSeqMetrics.pdf")
+        tuple val(meta),path("${meta.lib}.RnaSeqMetrics.txt") , emit: rnaseq_metrics
+        tuple val(meta),path("${meta.lib}.RnaSeqMetrics.pdf") , emit: rnaseq_metrics_pdf
 
 
         script:
@@ -112,7 +111,6 @@ process RNAlibrary_customQC {
 
         tuple val(meta),
         path(picard_rnametrics_txt),
-        path(picard_rnametrics_pdf),
         path(picard_alignmentsummarymetrics),
         path(fastqc)
 
@@ -155,6 +153,35 @@ process Lib1_RNAqc_TrancriptCoverage {
         cat ${RNA_customQC_out} |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
         list=`echo ${RNA_customQC_out}|sed -e 's/RnaSeqQC/RnaSeqMetrics/g'`
         transcript_coverage.R -f \$list -s "CL0082" -o ${meta.id}.transcriptCoverage.png
+
+        
+        """
+}
+
+
+process Lib2_RNAqc_TrancriptCoverage {
+        tag "$meta.lib"
+
+        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+        input:
+
+        tuple val(meta),path(RNA_customQC_lib1), path(RNA_customQC_lib2)
+        tuple val(meta2),path(picard_rnametrics_lib1),path(picard_rnametrics_lib2)
+
+ 
+        output:
+        tuple val(meta),
+        path("${meta.id}.RnaSeqQC.txt")
+        path("${meta.id}.transcriptCoverage.png")
+
+
+        script:
+        
+        """
+        export LC_ALL=C
+        cat ${RNA_customQC_lib1} ${RNA_customQC_lib2} |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
+        transcript_coverage.R -f "${picard_rnametrics_lib1} ${picard_rnametrics_lib2}" -s "${meta.id}" -o ${meta.id}.transcriptCoverage.png
 
         
         """

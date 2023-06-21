@@ -160,6 +160,57 @@ process HotspotPileup {
      """
 }
 
+process MakeHotSpotDB_1lib {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),
+        path(pileup)
+   
+     output:
+     tuple val(meta),
+        path("${meta.id}.hotspot")
+
+     stub:
+     """
+     touch "${meta.id}.hotspot"
+     """
+
+     script:
+ 
+     """
+     cat ${pileup} |sort > ${meta.id}.hotspot
+     """
+}
+
+process MakeHotSpotDB_2lib {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(pileup1),path(pileup2)
+   
+     output:
+     tuple val(meta),
+        path("${meta.id}.hotspot")
+
+     stub:
+     """
+     touch "${meta.id}.hotspot"
+     """
+
+     script:
+ 
+     """
+     cat ${pileup1} ${pileup2} |sort > ${meta.id}.hotspot
+     """
+}
+
 
 process Bam2tdf {
 
@@ -210,7 +261,6 @@ process Coverage {
     stub:
      """
      touch "${meta.lib}.coverage.txt"
-     touch "${meta.lib}.coveragePlot.png"
      """
 
      script:
