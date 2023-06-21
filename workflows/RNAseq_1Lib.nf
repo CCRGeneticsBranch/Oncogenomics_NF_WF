@@ -4,7 +4,7 @@ include {Onelib_FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {Multiqc} from '../modules/qc/qc'
 include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
-
+include {AddAnnotation} from '../modules/annotation/annot'
 workflow RNAseq_1lib {
 
 samples_rnaseq = Channel.fromPath("RNAseq.csv")
@@ -30,9 +30,10 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
     format_input_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(MakeHotSpotDB_1lib.out, by:[0])
     Onelib_FormatInput(format_input_ch)
     Annotation(
-        Onelib_FormatInput.out,
-        Common_RNAseq_WF.out.snpeff_vcf
-    )
+        Onelib_FormatInput.out)
+    merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation,by:[0])
+  
+  AddAnnotation(merged_ch)   
     multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                           .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                           .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
