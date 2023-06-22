@@ -1,9 +1,12 @@
+
+//include required modules
 include {Picard_AddReadgroups} from '../modules/qc/picard'
 include {Picard_MarkDuplicates} from '../modules/qc/picard'
 include {Picard_CollectRNAseqmetrics} from '../modules/qc/picard'
 include {Picard_CollectAlignmentSummaryMetrics} from '../modules/qc/picard'
 include {RNAlibrary_customQC} from '../modules/qc/picard'
 
+//Star_bam_processing workflow includes all the steps downstream of Star_RSEM workflow.
 workflow Star_bam_processing {
      ref_flat                = Channel.of(file(params.ref_flat, checkIfExists:true))
      rRNA_interval           = Channel.of(file(params.rRNA_interval, checkIfExists:true))
@@ -24,7 +27,7 @@ workflow Star_bam_processing {
              .combine(genome)
      )
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
-     RNAlib_qc_input = Picard_CollectRNAseqmetrics.out
+     RNAlib_qc_input = Picard_CollectRNAseqmetrics.out.rnaseq_metrics
                             .combine(Picard_CollectAlignmentSummaryMetrics.out, by:[0])
                             .combine(Fastqc_out, by:[0])
      RNAlibrary_customQC(RNAlib_qc_input)
@@ -33,7 +36,8 @@ workflow Star_bam_processing {
      
      picard_ARG = Picard_AddReadgroups.out
      picard_MD =  Picard_MarkDuplicates.out
-
+     rnalib_custom_qc = RNAlibrary_customQC.out
+     picard_rnaseqmetrics = Picard_CollectRNAseqmetrics.out.rnaseq_metrics
 }
 
 
