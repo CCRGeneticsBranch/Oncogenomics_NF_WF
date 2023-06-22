@@ -127,17 +127,20 @@ process RNAlibrary_customQC {
         """
 }
 
-process Lib1_RNAqc_TrancriptCoverage {
+process RNAqc_TrancriptCoverage {
         tag "$meta.lib"
 
         publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
         input:
 
-        tuple val(meta),
-        path(RNA_customQC_out),
-        path(picard_rnametrics_txt),
-        path(picard_rnametrics_pdf)
+        path(RNA_customqc_libs)
+        path(RNA_rnaseqmetrics_libs)
+        val(meta)
+        //tuple val(meta),
+        //path(RNA_customQC_out),
+        //path(picard_rnametrics_txt),
+        //path(picard_rnametrics_pdf)
 
  
         output:
@@ -150,9 +153,8 @@ process Lib1_RNAqc_TrancriptCoverage {
         
         """
         export LC_ALL=C
-        cat ${RNA_customQC_out} |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
-        list=`echo ${RNA_customQC_out}|sed -e 's/RnaSeqQC/RnaSeqMetrics/g'`
-        transcript_coverage.R -f \$list -s "CL0082" -o ${meta.id}.transcriptCoverage.png
+        cat ${RNA_customqc_libs.join(' ')}  |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
+        transcript_coverage.R -f "${RNA_rnaseqmetrics_libs.join(' ')}" -s "${meta.id}" -o ${meta.id}.transcriptCoverage.png
 
         
         """
