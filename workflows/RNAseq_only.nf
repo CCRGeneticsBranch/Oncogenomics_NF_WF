@@ -33,7 +33,7 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 rnalib_qc_list_ch = Common_RNAseq_WF.out.rnalib_custum_qc.map { tuple -> tuple[1] }
 rnaseqmetrics_list_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[1] }
 rnaseqmetrics_meta_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[0] }
-
+/*
 RNAqc_TrancriptCoverage(
            rnalib_qc_list_ch,
            rnaseqmetrics_list_ch,
@@ -83,5 +83,5 @@ RNAqc_TrancriptCoverage(
     final_inputs = Common_RNAseq_WF.out.fusion_calls.join(Annotation.out.final_annotation,by:[0]).join(Multiqc.out,by:[0])
 
     Allstepscomplete(final_inputs)
-
+*/
 }

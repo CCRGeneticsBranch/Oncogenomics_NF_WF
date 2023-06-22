@@ -15,7 +15,38 @@ process Fastqc {
     
     """
     if [ ! -d fastqc ];then mkdir -p fastqc;fi
-    fastqc  ${trim[0]} ${trim[1]} $r1fq $r2fq -t $task.cpus -o fastqc
+    fastqc --extract ${trim[0]} ${trim[1]} $r1fq $r2fq -t $task.cpus -o fastqc
+    """
+}
+
+process Fastq_screen {
+    tag "$meta.lib"
+
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/fastq_screen/", mode: 'copy'
+    
+    input:
+    tuple val(meta),path(trim),path(fastq_screen_config),path(fqs_human)
+    
+    stub:
+    """
+    touch "${meta.lib}_R1_screen.html"
+    touch "${meta.lib}_R1_screen.html"
+    """
+
+    output:
+    tuple val(meta), 
+    path("${meta.lib}_R1_screen.html"),
+    path("${meta.lib}_R2_screen.html")
+
+    
+    script:
+    def args = task.ext.args   ?: ''
+    def prefix   = task.ext.prefix ?: "${meta.lib}"
+    
+    """
+    #--subset 1000000  add this parameter after testing.
+    if [ ! -d fastq_screen ];then mkdir -p fastq_screen;fi
+    fastq_screen --conf ${fastq_screen_config}  --aligner bowtie2 --force ${trim[0]} ${trim[1]}  --outdir fastq_screen
     """
 }
 
@@ -57,9 +88,8 @@ process Genotyping {
         path(genome_dict)
 
     output:
-    tuple val(meta),
-    path("${meta.lib}.gt"),
-    path("${meta.lib}.loh")
+    tuple val(meta),path("${meta.lib}.gt") , emit: gt
+    tuple val(meta),path("${meta.lib}.loh"), emit: loh
 
     stub:
     """
@@ -81,14 +111,13 @@ process Genotyping {
 }
 
 
-process CircosPlot {
+process CircosPlot_lib {
     
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
     input:
     tuple val(meta),
-        path(gt),
         path(loh)
 
     output:

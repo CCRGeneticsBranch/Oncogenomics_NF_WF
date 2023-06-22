@@ -11,7 +11,7 @@ include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 // import subworkflows
 
 include {HLA_calls} from '../subworkflows/hla_calls'
-include {Star_rsem} from '../subworkflows/Star_RSEM'
+include {Star_RSEM} from '../subworkflows/Star_RSEM'
 include {Fusion_calling} from '../subworkflows/Fusion_calling'
 include {Star_bam_processing} from '../subworkflows/Star_bam_processing'
 include {RNAseq_GATK} from '../subworkflows/RNAseq_GATK'
@@ -22,37 +22,6 @@ include {QC_from_Star_bam} from '../subworkflows/QC_from_Star_bam'
 
 workflow Common_RNAseq_WF {
   
-/*
-//params.sample_exome = "/data/khanlab/projects/Nextflow_dev/testing/exome_samplesheet.csv"
-samples_rnaseq = Channel.fromPath(params.samplesheet1)
-.splitCsv(header:true)
-.filter { row -> row.type == "RNAseq" }
-.map { row ->
-    def meta = [:]
-    meta.id    =  row.sample
-    meta.lib   =  row.library
-    meta.sc    =  row.sample_captures
-    meta.casename  = row.casename 
-    meta.type     = row.type
-    meta.diagnosis =row.Diagnosis
-    def fastq_meta = []
-    fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
-
-    return fastq_meta
-}
-
-*/
-
-
-/*
-//.ifEmpty {exit 0, "No RNAseq samples found!" }
-if (samples_rnaseq.count() == 0) {
-    // Handle the case when samples_rnaseq channel is empty
-    println("No RNAseq samples found!")
-    
-} else {
-    // Proceed with the workflow using the non-empty samples_rnaseq channel
-*/
 
 take: 
      samples_rnaseq_ch
@@ -77,10 +46,10 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
    
   
  
-  Star_rsem(Cutadapt.out.trim_reads) 
+  Star_RSEM(Cutadapt.out.trim_reads) 
 
   starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
-  Starfusion_input = Star_rsem.out.chimeric_junction.combine(starfusion_db)
+  Starfusion_input = Star_RSEM.out.chimeric_junction.combine(starfusion_db)
 
 
   Fusion_calling (
@@ -88,12 +57,12 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
          Starfusion_input
      )
 
-  PicardARG_input = Star_rsem.out.genome_bam.combine(Star_rsem.out.genome_bai,by:[0])
+  PicardARG_input = Star_RSEM.out.genome_bam.combine(Star_RSEM.out.genome_bai,by:[0])
   
   
   Star_bam_processing(
       PicardARG_input,
-      Star_rsem.out.strandedness,
+      Star_RSEM.out.strandedness,
       Fastqc.out
   )
 
@@ -160,8 +129,8 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   coverageplot = QC_from_finalBAM.out.coverageplot
   pileup = QC_from_finalBAM.out.hotspot_pileup
   snpeff_vcf = RNAseq_GATK.out.SnpEff_vcf
-  chimeric_junction = Star_rsem.out.chimeric_junction
-  rsem_counts = Star_rsem.out.rsem
+  chimeric_junction = Star_RSEM.out.chimeric_junction
+  rsem_counts = Star_RSEM.out.rsem
   rnaseqc = QC_from_Star_bam.out.rnaseqc
   circos_plot = QC_from_Star_bam.out.circos
   fusion_calls = Fusion_calling.out.merge_fusion

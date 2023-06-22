@@ -1,5 +1,5 @@
 include {RNAseQC} from '../modules/qc/qc'
-include {CircosPlot} from  '../modules/qc/qc'
+include {CircosPlot_lib} from  '../modules/qc/qc'
 include {Genotyping} from  '../modules/qc/qc'
 
 workflow QC_from_Star_bam {
@@ -24,7 +24,7 @@ workflow QC_from_Star_bam {
             .combine(genome_dict)
     )
 
-    CircosPlot(Genotyping.out)
+    CircosPlot_lib(Genotyping.out.loh)
      RNAseQC(
 	Picard_MD_bam
              .combine(genome)
@@ -35,6 +35,7 @@ workflow QC_from_Star_bam {
      )
     emit:
          rnaseqc = RNAseQC.out
-         circos = CircosPlot.out
+         loh = Genotyping.out.loh
+         circos = CircosPlot_lib.out
 
 }
