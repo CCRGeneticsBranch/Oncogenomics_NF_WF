@@ -6,6 +6,7 @@ include {Multiqc} from '../modules/qc/qc'
 include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {DBinput} from '../modules/misc/DBinput'
+include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 
 workflow RNAseq_only {
 
@@ -29,12 +30,21 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 
     Common_RNAseq_WF(samples_rnaseq)
 
+rnalib_qc_list_ch = Common_RNAseq_WF.out.rnalib_custum_qc.map { tuple -> tuple[1] }
+rnaseqmetrics_list_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[1] }
+rnaseqmetrics_meta_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[0] }
+
+RNAqc_TrancriptCoverage(
+           rnalib_qc_list_ch,
+           rnaseqmetrics_list_ch,
+           rnaseqmetrics_meta_ch
+)
+
     pileup_input_ch = Common_RNAseq_WF.out.pileup.map { tuple -> tuple[1] }
-    
     pileup_meta_ch =Common_RNAseq_WF.out.pileup.map { tuple -> tuple[0] }
 
     MakeHotSpotDB(pileup_input_ch,
-                       pileup_meta_ch
+                  pileup_meta_ch
     )
 
     //MakeHotSpotDB(Common_RNAseq_WF.out.pileup)
