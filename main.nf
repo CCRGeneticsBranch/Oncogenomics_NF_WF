@@ -23,43 +23,54 @@ log.info """\
 
 
 //import workflows
-include { RNASEQ } from './workflows/rnaseq'
-include {EXOME} from './workflows/exome'
 
-workflow  {
-//launch Exome workflow
-EXOME ()
-
-//launch RNASEQ workflow
-RNASEQ ()
+include {RNAseq_only} from './workflows/RNAseq_only.nf'
+include {RNAseq_multiple_libs} from './workflows/RNAseq_multiple_libs.nf'
+include {Tumor_only_WF} from './workflows/Tumor_only_WF.nf'
+include {Tumor_multiple_libs} from './workflows/Tumor_multiple_libs.nf'
 
 
-}
-
-
-/*
 workflow {
-    // Check if Tumor_lib.csv is present
+/*   // Check if Tumor_lib.csv is present
     if (fileExists("Tumor_lib.csv")) {
         // Launch Exome workflow
-        EXOME()
+        Tumor_multiple_libs()
+    } else {
+        // Print a message indicating that Tumor_lib.csv is not present
+        println("No Exome workflow to run. Tumor_lib.csv is missing.")
+    }
+
+    if (fileExists("Tumor.csv")) {
+        // Launch Exome workflow
+        Tumor_only_WF()
     } else {
         // Print a message indicating that Tumor_lib.csv is not present
         println("No Exome workflow to run. Tumor_lib.csv is missing.")
     }
 
     // Check if RNAseq.csv is present
+*/
     if (fileExists("RNAseq.csv")) {
         // Launch RNASEQ workflow
-        RNASEQ()
+        RNAseq_only()
     } else {
         // Print a message indicating that RNAseq.csv is not present
         println("No RNASEQ workflow to run. RNAseq.csv is missing.")
     }
+
+/*
+    if (fileExists("RNA_lib.csv")) {
+        // Launch RNASEQ workflow
+        RNAseq_multiple_libs()
+    } else {
+        // Print a message indicating that RNAseq.csv is not present
+        println("No RNASEQ workflow to run. RNAseq.csv is missing.")
+    }
+*/
+
 }
 
 def fileExists(String filePath) {
     new File(filePath).exists()
 }
 
-*/
