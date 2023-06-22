@@ -11,7 +11,7 @@ include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 // import subworkflows
 
 include {HLA_calls} from '../subworkflows/hla_calls'
-include {Star_rsem} from '../subworkflows/star-rsem'
+include {Star_rsem} from '../subworkflows/Star_RSEM'
 include {Fusion_calling} from '../subworkflows/Fusion_calling'
 include {Star_bam_processing} from '../subworkflows/Star_bam_processing'
 include {RNAseq_GATK} from '../subworkflows/RNAseq_GATK'
@@ -81,6 +81,7 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
 
   starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
   Starfusion_input = Star_rsem.out.chimeric_junction.combine(starfusion_db)
+
 
   Fusion_calling (
          Cutadapt.out,

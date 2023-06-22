@@ -3,7 +3,7 @@ include {Star} from '../modules/mapping/star'
 include {Rsem} from '../modules/quant/rsem'
 include {Strandedness} from '../modules/quant/rsem'
 
-workflow Star_rsem {
+workflow Star_RSEM {
 
     star_genomeIndex        = Channel.of(file(params.star_genome_index, checkIfExists:true))
     rsemIndex               = Channel.of(file(params.rsem_index, checkIfExists:true))
