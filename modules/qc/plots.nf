@@ -160,15 +160,16 @@ process HotspotPileup {
      """
 }
 
-process MakeHotSpotDB_1lib {
+process MakeHotSpotDB {
 
      tag "$meta.lib"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),
-        path(pileup)
+     path(libs)
+     val(meta)
+     //tuple val(meta), path(pileup)
    
      output:
      tuple val(meta),
@@ -182,32 +183,7 @@ process MakeHotSpotDB_1lib {
      script:
  
      """
-     cat ${pileup} |sort > ${meta.id}.hotspot
-     """
-}
-
-process MakeHotSpotDB_2lib {
-
-     tag "$meta.lib"
-
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
-
-     input:
-     tuple val(meta),path(pileup1),path(pileup2)
-   
-     output:
-     tuple val(meta),
-        path("${meta.id}.hotspot")
-
-     stub:
-     """
-     touch "${meta.id}.hotspot"
-     """
-
-     script:
- 
-     """
-     cat ${pileup1} ${pileup2} |sort > ${meta.id}.hotspot
+     cat ${libs.join(' ')} |sort > ${meta.id}.hotspot
      """
 }
 
