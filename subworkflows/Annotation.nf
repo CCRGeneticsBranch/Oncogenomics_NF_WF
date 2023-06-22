@@ -1,4 +1,4 @@
-include {FormatInput} from '../modules/annotation/annot'
+
 include {Annovar} from '../modules/annotation/annot'
 include {Custom_annotation} from '../modules/annotation/annot'
 include {Combine_annotation} from '../modules/annotation/annot'
@@ -22,19 +22,17 @@ workflow Annotation {
     hg19_WLsites             = Channel.of(file(params.hg19_WLsites, checkIfExists:true))
 
     take: 
-        hotspot_pileup_out
-        vcf2txt_out
+        FormatInput_out
     main:
-    format_input_ch = vcf2txt_out.combine(hotspot_pileup_out, by:[0])
-    FormatInput(format_input_ch)
+
     Annovar(
-        FormatInput.out
+        FormatInput_out
              .combine(annovar_data)
              .combine(clinseq)
              .combine(pcg)
     )
     Custom_annotation(
-         FormatInput.out
+         FormatInput_out
              .combine(clinvar)
              .combine(hgmd)
              .combine(matchTrial)
@@ -45,7 +43,6 @@ workflow Annotation {
              .combine(civic)
     )
     Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:[0])
-             .combine(vcf2txt_out, by:[0])
              .combine(ACMG)
              .combine(hg19_BLsites)
              .combine(hg19_WLsites)
@@ -54,7 +51,7 @@ workflow Annotation {
     emit:
     rare_annotation	= Combine_annotation.out.rare_annotation
     final_annotation	= Combine_annotation.out.final_annotation
-    hc_annot		= Combine_annotation.out.hc_anno_txt
+
 
 }       
  
