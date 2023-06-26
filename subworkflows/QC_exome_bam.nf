@@ -33,7 +33,7 @@ workflow QC_exome_bam {
             .combine(genome_fai)
             .combine(genome_dict)
          )
-         CircosPlot(Genotyping.out)
+         CircosPlot_lib(Genotyping.out.loh)
          Read_depth(GATK_exome_bam.combine(capture_ch, by:[0]))
          //FailedExons_Genes(Read_depth.out)
          Bam2tdf(
@@ -68,4 +68,5 @@ workflow QC_exome_bam {
    emit:
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out
+         loh = Genotyping.out.loh
 }

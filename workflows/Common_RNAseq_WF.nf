@@ -136,7 +136,7 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   fusion_calls = Fusion_calling.out.merge_fusion
   rnalib_custum_qc = Star_bam_processing.out.rnalib_custom_qc
   picard_rnaseqmetrics = Star_bam_processing.out.picard_rnaseqmetrics
-
+  loh = QC_from_Star_bam.out.loh
 }
 
 /*

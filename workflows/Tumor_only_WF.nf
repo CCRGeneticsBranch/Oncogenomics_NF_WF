@@ -4,6 +4,8 @@ include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CNVkitPooled} from '../modules/cnvkit/CNVkitPooled'
+include {CircosPlot} from '../modules/qc/qc'
+
 workflow Tumor_only_WF {
 
 samples_exome = Channel.fromPath(params.samplesheet1)
@@ -29,11 +31,17 @@ pileup_meta_ch =Exome_common_WF.out.pileup.map { tuple -> tuple[0] }
 
 MakeHotSpotDB(pileup_input_ch,
                        pileup_meta_ch
-    )
+)
+
+merged_loh_ch = Exome_common_WF.out.loh.map { tuple -> tuple[1] }
+meta_merged_loh = Exome_common_WF.out.loh.map { tuple -> tuple[0] }
+
+CircosPlot(
+    merged_loh_ch,
+    meta_merged_loh
+)
+
 formatinput_snpeff_ch = Exome_common_WF.out.snpeff_vcf.map { tuple -> tuple.drop(1) }
-//formatinput_snpeff_ch.view()
-//MakeHotSpotDB_1lib.out.view()
-//.combine(MakeHotSpotDB_1lib.out, by:[0])
 
 FormatInput(
         formatinput_snpeff_ch,

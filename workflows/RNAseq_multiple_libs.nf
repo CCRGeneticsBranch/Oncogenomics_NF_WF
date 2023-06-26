@@ -4,6 +4,7 @@ include {MakeHotSpotDB} from '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
+include {CircosPlot} from '../modules/qc/qc'
 
 
 workflow RNAseq_multiple_libs {
@@ -112,7 +113,28 @@ FormatInput(
 )
 
 Annotation(FormatInput.out)
-//Common_RNAseq_WF.out.snpeff_vcf.view()
+
+
+Common_RNAseq_WF.out.loh.map { meta, file ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename,
+        type: meta.type
+    ]
+    [ meta2, file ]
+  }.groupTuple()
+   .map { meta, files -> [ meta, *files ] }
+   .filter { tuple ->
+    tuple.size() > 2
+  }
+   .set { combined_loh }
+
+merged_loh_ch  = combined_loh.map { tuple -> tuple.drop(1) }
+meta_merged_loh = combined_loh.map { tuple -> tuple[0] }
+CircosPlot(
+    merged_loh_ch,
+    meta_merged_loh
+)
 
 merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation)
 updated_tuples = merged_ch.map { tuple ->

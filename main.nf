@@ -39,7 +39,7 @@ workflow {
         // Print a message indicating that Tumor_lib.csv is not present
         println("No Exome workflow to run. Tumor_lib.csv is missing.")
     }
-
+*/
     if (fileExists("Tumor.csv")) {
         // Launch Exome workflow
         Tumor_only_WF()
@@ -49,7 +49,7 @@ workflow {
     }
 
     // Check if RNAseq.csv is present
-*/
+
     if (fileExists("RNAseq.csv")) {
         // Launch RNASEQ workflow
         RNAseq_only()
@@ -58,7 +58,7 @@ workflow {
         println("No RNASEQ workflow to run. RNAseq.csv is missing.")
     }
 
-/*
+
     if (fileExists("RNA_lib.csv")) {
         // Launch RNASEQ workflow
         RNAseq_multiple_libs()
@@ -66,7 +66,7 @@ workflow {
         // Print a message indicating that RNAseq.csv is not present
         println("No RNASEQ workflow to run. RNAseq.csv is missing.")
     }
-*/
+
 
 }
 
