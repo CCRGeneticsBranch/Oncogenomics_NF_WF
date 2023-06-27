@@ -29,7 +29,7 @@ process CNVkitPooled {
    mv ${prefix}.final.cns ${prefix}.cns
    mv ${prefix}.final.cnr ${prefix}.cnr
    cnvkit.py scatter -s ${prefix}.cn{s,r} -o ${prefix}.pdf
-   ##convert -density 150 ${prefix}.pdf ${prefix}.png
+   ##convert -density 150 ${prefix}.pdf ${prefix}.png   --- install imagemagick to the docker
    """
 }
 
