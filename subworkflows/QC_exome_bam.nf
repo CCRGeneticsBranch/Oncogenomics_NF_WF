@@ -11,6 +11,7 @@ include {FailedExons_Genes} from '../modules/qc/plots'
 include {Coverage} from  '../modules/qc/plots'
 include {CoveragePlot} from  '../modules/qc/plots'
 include {TargetIntervals} from  '../modules/qc/plots'
+include {HSMetrics} from  '../modules/qc/plots'
 
 workflow QC_exome_bam {
 
@@ -69,7 +70,8 @@ workflow QC_exome_bam {
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
-        
+        //Test this with full sample
+        //HSMetrics(GATK_exome_bam.combine(TargetIntervals.out, by:[0]).combine(genome))
    emit:
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out

@@ -356,3 +356,69 @@ process FailedExons_Genes {
    failed_Exon_Final.pl ${depth_per_base} 10 ${prefix}.failExons ${prefix}.failGenes
    """
 }
+
+
+process TargetIntervals {
+   
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(bam),
+        path(index),
+        path(targetcapture),
+        path(design_ch)
+
+    output:
+    tuple val(meta),
+       path("${meta.lib}.probe.intervals"),
+       path("${meta.lib}.target.intervals")
+
+    stub:
+     """
+     touch "${meta.lib}.probe.intervals"
+     touch "${meta.lib}.target.intervals"
+     """
+
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+   
+     cat <(samtools view -H ${bam}) <(gawk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${design_ch} )> ${prefix}.probe.intervals
+     cat <(samtools view -H ${bam}) <(gawk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${targetcapture} )> ${prefix}.target.intervals
+     """
+
+}
+
+process HSMetrics {
+
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(bam),
+        path(index),
+        path(probe_intervals),
+        path(target_intervals),
+        path(genome)
+
+    output:
+    tuple val(meta),
+       path("${meta.lib}.hsmetrics")
+
+    stub:
+     """
+     touch "${meta.lib}.hsmetrics"
+     """
+
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     java -Xmx75g  -jar \$PICARDJAR CollectHsMetrics BAIT_INTERVALS= ${probe_intervals} TARGET_INTERVALS= ${target_intervals} INPUT= ${bam} OUTPUT= ${prefix}.hsmetrics METRIC_ACCUMULATION_LEVEL=ALL_READS REFERENCE_SEQUENCE= ${genome} QUIET=true  VALIDATION_STRINGENCY=SILENT
+     """
+
+
+
+}
