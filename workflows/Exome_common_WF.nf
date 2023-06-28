@@ -58,17 +58,43 @@ capture_ch = BWA_picard.out.picard_MD
         return [meta,target_file]
     }
 
+   
+
 //capture_ch.view()
 
 Exome_GATK(BWA_picard.out.picard_MD,
            capture_ch
 )
 
+design_ch =  Exome_GATK.out.GATK_Exome_bam
+   .map { tuple ->
+        def meta = tuple[0]
+        def bam = tuple[1]
+        def bai = tuple[2]
+        def design_file = ''
+        
+        if (meta.sc == 'clin.ex.v1') {
+            design_file = params.clin_ex_v1_design
+        } else if (meta.sc == 'seqcapez.hu.ex.v3') {
+            design_file = params.seqcapez.hu.ex.v3
+        } else if (meta.sc == 'polya') {
+            design_file = params.polya_target
+        } else if (meta.sc == 'ribozero') {
+            design_file = params.ribozero_target
+        } else if (meta.sc == 'SmartRNA') {
+            design_file = params.smartrna_target
+        }
+
+        return [meta,design_file]
+    }
+
+
 QC_exome_bam(
 
     Exome_GATK.out.GATK_Exome_bam,
     BWA_picard.out.bwa_bam,
-    capture_ch
+    capture_ch,
+    design_ch
 )
 
 

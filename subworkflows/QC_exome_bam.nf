@@ -10,6 +10,7 @@ include {VerifyBamID} from '../modules/qc/plots'
 include {FailedExons_Genes} from '../modules/qc/plots'
 include {Coverage} from  '../modules/qc/plots'
 include {CoveragePlot} from  '../modules/qc/plots'
+include {TargetIntervals} from  '../modules/qc/plots'
 
 workflow QC_exome_bam {
 
@@ -25,6 +26,7 @@ workflow QC_exome_bam {
          GATK_exome_bam
          bwa_picard_bam
          capture_ch
+         design_ch
     main:
          Genotyping(
           bwa_picard_bam
@@ -64,6 +66,9 @@ workflow QC_exome_bam {
         GATK_exome_bam.combine(capture_ch, by:[0])
         )
         CoveragePlot(Coverage.out)
+        TargetIntervals(
+          GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
+        )
         
    emit:
          hotspot_pileup = HotspotPileup.out
