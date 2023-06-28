@@ -1,0 +1,33 @@
+process DBinput {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     path(dbinput_annot_libs)
+     path(dbinput_snpeff_libs)
+     val(meta)
+   
+   
+     output:
+     tuple val(meta),
+        path("${meta.id}.${meta.type}")
+
+     stub:
+     """
+     touch "${meta.id}.${meta.type}"
+     """
+
+     script:
+
+     """
+    makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.${meta.type}.tmp
+    if [ ${meta.type}  == 'germline' ] || [ ${meta.type} == 'variants' ]; then  
+         addFS.pl ${meta.id}.${meta.type}.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.${meta.type}
+         rm -rf ${meta.id}.${meta.type}.tmp
+    else
+        mv ${meta.id}.${meta.type}.tmp ${meta.id}.${meta.type}
+    fi
+     """
+}
