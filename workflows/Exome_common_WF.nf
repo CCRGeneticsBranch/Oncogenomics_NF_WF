@@ -60,8 +60,6 @@ capture_ch = BWA_picard.out.picard_MD
 
    
 
-//capture_ch.view()
-
 Exome_GATK(BWA_picard.out.picard_MD,
            capture_ch
 )
@@ -104,6 +102,7 @@ pileup = QC_exome_bam.out.hotspot_pileup
 snpeff_vcf =Exome_GATK.out.SnpEff_vcf
 exome_final_bam = Exome_GATK.out.GATK_Exome_bam
 loh = QC_exome_bam.out.loh
+target_capture_ch = capture_ch
 
 
 

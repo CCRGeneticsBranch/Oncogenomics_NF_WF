@@ -12,6 +12,7 @@ include {Coverage} from  '../modules/qc/plots'
 include {CoveragePlot} from  '../modules/qc/plots'
 include {TargetIntervals} from  '../modules/qc/plots'
 include {HSMetrics} from  '../modules/qc/plots'
+include {Conpair_pile} from  '../modules/qc/qc'
 
 workflow QC_exome_bam {
 
@@ -23,6 +24,7 @@ workflow QC_exome_bam {
     clin_ex_v1              = Channel.of(file(params.clin_ex_v1, checkIfExists:true))
     Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
     recode_vcf              = Channel.of(file(params.recode_vcf, checkIfExists:true))
+    conpair_refbed          = Channel.of(file(params.conpair_refbed, checkIfExists:true))
     take:
          GATK_exome_bam
          bwa_picard_bam
@@ -38,7 +40,7 @@ workflow QC_exome_bam {
          )
          CircosPlot_lib(Genotyping.out.loh)
          Read_depth(GATK_exome_bam.combine(capture_ch, by:[0]))
-         //FailedExons_Genes(Read_depth.out)
+         //FailedExons_Genes(Read_depth.out) test on full sample
          Bam2tdf(
           GATK_exome_bam
              .combine(genome)
@@ -70,6 +72,12 @@ workflow QC_exome_bam {
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
+        /*Conpair_pile(
+          GATK_exome_bam
+          .combine(genome)
+          .combine(conpair_refbed)
+        )
+        */
         //Test this with full sample
         //HSMetrics(GATK_exome_bam.combine(TargetIntervals.out, by:[0]).combine(genome))
    emit:
