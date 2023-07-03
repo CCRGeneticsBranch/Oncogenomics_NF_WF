@@ -1,6 +1,7 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
 include {Mutect} from '../modules/Variant_analysis/Mutect'
 include {Mutect_order} from '../modules/Variant_analysis/Mutect'
+include {Manta} from '../modules/Variant_analysis/Manta_Strelka.nf'
 
 workflow Tumor_Normal_WF {
 
@@ -50,5 +51,12 @@ Mutect(
 )
 
 Mutect_order(Mutect.out.mutect_raw_vcf)
+Manta(
+    tumor_bam_channel.Tumor,
+    tumor_bam_channel.Normal.map { tuple -> tuple.take(tuple.size() - 1) },
+    genome,
+    genome_fai,
+    genome_dict
+)
 
 }

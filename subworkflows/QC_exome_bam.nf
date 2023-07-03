@@ -72,12 +72,14 @@ workflow QC_exome_bam {
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
-        /*Conpair_pile(
+        Conpair_pile(
           GATK_exome_bam
           .combine(genome)
+          .combine(genome_fai)
+          .combine(genome_dict)
           .combine(conpair_refbed)
         )
-        */
+        
         //Test this with full sample
         //HSMetrics(GATK_exome_bam.combine(TargetIntervals.out, by:[0]).combine(genome))
    emit:
