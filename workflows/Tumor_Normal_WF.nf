@@ -2,6 +2,9 @@ include {Exome_common_WF} from './Exome_common_WF.nf'
 include {Mutect} from '../modules/Variant_analysis/Mutect'
 include {Mutect_order} from '../modules/Variant_analysis/Mutect'
 include {Manta} from '../modules/Variant_analysis/Manta_Strelka.nf'
+include {Strelka} from '../modules/Variant_analysis/Manta_Strelka.nf'
+include {Strelka_vcf_processing} from '../modules/Variant_analysis/Manta_Strelka.nf'
+include {Exome_QC} from '../modules/qc/qc.nf'
 
 workflow Tumor_Normal_WF {
 
@@ -10,6 +13,8 @@ workflow Tumor_Normal_WF {
     cosmic_v67_hg19_vcf     = Channel.of(file(params.cosmic_v67_hg19_vcf, checkIfExists:true))
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
+    strelka_config          = Channel.of(file(params.strelka_config, checkIfExists:true))
+
 
 
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
@@ -22,6 +27,7 @@ samples_exome = Channel.fromPath("Tumor_Normal.csv")
     meta.sc    =  row.sample_captures
     meta.casename  = row.casename 
     meta.type     = row.type
+    meta.diagnosis =row.Diagnosis
     def fastq_meta = []
     fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
 
@@ -58,5 +64,21 @@ Manta(
     genome_fai,
     genome_dict
 )
+ch_strelka = tumor_bam_channel.Tumor.combine(Manta.out,by:[0])
 
+Strelka(
+    tumor_bam_channel.Tumor.combine(Manta.out,by:[0]),
+    tumor_bam_channel.Normal.map { tuple -> tuple.take(tuple.size() - 1) },
+    genome,
+    genome_fai,
+    genome_dict,
+    strelka_config
+)
+
+Strelka_vcf_processing(
+    tumor_bam_channel.Tumor,
+    Strelka.out,
+    tumor_bam_channel.Normal.map { tuple -> tuple.take(tuple.size() - 1) }
+)
+//Exome_QC(bam_target_ch)
 }
