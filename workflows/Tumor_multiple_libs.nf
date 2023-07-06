@@ -4,6 +4,7 @@ include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CNVkitPooled} from '../modules/cnvkit/CNVkitPooled'
+include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 
 workflow Tumor_multiple_libs {
 
@@ -17,6 +18,7 @@ samples_exome = Channel.fromPath("Tumor_lib.csv")
     meta.sc    =  row.sample_captures
     meta.casename  = row.casename 
     meta.type     = row.type
+    meta.diagnosis =row.Diagnosis
     def fastq_meta = []
     fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
 
@@ -50,7 +52,8 @@ Exome_common_WF.out.snpeff_vcf.map { meta, file ->
     meta2 = [
         id: meta.id,
         casename: meta.casename,
-        type: meta.type
+        type: meta.type,
+        diagnosis: meta.diagnosis 
     ]
     [ meta2, file ]
   }.groupTuple()
@@ -78,5 +81,5 @@ cnvkit_clin_ex_v1 = Channel.of(file(params.cnvkit_clin_ex_v1, checkIfExists:true
 CNVkitPooled(
     Exome_common_WF.out.exome_final_bam.combine(cnvkit_clin_ex_v1)
 )
-
+CNVkit_png(CNVkitPooled.out.cnvkit_pdf)
 }

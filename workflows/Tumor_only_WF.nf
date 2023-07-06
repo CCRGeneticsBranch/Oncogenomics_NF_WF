@@ -18,6 +18,7 @@ samples_exome = Channel.fromPath(params.samplesheet1)
     meta.sc    =  row.sample_captures
     meta.casename  = row.casename 
     meta.type     = row.type
+    meta.diagnosis =row.Diagnosis
     def fastq_meta = []
     fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
 

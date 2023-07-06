@@ -10,10 +10,9 @@ process CNVkitPooled {
         path(cnv_ref)
  
   output:
-    tuple val(meta),
-       path("${meta.lib}.cns"),
-       path("${meta.lib}.cnr"),
-       path("${meta.lib}.pdf")
+    tuple val(meta),path("${meta.lib}.cns"), emit: cnvkit_cns
+    tuple val(meta),path("${meta.lib}.cnr"), emit: cnvkit_cnr
+    tuple val(meta),path("${meta.lib}.pdf"), emit: cnvkit_pdf
        //path("${meta.lib}.png")
   stub:
      """
@@ -33,3 +32,28 @@ process CNVkitPooled {
    """
 }
 
+process CNVkit_png {
+
+tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/cnvkit", mode: "${params.publishDirMode}"
+
+input:
+
+    tuple val(meta),path(pdf)
+
+output:
+    tuple val(meta),path("${meta.lib}.png")
+
+stub:
+   """
+   touch "${meta.lib}.png"
+   """
+
+script:
+def prefix = task.ext.prefix ?: "${meta.lib}"
+"""
+pdftoppm -png ${pdf} -singlefile  ${prefix}  
+
+"""
+
+}
