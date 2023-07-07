@@ -48,10 +48,9 @@ process Strelka {
 
      output:
      tuple val(meta),
-     path("somatic.snvs.vcf.gz"),
-     path("somatic.snvs.vcf.gz.tbi"),
-     path("somatic.indels.vcf.gz"),
-     path("somatic.indels.vcf.gz.tbi")
+     path("somatic.snvs.vcf.gz"),path("somatic.snvs.vcf.gz.tbi"), emit: strelka_snv
+     tuple val(meta),
+     path("somatic.indels.vcf.gz"),path("somatic.indels.vcf.gz.tbi"), emit: strelka_indels
 
      stub:
      """
@@ -84,13 +83,13 @@ process Strelka_vcf_processing {
 
      input:
      tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
-     tuple val(meta),path(snvs_vcf),path(snvs_vcf_tbi),path(indels_vcf),path(indels_vcf_tbi)
+     tuple val(meta),path(snvs_vcf),path(snvs_vcf_tbi)
+     tuple val(meta),path(indels_vcf),path(indels_vcf_tbi)
      tuple val(meta2),path(Nbam),path(Nindex)
 
      output:
-     tuple val(meta),
-     path("${meta.lib}.strelka.snvs.raw.vcf"),
-     path("${meta.lib}.strelka.indels.raw.vcf")
+     tuple val(meta),path("${meta.lib}.strelka.snvs.raw.vcf"), emit: strelka_snv
+     tuple val(meta),path("${meta.lib}.strelka.indels.raw.vcf"), emit: strelka_indel
     
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"

@@ -9,15 +9,16 @@ process SnpEff {
         path(vcf),
         path(dbNSFP2_4),
         path(dbNSFP2_4_tbi),
-        path(Biowulf_snpEff_config)
+        path(Biowulf_snpEff_config),
+        val(tool_ch)
 
      output:
      tuple val(meta),
-        path("${meta.lib}.HC_${meta.type}.raw.snpEff.vcf")
+        path("${meta.lib}.*${meta.type}.raw.snpEff.vcf")
 
      stub:
      """
-     touch "${meta.lib}.HC_${meta.type}.raw.snpEff.vcf"
+     touch "${meta.lib}.*${meta.type}.raw.snpEff.vcf"
      """
 
      script:
@@ -26,10 +27,11 @@ process SnpEff {
 
      set -exo pipefail
 
-     java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db ${dbNSFP2_4}  -c ${Biowulf_snpEff_config} -a ${vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon GRCh37.75 > ${prefix}.HC_${meta.type}.raw.snpEff.vcf
+     java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db ${dbNSFP2_4}  -c ${Biowulf_snpEff_config} -a ${vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon GRCh37.75 > ${prefix}.${tool_ch}_${meta.type}.raw.snpEff.vcf
 
      """
 }
+
 
 
 process Vcf2txt {
@@ -40,22 +42,23 @@ process Vcf2txt {
 
      input:
      tuple val(meta),
-        path(vcf)
+        path(vcf),
+        val(tool_ch)
 
      output:
      tuple val(meta),
-        path("${meta.lib}.HC_${meta.type}.snpEff.txt")
+        path("${meta.lib}.*${meta.type}.snpEff.txt")
 
      stub:
      """
-     touch "${meta.lib}.HC_${meta.type}.snpEff.txt"
+     touch "${meta.lib}.*${meta.type}.snpEff.txt"
      """
 
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
 
-     vcf2txt.pl ${vcf} ./ > ${prefix}.HC_${meta.type}.snpEff.txt
+     vcf2txt.pl ${vcf} ./ > ${prefix}.${tool_ch}_${meta.type}.snpEff.txt
 
      """
 }

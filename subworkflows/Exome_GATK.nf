@@ -14,7 +14,7 @@ workflow Exome_GATK {
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
-
+    HC_ch                  = Channel.from("HC")
 take: MD_bam
       Capture_bed
 
@@ -42,16 +42,18 @@ main:
              .combine(genome_dict)
              .combine(dbsnp)
      )
-
+     
      SnpEff(
         Exome_HaplotypeCaller.out
              .combine(dbNSFP2_4)
              .combine(dbNSFP2_4_tbi)
              .combine(Biowulf_snpEff_config)
+             .combine(HC_ch)
      )
-      Vcf2txt(SnpEff.out)
+      Vcf2txt(SnpEff.out.combine(HC_ch))
 
 emit:
      GATK_Exome_bam =  GATK_BR_PR.out
-     SnpEff_vcf      = Vcf2txt.out
+     SnpEff_vcf      = SnpEff.out
+     HC_snpeff_snv_vcf2txt = Vcf2txt.out
 }
