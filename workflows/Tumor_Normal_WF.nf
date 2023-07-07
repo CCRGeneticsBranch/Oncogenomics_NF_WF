@@ -66,18 +66,15 @@ MakeHotSpotDB(pileup_input_ch,
 bam_target_ch = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0])
 
 
-//bam_target_ch.view()
 tumor_bam_channel = bam_target_ch.branch { 
     Tumor: it[0].type == "Tumor"
     Normal: it[0].type == "Normal"
 }
-//tumor_bam_channel.Normal.view()
 
 Manta_Strelka(
     tumor_bam_channel.Tumor,
     tumor_bam_channel.Normal
 )
-
 
 SnpEff(Manta_Strelka.out.strelka_indel_vcf
                .combine(dbNSFP2_4)
