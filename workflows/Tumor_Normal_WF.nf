@@ -6,6 +6,7 @@ include {Exome_QC} from '../modules/qc/qc.nf'
 include {SnpEff} from '../modules/misc/snpEff'
 include {Vcf2txt} from '../modules/misc/snpEff'
 include {FormatInput} from '../modules/annotation/annot'
+include {Annotation} from '../subworkflows/Annotation'
 
 workflow Tumor_Normal_WF {
 
@@ -111,5 +112,5 @@ FormatInput(
         Format_input_ch,
         MakeHotSpotDB.out
 )
-
+Annotation(FormatInput.out)
 }
