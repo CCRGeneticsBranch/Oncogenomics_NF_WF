@@ -54,7 +54,8 @@ main:
 
 
 emit:
-    strelka_indel_vcf = Strelka_vcf_processing.out.strelka_indel
+    strelka_indel_raw_vcf = Strelka_vcf_processing.out.strelka_indel
+    strelka_snvs_raw_vcf = Strelka_vcf_processing.out.strelka_snv
     strelka_snpeff_snv_vcf2txt = Vcf2txt.out
 
 }

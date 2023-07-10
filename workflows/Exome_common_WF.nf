@@ -84,6 +84,6 @@ exome_final_bam = Exome_GATK.out.GATK_Exome_bam
 loh = QC_exome_bam.out.loh
 target_capture_ch = capture_ch
 HC_snpeff_snv_vcf2txt = Exome_GATK.out.HC_snpeff_snv_vcf2txt
-
-
+hlaminer_exome  = HLA_calls_exome.out.hlaminer_exome
+seq2hla_exome = HLA_calls_exome.out.seq2hla_exome
 }

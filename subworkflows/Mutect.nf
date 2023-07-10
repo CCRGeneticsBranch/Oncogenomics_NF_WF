@@ -41,4 +41,5 @@ main:
     Vcf2txt(SnpEff.out.combine(mutect_ch))
 emit:
     mutect_snpeff_snv_vcf2txt = Vcf2txt.out
+    mutect_raw_vcf = Mutect_order.out
 }

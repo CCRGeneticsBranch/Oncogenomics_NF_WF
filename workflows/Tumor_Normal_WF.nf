@@ -7,6 +7,7 @@ include {SnpEff} from '../modules/misc/snpEff'
 include {Vcf2txt} from '../modules/misc/snpEff'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
+include {Combine_variants} from '../modules/annotation/VEP.nf'
 
 workflow Tumor_Normal_WF {
 
@@ -77,7 +78,7 @@ Manta_Strelka(
     tumor_bam_channel.Normal
 )
 
-SnpEff(Manta_Strelka.out.strelka_indel_vcf
+SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
                .combine(dbNSFP2_4)
                .combine(dbNSFP2_4_tbi)
                .combine(Biowulf_snpEff_config)
@@ -113,4 +114,19 @@ FormatInput(
         MakeHotSpotDB.out
 )
 Annotation(FormatInput.out)
+HLA_channel = Exome_common_WF.out.hlaminer_exome.branch { 
+    Tumor: it[0].type == "Tumor"
+    Normal: it[0].type == "Normal"
+}
+
+//HLA_channel.Normal.view()
+somatic_variants = Mutect_WF.out.mutect_raw_vcf
+   .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
+   .combine(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
+HLA_normals = Exome_common_WF.out.hlaminer_exome.branch {Normal: it[0].type == "Normal"}
+               .combine(Exome_common_WF.out.seq2hla_exome.branch {Normal: it[0].type == "Normal"},by:[0])
+Combine_variants(
+    somatic_variants,
+    HLA_normals
+)
 }
