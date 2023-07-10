@@ -2,30 +2,10 @@
 include {BWA_picard} from '../subworkflows/Bwa_picard_bam_processing'
 include {Exome_GATK} from '../subworkflows/Exome_GATK'
 include {QC_exome_bam} from '../subworkflows/QC_exome_bam'
-
+include {HLA_calls_exome} from '../subworkflows/HLA_calls_exome'
 
 workflow Exome_common_WF {
   
-//params.exome = "/data/khanlab/projects/Nextflow_dev/testing/exome_samplesheet.csv"
-/*
-samples_exome = Channel.fromPath(params.samplesheet1)
-.splitCsv(header:true)
-.filter { row -> row.type == "Tumor" || row.type == "Normal" }
-.map { row ->
-    def meta = [:]
-    meta.id    =  row.sample
-    meta.lib   =  row.library
-    meta.sc    =  row.sample_captures
-    meta.casename  = row.casename 
-    meta.type     = row.type
-    def fastq_meta = []
-    fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
-
-    return fastq_meta
-}
-//samples_exome.view()
-
-*/
 
 take: 
      samples_exome_ch
@@ -34,7 +14,7 @@ main:
 
 BWA_picard(samples_exome_ch)
 
-//  HLA_calls(Cutadapt.out)  docker needs to be fixed
+HLA_calls_exome(samples_exome_ch)
 
 capture_ch = BWA_picard.out.picard_MD
     .map { tuple ->
