@@ -66,8 +66,7 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
       Fastqc.out
   )
 
-//  HLA_calls(Cutadapt.out)  docker needs to be fixed
-
+HLA_calls(Cutadapt.out) 
 
 
 //Star_bam_processing.out.rnalib_custom_qc.view()

@@ -16,6 +16,8 @@ workflow RNAseq_GATK {
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
+    HC_ch                  = Channel.from("HC")
+
     take: MD_bam
     main:
     GATK_RNASeq_Trim(
@@ -52,6 +54,7 @@ workflow RNAseq_GATK {
              .combine(dbNSFP2_4)
              .combine(dbNSFP2_4_tbi)
              .combine(Biowulf_snpEff_config)
+             .combine(HC_ch)
      )
        Vcf2txt(SnpEff.out)
     emit:
