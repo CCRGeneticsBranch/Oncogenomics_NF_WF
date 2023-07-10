@@ -1,29 +1,29 @@
 process MergeHLA {
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/${params.casename}/${dataset_id}/HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}"
     input:
-//    path(mergeHLA_script)
-    tuple val(dataset_id),
+
+    tuple val(meta),
         path(seq2hla),
         path(hlaminer)
 
     output:
-	path "${dataset_id}.Calls.txt"
+	tuple val(meta),path("${meta.lib}.Calls.txt")
 
     stub:
     """
-    touch "${dataset_id}.Calls.txt"
+    touch "${meta.lib}.Calls.txt"
     """
 
 
-    shell:
-    '''
+    script:
+    """
     set -exo pipefail
 
-    consensusHLA.pl !{hlaminer} !{seq2hla} |sort > !{dataset_id}.Calls.txt
+    consensusHLA.pl ${hlaminer} ${seq2hla} |sort > ${meta.lib}.Calls.txt
 
-    '''
+    """
 }
 
 

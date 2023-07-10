@@ -1,33 +1,58 @@
 process Seq2HLA {
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "$params.resultsdir/$dataset_id/${params.casename}/$dataset_id/HLA/seq2HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/seq2HLA", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(dataset_id),
-        path(r1), 
-        path(r2)
+    tuple val(meta), path(trim)
     
     output:
-    tuple val("${dataset_id}"),
-        path("${dataset_id}-ClassI.HLAgenotype4digits")
+    tuple val(meta), path("${meta.lib}-ClassI.HLAgenotype4digits")
 
     stub:
     """
-    touch "${dataset_id}-ClassI.HLAgenotype4digits"
+    touch "${meta.lib}-ClassI.HLAgenotype4digits"
     """
 
-    shell:
-    '''
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
     set -exo pipefail
-
     seq2HLA \
         references/ \
-        -1 !{r1} \
-        -2 !{r2} \
-        -p !{task.cpus} \
-        -r "!{dataset_id}"
-    '''
+        -1 ${trim[0]} \
+        -2 ${trim[1]} \
+        -p ${task.cpus} \
+        -r "${prefix}"
+    """
 }
 
+process Seq2HLA_exome {
+    tag "$meta.lib"
+
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/seq2HLA", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta), path(r1fq),path(r2fq)
+    
+    output:
+    tuple val(meta), path("${meta.lib}-ClassI.HLAgenotype4digits")
+
+    stub:
+    """
+    touch "${meta.lib}-ClassI.HLAgenotype4digits"
+    """
+
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
+    set -exo pipefail
+    seq2HLA \
+        references/ \
+        -1 ${r1fq} \
+        -2 ${r2fq} \
+        -p ${task.cpus} \
+        -r "${prefix}"
+    """
+}
 
