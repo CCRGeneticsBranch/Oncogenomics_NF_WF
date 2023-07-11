@@ -7,7 +7,11 @@ include {SnpEff} from '../modules/misc/snpEff'
 include {Vcf2txt} from '../modules/misc/snpEff'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
+include {AddAnnotation} from '../modules/annotation/annot'
+include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
+include {AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
+include {VEP} from '../modules/annotation/VEP.nf'
 
 workflow Tumor_Normal_WF {
 
@@ -17,12 +21,14 @@ workflow Tumor_Normal_WF {
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     strelka_config          = Channel.of(file(params.strelka_config, checkIfExists:true))
-    strelka_indelch         = Channel.from("strelka_indels")
+    strelka_indelch         = Channel.from("strelka.indels")
+    strelka_snvsch          = Channel.from("strelka.snvs")
+    mutect_ch               = Channel.from("MuTect")
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
 
-
+// Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
 .splitCsv(header:true)
 .filter { row -> row.type == "Tumor" || row.type == "Normal" }
@@ -39,10 +45,11 @@ samples_exome = Channel.fromPath("Tumor_Normal.csv")
 
     return fastq_meta
 }
-//samples_exome.view()
 
+//Run the common exome workflow, this workflow runs all the steps from BWA to GATK and QC steps
 Exome_common_WF(samples_exome)
 
+//Create a combined channel of libraries pileup  to generate hotspotdb at Patient-case level
 Exome_common_WF.out.pileup.map { meta, file ->
     meta2 = [
         id: meta.id,
@@ -64,10 +71,8 @@ MakeHotSpotDB(pileup_input_ch,
                    pileup_meta_ch
 )
 
-
+//tag the bam channel for Tumor 
 bam_target_ch = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0])
-
-
 tumor_bam_channel = bam_target_ch.branch { 
     Tumor: it[0].type == "Tumor"
     Normal: it[0].type == "Normal"
@@ -114,19 +119,33 @@ FormatInput(
         MakeHotSpotDB.out
 )
 Annotation(FormatInput.out)
-HLA_channel = Exome_common_WF.out.hlaminer_exome.branch { 
-    Tumor: it[0].type == "Tumor"
-    Normal: it[0].type == "Normal"
-}
+AddAnnotation_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation).map { tuple ->[tuple[0], tuple[1], tuple[3]]}
+AddAnnotation(AddAnnotation_input_ch)
 
-//HLA_channel.Normal.view()
+somatic_variants_txt =Mutect_WF.out.mutect_snpeff_snv_vcf2txt
+                            .combine(Vcf2txt.out,by:[0])
+                            .combine(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt,by:[0])
+somatic_variants_txt.view()                 
+AddAnnotation_somatic_variants(
+    somatic_variants_txt,
+    Annotation.out.rare_annotation
+)
+
+AddAnnotationFull_somatic_variants(
+    somatic_variants_txt,
+    Annotation.out.final_annotation
+)
+
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
    .combine(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
+
 HLA_normals = Exome_common_WF.out.hlaminer_exome.branch {Normal: it[0].type == "Normal"}
                .combine(Exome_common_WF.out.seq2hla_exome.branch {Normal: it[0].type == "Normal"},by:[0])
 Combine_variants(
     somatic_variants,
     HLA_normals
 )
+//VEP(Combine_variants.out.combined_vcf_tmp)
+
 }

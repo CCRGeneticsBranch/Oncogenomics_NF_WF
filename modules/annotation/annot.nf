@@ -5,9 +5,9 @@ process FormatInput {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),
-        path(vcf2txt),
-        path(hotspotpileup)
+     //tuple val(meta),path(vcf2txt),path(hotspotpileup)
+     path(snpeff_vcfs)
+     tuple val(meta),path(hotspot)
 
      output:
      tuple val(meta),
@@ -22,11 +22,43 @@ process FormatInput {
      """
 
      script:
-     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     set -exo pipefail
+     cat  ${hotspot} |sort > ${meta.id}.hotspot
+     cut -f 1-5 ${snpeff_vcfs.join(' ')} ${meta.id}.hotspot |sort |uniq > AnnotationInput
+     MakeAnnotationInputs.pl AnnotationInput
+
+     """
+}
+
+process Twolib_FormatInput {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(vcf2txt1),path(vcf2txt2)
+     tuple val(meta2),path(hotspotpileup)
+
+     output:
+     tuple val(meta),
+        path("AnnotationInput.anno"),
+        path("AnnotationInput.sift"),
+        path("AnnotationInput")
+     stub:
+     """
+     touch "AnnotationInput.anno"
+     touch "AnnotationInput.sift"
+     touch "AnnotationInput"
+     """
+
+     script:
+     def prefix = task.ext.prefix ?: "${meta.id}"
      """
      set -exo pipefail
      cat  ${hotspotpileup} |sort > ${prefix}.hotspot
-     cut -f 1-5 ${vcf2txt} ${prefix}.hotspot |sort |uniq > AnnotationInput
+     cut -f 1-5 ${vcf2txt1} ${vcf2txt2} ${prefix}.hotspot |sort |uniq > AnnotationInput
      MakeAnnotationInputs.pl AnnotationInput
 
      """
@@ -132,7 +164,7 @@ process Custom_annotation {
      touch "AnnotationInput.candl"
      touch "AnnotationInput.tcc"
      touch "AnnotationInput.civic"
-     touch "AnnotationInput"
+     touch "AnnotationInput_final"
      """
 
      script:
@@ -173,7 +205,6 @@ process Combine_annotation {
        	path(tcc_out),
        	path(civic_out),
         path(Anno_input_final),
-        path(snpeff_txt),
         path(ACMG),
         path(hg19_BLsites),
         path(hg19_WLsites)
@@ -182,26 +213,40 @@ process Combine_annotation {
 
    tuple val(meta),path("${meta.id}.Annotations.coding.rare.txt") , emit: rare_annotation       
    tuple val(meta),path("${meta.id}.Annotations.final.txt") , emit: final_annotation
-   tuple val(meta),path("${meta.id}.HC_RNASeq.annotated.txt") , emit: hc_RNAseq
-
 
      stub:
      """
        touch "${meta.id}.Annotations.coding.rare.txt"
-       touch "${meta.id}.Annotations.final.txt"
-       touch "${meta.id}.HC_RNASeq.annotated.txt"
+       touch "${meta.id}.Annotations.final.txt"   
      """
 
    script:
    
      """
 
-     echo "${Anno_input_final}
+echo "Anno_input_final: ${Anno_input_final}"
+echo "gene_out: ${gene_out}"
+echo "clinseq_out: ${clinseq_out}"
+echo "cadd_out: ${cadd_out}"
+echo "clinvar_out: ${clinvar_out}"
+echo "cosmic_out: ${cosmic_out}"
+echo "hgmd_out: ${hgmd_out}"
+echo "match_out: ${match_out}"
+echo "docm_out: ${docm_out}"
+echo "candl_out: ${candl_out}"
+echo "tcc_out: ${tcc_out}"
+echo "mcg_out: ${mcg_out}"
+echo "pcg_out: ${pcg_out}"
+echo "civic_out: ${civic_out}"
+
+echo "${Anno_input_final}
 ${gene_out}
 ${clinseq_out}
+${cadd_out}
 ${clinvar_out}
 ${cosmic_out}
 ${hgmd_out}
+${match_out}
 ${docm_out}
 ${candl_out}
 ${tcc_out}
@@ -212,8 +257,103 @@ ${civic_out}" > list
      CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
      GeneAnnotation.pl ${ACMG} AnnotationInput.annotations.final.txt.tmp > ${meta.id}.Annotations.final.txt
      ProteinCodingRare.pl ${hg19_BLsites} ${hg19_WLsites} ${meta.id}.Annotations.final.txt 0.05 > ${meta.id}.Annotations.coding.rare.txt
-     addAnnotations2vcf.pl ${meta.id}.Annotations.coding.rare.txt ${snpeff_txt} > ${meta.id}.HC_RNASeq.annotated.txt
      """
 
 }
 
+process AddAnnotation {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(snpeff_txt),path(rare_annotation)
+     
+
+     output:
+     tuple val(meta),path("${meta.lib}.HC_${meta.type}.annotated.txt") , emit: hc_anno_txt
+
+     stub:
+     """
+       touch "${meta.lib}.HC_${meta.type}.annotated.txt"
+     """
+     script:
+     
+     """
+     
+     addAnnotations2vcf.pl ${snpeff_txt} ${rare_annotation}  > ${meta.lib}.HC_${meta.type}.annotated.txt 
+
+     """
+
+}
+
+process AddAnnotation_somatic_variants {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(mutect_txt), path(strelka_indels_txt), path(strelka_snvs_txt)
+     tuple val(meta2),path(rare_annotation)
+
+     output:
+     tuple val(meta),
+     path("${meta.lib}.MuTect.annotated.txt"),
+     path("${meta.lib}.strelka.indels.annotated.txt"),
+     path("${meta.lib}.strelka.snvs.annotated.txt")
+
+     stub:
+     """
+       touch "${meta.lib}.MuTect.annotated.txt"
+       touch "${meta.lib}.strelka.indels.annotated.txt"
+       touch "${meta.lib}.strelka.snvs.annotated.txt"
+       
+     """
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     
+     addAnnotations2vcf.pl ${mutect_txt} ${rare_annotation}   > ${prefix}.MuTect.annotated.txt 
+     addAnnotations2vcf.pl ${strelka_indels_txt} ${rare_annotation}   > ${prefix}.strelka.indels.annotated.txt
+     addAnnotations2vcf.pl ${strelka_snvs_txt} ${rare_annotation}   > ${prefix}.strelka.snvs.annotated.txt
+
+    """
+
+}
+
+
+process AddAnnotationFull_somatic_variants {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(mutect_txt), path(strelka_indels_txt), path(strelka_snvs_txt)
+     tuple val(meta2),path(final_annotation)
+
+     output:
+     tuple val(meta),path("${meta.lib}.MuTect.annotatedFull.txt"), emit: mutect_annotationfull
+     tuple val(meta),path("${meta.lib}.strelka.indels.annotatedFull.txt"), emit: strelka_indels_annotationfull
+     tuple val(meta),path("${meta.lib}.strelka.snvs.annotatedFull.txt"), emit: strelka_snvs_annotationfull
+
+
+     stub:
+     """
+       touch "${meta.lib}.MuTect.annotatedFull.txt"
+       touch "${meta.lib}.strelka.indels.annotatedFull.txt"
+       touch "${meta.lib}.strelka.snvs.annotatedFull.txt"
+       
+     """
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     addAnnotations2vcf.pl ${mutect_txt} ${final_annotation}   > ${prefix}.MuTect.annotatedFull.txt
+     addAnnotations2vcf.pl ${strelka_indels_txt} ${final_annotation}   > ${prefix}.strelka.indels.annotatedFull.txt
+     addAnnotations2vcf.pl ${strelka_snvs_txt} ${final_annotation}   > ${prefix}.strelka.snvs.annotatedFull.txt
+
+     """
+
+}
