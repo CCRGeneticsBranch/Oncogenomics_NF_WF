@@ -28,7 +28,7 @@ workflow Tumor_Normal_WF {
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
-
+    vep_cache              = Channel.of(file(params.vep_cache, checkIfExists:true))
 // Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
 .splitCsv(header:true)
@@ -119,6 +119,7 @@ FormatInput(
         Format_input_ch,
         MakeHotSpotDB.out
 )
+
 Annotation(FormatInput.out)
 AddAnnotation_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation).map { tuple ->[tuple[0], tuple[1], tuple[3]]}
 AddAnnotation(AddAnnotation_input_ch)
@@ -149,6 +150,8 @@ Combine_variants(
     somatic_variants,
     HLA_normals
 )
-//VEP(Combine_variants.out.combined_vcf_tmp)
+
+VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
 
 }
+
