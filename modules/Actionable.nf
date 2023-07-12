@@ -32,3 +32,39 @@ process Actionable_RNAseq {
 
      """
 }
+
+
+process Actionable_fusion {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
+
+     input:
+     path(libs)
+     val(meta)
+    
+     output:
+     tuple val(meta),
+        path("${meta.id}.fusion.actionable.txt")
+
+     stub:
+     """
+     touch "${meta.id}.fusion.actionable.txt"
+     """
+
+     script:
+
+     """
+     if [ \$(wc -l < ${libs.join(' ')}) -ge 2];
+     then
+        cat ${libs.join(' ')} |sort |uniq > ${meta.id}.fusion.actionable.txt.tmp
+        grep "LeftGene" ${meta.id}.fusion.actionable.txt.tmp >${meta.id}.fusion.actionable.txt
+        grep -v "LeftGene" ${meta.id}.fusion.actionable.txt.tmp >>${meta.id}.fusion.actionable.txt
+        rm -rf ${meta.id}.fusion.actionable.txt.tmp
+     else
+        touch ${meta.id}.fusion.actionable.txt
+     fi
+
+     """
+}
