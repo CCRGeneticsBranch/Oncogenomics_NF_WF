@@ -10,6 +10,7 @@ include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
 include {AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
+include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
 include {VEP} from '../modules/annotation/VEP.nf'
 
@@ -125,7 +126,7 @@ AddAnnotation(AddAnnotation_input_ch)
 somatic_variants_txt =Mutect_WF.out.mutect_snpeff_snv_vcf2txt
                             .combine(Vcf2txt.out,by:[0])
                             .combine(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt,by:[0])
-somatic_variants_txt.view()                 
+                
 AddAnnotation_somatic_variants(
     somatic_variants_txt,
     Annotation.out.rare_annotation
@@ -135,6 +136,8 @@ AddAnnotationFull_somatic_variants(
     somatic_variants_txt,
     Annotation.out.final_annotation
 )
+
+UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
