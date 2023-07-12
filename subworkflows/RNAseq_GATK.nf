@@ -56,7 +56,7 @@ workflow RNAseq_GATK {
              .combine(Biowulf_snpEff_config)
              .combine(HC_ch)
      )
-       Vcf2txt(SnpEff.out)
+       Vcf2txt(SnpEff.out.combine(HC_ch))
     emit:
      GATK_RNAseq_bam =  GATK_BR_PR.out
      SnpEff_vcf      = Vcf2txt.out

@@ -121,3 +121,38 @@ process RNAseq_HaplotypeCaller {
      java -jar -Xmx40g \$GATK_JAR -T VariantFiltration -R ${genome} -V ${prefix}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o ${prefix}.HC_RNASeq.raw.vcf
      """
 }
+
+process Exome_HaplotypeCaller {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),
+        path(bam),
+        path(index),
+        path(Capture_bed),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict),
+        path(dbsnp)
+        
+
+     output:
+     tuple val(meta),
+        path("${meta.lib}.HC_DNASeq.raw.vcf")
+
+     stub:
+     """
+     touch "${meta.lib}.HC_DNASeq.raw.vcf"
+     """
+
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     set -exo pipefail
+     java -jar -Xmx100g \$GATK_JAR -T HaplotypeCaller -R ${genome} -I ${bam} -o ${prefix}.HC_DNASeq.raw.vcf --dbsnp ${dbsnp} -L ${Capture_bed} -mbq 20 -mmq 30 -nct ${task.cpus}
+
+     """
+}
