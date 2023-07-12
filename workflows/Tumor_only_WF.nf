@@ -42,7 +42,7 @@ CircosPlot(
     meta_merged_loh
 )
 
-formatinput_snpeff_ch = Exome_common_WF.out.snpeff_vcf.map { tuple -> tuple.drop(1) }
+formatinput_snpeff_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { tuple -> tuple.drop(1) }
 
 FormatInput(
         formatinput_snpeff_ch,
@@ -51,7 +51,7 @@ FormatInput(
 Annotation(FormatInput.out)
 
 
-merged_ch = Exome_common_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation,by:[0])
+merged_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation,by:[0])
 AddAnnotation(merged_ch)
 
 cnvkit_clin_ex_v1 = Channel.of(file(params.cnvkit_clin_ex_v1, checkIfExists:true))

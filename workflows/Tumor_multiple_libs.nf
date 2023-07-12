@@ -48,7 +48,7 @@ MakeHotSpotDB(pileup_input_ch,
                    pileup_meta_ch
 )
 
-Exome_common_WF.out.snpeff_vcf.map { meta, file ->
+Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
     meta2 = [
         id: meta.id,
         casename: meta.casename,
@@ -71,7 +71,7 @@ FormatInput(
 )
 Annotation(FormatInput.out)
 
-merged_ch = Exome_common_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation)
+merged_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation)
 updated_tuples = merged_ch.map { tuple ->
     [tuple[0], tuple[1], tuple[3]]
 }
