@@ -11,9 +11,13 @@ include {AddAnnotation} from '../modules/annotation/annot'
 include {DBinput} from '../modules/misc/DBinput'
 include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CircosPlot} from '../modules/qc/qc'
+include {Actionable_RNAseq} from '../modules/Actionable.nf'
 
 
 workflow RNAseq_only {
+
+combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
+somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
 
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNAseq.csv")
@@ -81,6 +85,11 @@ DBinput(
     dbinput_meta_ch
 )
 
+Actionable_RNAseq(DBinput.out
+       .combine(Annotation.out.rare_annotation,by:[0])
+       .combine(combined_gene_list)
+       .combine(somatic_actionable_sites)
+)
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.coverageplot, by: [0])

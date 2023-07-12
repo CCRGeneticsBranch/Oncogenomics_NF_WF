@@ -36,6 +36,7 @@ Cutadapt(samples_rnaseq_ch)
 
 fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
 
+//fastqc_input.view()
 
   Fastqc(fastqc_input)
   fastq_screen_config         = Channel.of(file(params.fastq_screen_config, checkIfExists:true))
