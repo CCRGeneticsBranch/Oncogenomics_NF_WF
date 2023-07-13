@@ -9,7 +9,7 @@ process Mergefusion {
     tuple val(meta),path(arriba),path(FC),path(SF)
 
     output:
-    tuple val(meta),path("${meta.id}.actionable.fusion.txt")
+    tuple val(meta),path("${meta.lib}.actionable.fusion.txt")
 
     stub:
     """
@@ -18,7 +18,7 @@ process Mergefusion {
 
     script:
     """
-    ActionableFusion.v1.pl  ${meta.lib} ${FC} ${SF} ${arriba} $PWD | awk 'NR<2{print \$0;next}{print \$0| "sort "}' > ${meta.id}.actionable.fusion.txt
+    ActionableFusion.v1.pl  ${meta.lib} ${FC} ${SF} ${arriba} $PWD | awk 'NR<2{print \$0;next}{print \$0| "sort "}' > ${meta.lib}.actionable.fusion.txt
 
     """
 }
