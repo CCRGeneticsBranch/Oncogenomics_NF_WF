@@ -8,8 +8,9 @@ process Kraken {
     
     output:
     tuple val(meta),
-    path("${meta.lib}.kraken.taxa.txt")
-    path("${meta.lib}.krakenout")
+    path("${meta.lib}.kraken.taxa.txt"), emit: kraken_taxa
+    tuple val(meta),
+    path("${meta.lib}.krakenout"), emit : kraken_out
 
     stub:
     """
@@ -29,6 +30,35 @@ process Kraken {
     #mv ${prefix}.kronahtml ${prefix}.krona.html
     """
 }
+
+process Krona {
+    tag "$meta.lib"
+
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/kraken", mode: 'copy'
+    
+    input:
+    tuple val(meta), path(krakenout)
+    
+    output:
+    tuple val(meta),
+    path("${meta.lib}.krona.html")
+
+    stub:
+    """
+    touch "${meta.lib}.krona.html"
+    """
+
+    script:
+    def prefix   = task.ext.prefix ?: "${meta.lib}"
+    
+    """
+    cut -f2,3 ${krakenout} |ktImportTaxonomy - -o ${prefix}.kronahtml
+    mv ${prefix}.kronahtml ${prefix}.krona.html
+    """
+}
+
+
+
 
 
 process Fastqc {

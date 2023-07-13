@@ -3,6 +3,7 @@
 //import modules
 include {Cutadapt} from '../modules/cutadapt/cutadapt'
 include {Kraken} from '../modules/qc/qc'
+include {Krona} from '../modules/qc/qc'
 include {Fastqc} from '../modules/qc/qc'
 include {Fastq_screen} from '../modules/qc/qc'
 include {Multiqc} from '../modules/qc/qc'
@@ -37,6 +38,7 @@ Cutadapt(samples_rnaseq_ch)
 Kraken(samples_rnaseq_ch
     .combine(kraken_bacteria)
 )
+Krona(Kraken.out.kraken_out)
 
 fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
 
