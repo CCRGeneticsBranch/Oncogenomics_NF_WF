@@ -1,3 +1,36 @@
+process Kraken {
+    tag "$meta.lib"
+
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/kraken", mode: 'copy', pattern: "*.txt"
+    
+    input:
+    tuple val(meta), path(r1fq), path(r2fq),path(kraken_bacteria)
+    
+    output:
+    tuple val(meta),
+    path("${meta.lib}.kraken.taxa.txt")
+    path("${meta.lib}.krakenout")
+
+    stub:
+    """
+    touch "${meta.lib}.kraken.taxa.txt"
+    touch "${meta.lib}.krakenout"
+    """
+
+
+    script:
+    def prefix   = task.ext.prefix ?: "${meta.lib}"
+    
+    """
+    kraken --db ${kraken_bacteria} --fastq-input --gzip-compressed --threads ${task.cpus} --output ${prefix}.krakenout --preload --paired ${r1fq} ${r2fq}
+    kraken-translate --mpa-format --db ${kraken_bacteria} ${prefix}.krakenout |cut -f2|sort|uniq -c|sort -k1,1nr > ${prefix}.krakentaxa
+    #cut -f2,3 ${prefix}.krakenout |ktImportTaxonomy - -o ${prefix}.kronahtml
+    mv ${prefix}.krakentaxa ${prefix}.kraken.taxa.txt
+    #mv ${prefix}.kronahtml ${prefix}.krona.html
+    """
+}
+
+
 process Fastqc {
     tag "$meta.lib"
 
@@ -136,6 +169,30 @@ process CircosPlot_lib {
      """
 }
 
+process CircosPlot {
+    
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    path(loh_files)
+    val(meta)
+
+    output:
+    tuple val(meta),
+        path("${meta.id}.circos.png")
+
+    stub:
+    """
+    touch "${meta.id}.circos.png"
+    """
+
+    script:
+
+     """
+     circos.R  \$PWD/ ${meta.id}.circos.png ${loh_files.join(' ')}
+     """
+}
 
 process RNAseQC {
 
@@ -169,3 +226,60 @@ process RNAseQC {
 
 }
 
+process Conpair_pile {
+   
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(bam),
+        path(index),
+        path(genome),
+        path(genome_fai),
+        path(genome_dict),
+        path(conpair)
+
+    output:
+    tuple val(meta),
+       path("${meta.lib}.conpair.mpileup")
+
+    stub:
+     """
+       touch "${meta.lib}.conpair.mpileup"
+     """
+
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     run_gatk_pileup_for_sample.py -B ${bam} -O ${prefix}.conpair.mpileup -R ${genome} -M ${conpair}
+     """
+
+}
+
+process Exome_QC {
+
+    tag "$meta.lib"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(bam),
+        path(index),
+        path(Tbed)
+
+    output:
+    tuple val(meta),path("${meta.lib}.consolidated_QC")
+
+    stub:
+     """
+       touch "${meta.lib}.consolidated_QC"
+     """
+
+    script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     QC_stats_Final.py  ${bam} ${Tbed} . ${meta.id} ${prefix} "${meta.diagnosis}" > ${prefix}.consolidated_QC.tmp
+
+     """
+}

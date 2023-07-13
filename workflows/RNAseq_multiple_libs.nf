@@ -200,8 +200,7 @@ DBinput_multiple(
     dbinput_combined_addannot_txt,
     dbinput_combined_snpeff_txt
 )
-Annotation.out.rare_annotation.view()
-DBinput_multiple.out.view()
+
 
 Actionable_RNAseq(DBinput_multiple.out
        .combine(Annotation.out.rare_annotation,by:[0])

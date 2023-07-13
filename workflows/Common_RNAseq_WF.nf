@@ -2,6 +2,7 @@
 
 //import modules
 include {Cutadapt} from '../modules/cutadapt/cutadapt'
+include {Kraken} from '../modules/qc/qc'
 include {Fastqc} from '../modules/qc/qc'
 include {Fastq_screen} from '../modules/qc/qc'
 include {Multiqc} from '../modules/qc/qc'
@@ -16,12 +17,15 @@ include {Fusion_calling} from '../subworkflows/Fusion_calling'
 include {Star_bam_processing} from '../subworkflows/Star_bam_processing'
 include {RNAseq_GATK} from '../subworkflows/RNAseq_GATK'
 include {QC_from_finalBAM} from '../subworkflows/QC_from_finalBAM'
-//include {Annotation} from '../subworkflows/Annotation'
 include {QC_from_Star_bam} from '../subworkflows/QC_from_Star_bam'
 
 
+
 workflow Common_RNAseq_WF {
-  
+
+kraken_bacteria = Channel.of(file(params.kraken_bacteria, checkIfExists:true))
+starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+fastq_screen_config         = Channel.of(file(params.fastq_screen_config, checkIfExists:true))
 
 take: 
      samples_rnaseq_ch
@@ -30,18 +34,17 @@ main:
 
 Cutadapt(samples_rnaseq_ch)
 
-
-//samples_rnaseq.view()
-
+Kraken(samples_rnaseq_ch
+    .combine(kraken_bacteria)
+)
 
 fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
 
-//fastqc_input.view()
 
   Fastqc(fastqc_input)
-  fastq_screen_config         = Channel.of(file(params.fastq_screen_config, checkIfExists:true))
-  //fqs_human =   Channel.of(file(params.fqs_human, checkIfExists:true))
-  //Fastq_screen_input = Cutadapt.out.trim_reads.combine(fastq_screen_config).combine(fqs_human)
+  
+  fqs_human =   Channel.of(file(params.fqs_human, checkIfExists:true))
+  Fastq_screen_input = Cutadapt.out.trim_reads.combine(fastq_screen_config).combine(fqs_human)
   //Fastq_screen_input.view()
   //Fastq_screen(Fastq_screen_input)
    
@@ -49,7 +52,7 @@ fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
  
   Star_RSEM(Cutadapt.out.trim_reads) 
 
-  starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
+ 
   Starfusion_input = Star_RSEM.out.chimeric_junction.combine(starfusion_db)
 
 
