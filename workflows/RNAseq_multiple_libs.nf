@@ -9,6 +9,7 @@ include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_fusion} from '../modules/Actionable.nf'
+include {DBinput_multiple} from '../modules/misc/DBinput'
 
 
 workflow RNAseq_multiple_libs {
@@ -157,6 +158,42 @@ updated_tuples = merged_ch.map { tuple ->
     [tuple[0], tuple[1], tuple[3]]
 }
 AddAnnotation(updated_tuples)    
+
+Common_RNAseq_WF.out.snpeff_vcf.map { meta, file ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename,
+        type: meta.type,
+        sc: meta.sc
+    ]
+    [ meta2, file ]
+  }.groupTuple()
+   .map { meta, files -> [ meta, *files ] }
+   .filter { tuple ->
+    tuple.size() > 2
+  }
+   .set { dbinput_combined_snpeff_txt }
+
+AddAnnotation.out.map { meta, file ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename,
+        type: meta.type,
+        sc: meta.sc
+    ]
+    [ meta2, file ]
+  }.groupTuple()
+   .map { meta, files -> [ meta, *files ] }
+   .filter { tuple ->
+    tuple.size() > 2
+  }
+   .set { dbinput_combined_addannot_txt }
+
+DBinput_multiple(
+    dbinput_combined_addannot_txt,
+    dbinput_combined_snpeff_txt
+)
+
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                    .join(Common_RNAseq_WF.out.coverageplot, by: [0])

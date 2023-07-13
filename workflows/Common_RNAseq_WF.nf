@@ -139,29 +139,9 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   loh = QC_from_Star_bam.out.loh
 }
 
-/*
-workflow Common_Annotation {
-
-  Annotation(
-      QC_from_finalBAM.out.hotspot_pileup,
-      RNAseq_GATK.out.SnpEff_vcf
-)
-}
 
 
-multiqc_input = Fastqc.out.join(QC_from_finalBAM.out.hotspot_pileup, by: [0])
-                          .join(QC_from_finalBAM.out.coverageplot, by: [0])
-                          .join(Star_rsem.out.chimeric_junction, by: [0])
-                          .join(Star_rsem.out.rsem, by: [0]).join(QC_from_Star_bam.out.rnaseqc, by: [0])
-                          .join(QC_from_Star_bam.out.circos, by: [0])
-Multiqc(multiqc_input)
 
-final_inputs = Fusion_calling.out.merge_fusion.join(Annotation.out.final_annotation,by:[0]).join(Multiqc.out,by:[0])
-
-Allstepscomplete(final_inputs)
-
-//}
-*/
 
 
 
