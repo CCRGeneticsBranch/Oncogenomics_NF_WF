@@ -9,10 +9,16 @@ include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_fusion} from '../modules/Actionable.nf'
+include {Actionable_RNAseq} from '../modules/Actionable.nf'
 include {DBinput_multiple} from '../modules/misc/DBinput'
 
 
 workflow RNAseq_multiple_libs {
+
+combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
+somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
+
+
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNA_lib.csv")
 .splitCsv(header:true)
@@ -94,7 +100,8 @@ Common_RNAseq_WF.out.pileup.map { meta, file ->
     meta2 = [
         id: meta.id,
         casename: meta.casename,
-        type: meta.type
+        type: meta.type,
+        sc: meta.sc
     ]
     [ meta2, file ]
   }.groupTuple()
@@ -193,7 +200,14 @@ DBinput_multiple(
     dbinput_combined_addannot_txt,
     dbinput_combined_snpeff_txt
 )
+Annotation.out.rare_annotation.view()
+DBinput_multiple.out.view()
 
+Actionable_RNAseq(DBinput_multiple.out
+       .combine(Annotation.out.rare_annotation,by:[0])
+       .combine(combined_gene_list)
+       .combine(somatic_actionable_sites)
+)
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                    .join(Common_RNAseq_WF.out.coverageplot, by: [0])
