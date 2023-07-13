@@ -34,7 +34,8 @@ workflow Star_RSEM {
      genome_bam = Star.out.genome_bam
      genome_bai = Star.out.genome_bai
      chimeric_junction = Star.out.chimeric_junction
-     rsem =  Rsem.out
+     rsem_genes = Rsem.out.rsem_genes
+     rsem_isoforms = Rsem.out.rsem_isoforms
      strandedness = Strandedness.out 
 }
 

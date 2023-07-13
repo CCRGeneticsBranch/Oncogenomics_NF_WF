@@ -12,7 +12,7 @@ include {DBinput} from '../modules/misc/DBinput'
 include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_RNAseq} from '../modules/Actionable.nf'
-
+include {Actionable_fusion} from '../modules/Actionable.nf'
 
 workflow RNAseq_only {
 
@@ -39,6 +39,11 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 
 
 Common_RNAseq_WF(samples_rnaseq)
+
+Actionable_fusion(
+Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[1] },
+Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[0] }
+)
 
 //Converting meta channel to list channel
 rnalib_qc_list_ch = Common_RNAseq_WF.out.rnalib_custum_qc.map { tuple -> tuple[1] }
@@ -91,14 +96,18 @@ Actionable_RNAseq(DBinput.out
        .combine(somatic_actionable_sites)
 )
 
+//Common_RNAseq_WF.out.rsem_counts.view()
+
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
-                      .join(Common_RNAseq_WF.out.rsem_counts, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
+                      .join(Common_RNAseq_WF.out.rsem_genes, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                       .join(Common_RNAseq_WF.out.circos_plot, by: [0])
 Multiqc(multiqc_input)
 
 final_inputs = Common_RNAseq_WF.out.fusion_calls.join(Annotation.out.final_annotation,by:[0]).join(Multiqc.out,by:[0])
 Allstepscomplete(final_inputs)
 
+
+//	python $script_home/fusionTools.py -i "$path/$patient_id/$case_id/Actionable/${patient_id}.fusion.actionable.txt" -o $out_file -t $threads -p $pfam_path -f $genome_fasta -g $gtf -n $can_file -d $domain_file
 }

@@ -135,7 +135,8 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   pileup = QC_from_finalBAM.out.hotspot_pileup
   snpeff_vcf = RNAseq_GATK.out.SnpEff_vcf
   chimeric_junction = Star_RSEM.out.chimeric_junction
-  rsem_counts = Star_RSEM.out.rsem
+  rsem_genes = Star_RSEM.out.rsem_genes
+  rsem_isoforms = Star_RSEM.out.rsem_isoforms
   rnaseqc = QC_from_Star_bam.out.rnaseqc
   circos_plot = QC_from_Star_bam.out.circos
   fusion_calls = Fusion_calling.out.merge_fusion
