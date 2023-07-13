@@ -8,6 +8,7 @@ include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CircosPlot} from '../modules/qc/qc'
+include {Actionable_fusion} from '../modules/Actionable.nf'
 
 
 workflow RNAseq_multiple_libs {
@@ -30,6 +31,26 @@ samples_rnaseq = Channel.fromPath("RNA_lib.csv")
 }    
 
 Common_RNAseq_WF(samples_rnaseq)
+
+Common_RNAseq_WF.out.fusion_calls.map { meta, file ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename,
+        type: meta.type
+    ]
+    [ meta2, file ]
+  }.groupTuple()
+   .map { meta, files -> [ meta, *files ] }
+   .filter { tuple ->
+    tuple.size() > 2
+  }
+   .set { combined_fusion_ch }
+
+Actionable_fusion(
+combined_fusion_ch.map { tuple -> tuple.drop(1) },
+combined_fusion_ch.map { tuple -> tuple[0] }
+)
+
 Common_RNAseq_WF.out.rnalib_custum_qc.map { meta, file ->
     meta2 = [
         id: meta.id,
