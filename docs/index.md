@@ -37,14 +37,16 @@ scheduling system.
 
  ```
         sh launch.sh         
-        This script takes one input
+        This script takes two inputs
         Provide Tag argument - This will add a tag to your resultsdir.
-        example: sh launch.sh projectname  #this will create work.projectname and results.projectname folders under `OUTDIR` path.
+        Provide samplesheet with complete path
+        example: sh launch.sh projectname /path/to/samplesheet  #this will create work.projectname and results.projectname folders under `OUTDIR` path.
         
  ```
 The following command should kick initiate the pipeline and display the status.
+Test samplesheet with subsamples is available here `/data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
 
-`sh launch.sh `
+`sh launch.sh vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
 
 When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of 
 Nextflow, the input folder path, the results directory, and the work directory.

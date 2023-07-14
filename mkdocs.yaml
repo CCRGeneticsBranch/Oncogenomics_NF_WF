@@ -5,9 +5,9 @@ site_description: >-
   The space will be used to provided documentation for khanlab NGS pipeline. 
 
 # Repository
-repo_name: AWS_POC_Nextflow
-repo_url: https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow
-edit_uri: https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow/edit
+repo_name: AWS_POC_MVP_NF
+repo_url: https://github.com/CCRGeneticsBranch/AWS_POC_MVP_NF
+edit_uri: https://github.com/CCRGeneticsBranch/AWS_POC_MVP_NF/edit
 
 # Copyright
 copyright: Copyright &copy; 2022 CCR Genetics
