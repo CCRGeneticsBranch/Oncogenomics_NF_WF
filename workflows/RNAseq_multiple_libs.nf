@@ -24,6 +24,10 @@ workflow RNAseq_multiple_libs {
 //config files
 combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
 somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
+genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_annotation)
+genome_version = Channel.from(params.genome_version)
+pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
+genome  = Channel.of(file(params.genome, checkIfExists:true))
 
 
 //create a sample channel using meta hashmap
@@ -82,12 +86,15 @@ Common_RNAseq_WF.out.rsem_isoforms.map { meta, file ->
     tuple.size() > 2
   }
    .set { combined_rsem_ch }
-/*
+
 Fusion_Annotation(
     combined_rsem_ch.map { tuple -> tuple.drop(1) },
-    Actionable_fusion.out
+    Actionable_fusion.out.combine(pfamdb).combine(genome),
+    genome_version_fusion_annotation,
+    genome_version
 )
-*/
+
+
 
 //create combined qc channel of multiple libraries
 Common_RNAseq_WF.out.rnalib_custum_qc.map { meta, file ->
