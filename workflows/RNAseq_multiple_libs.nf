@@ -87,13 +87,14 @@ Common_RNAseq_WF.out.rsem_isoforms.map { meta, file ->
   }
    .set { combined_rsem_ch }
 
+/* Test this with full sample
 Fusion_Annotation(
     combined_rsem_ch.map { tuple -> tuple.drop(1) },
     Actionable_fusion.out.combine(pfamdb).combine(genome),
     genome_version_fusion_annotation,
     genome_version
 )
-
+*/
 
 
 //create combined qc channel of multiple libraries
