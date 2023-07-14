@@ -44,7 +44,12 @@ scheduling system.
         
  ```
 The following command should kick initiate the pipeline and display the status.
+# Case1:
 Test samplesheet with subsamples is available here `/data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
+# Case2: 
+Test samplesheet with 20 samples is available here `/data/khanlab/projects/Nextflow_dev/testing/20_samplesheet.csv`
+
+To ensure you dont run into permission issues please run the #Case1 before launching full samples with #Case2
 
 `sh launch.sh vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
 
