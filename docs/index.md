@@ -52,10 +52,10 @@ Test samplesheet with 20 samples is available here `/data/khanlab/projects/Nextf
 To ensure you dont run into permission issues please run the #Case1 before launching full samples with #Case2
 
 `sh launch.sh vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
-
+                                                or 
+`sbatch --mem=50g --time=24:00:00 sh launch vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
 # Workflow log
-When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of 
-Nextflow, the input folder path, the results directory, and the work directory.
+When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
 
 
 ```
