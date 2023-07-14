@@ -3,9 +3,12 @@ include {BWA_picard} from '../subworkflows/Bwa_picard_bam_processing'
 include {Exome_GATK} from '../subworkflows/Exome_GATK'
 include {QC_exome_bam} from '../subworkflows/QC_exome_bam'
 include {HLA_calls_exome} from '../subworkflows/HLA_calls_exome'
+include {Kraken} from '../modules/qc/qc'
+include {Krona} from '../modules/qc/qc'
 
 workflow Exome_common_WF {
-  
+
+kraken_bacteria = Channel.of(file(params.kraken_bacteria, checkIfExists:true))
 
 take: 
      samples_exome_ch
@@ -13,6 +16,11 @@ take:
 main: 
 
 BWA_picard(samples_exome_ch)
+
+Kraken(samples_exome_ch
+    .combine(kraken_bacteria)
+)
+Krona(Kraken.out.kraken_out)
 
 HLA_calls_exome(samples_exome_ch)
 
