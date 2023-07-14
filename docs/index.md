@@ -19,72 +19,71 @@ Please clone this repository to your local filesystem using the following comman
 ```
         git clone https://github.com/CCRGeneticsBranch/AWS_POC_Nextflow.git
         cd AWS_POC_Nextflow/ 
-        git checkout feature/mvp
+        git checkout feature/casename
 ```
 
 
-# Setting up the workflow for Read Trimming and Quantification
-1. Obtain the References folder from [box](https://nih.app.box.com/folder/193831680410) and save it to a location that is accessible. Extract the 
-`index-STAR_2.7.9a.tar.gz` and `rsem_1.3.2.tar.gz` files. 
-2. Modify the references configuration file, `AWS_POC_Nextflow/config/Run_upto_quants_references.config`, by updating the file paths for the references and the 
-input directory. The workflow requires all fastq files to be in the same directory.
-3. Adjust the cluster requirements in the resources configuration file, `AWS_POC_Nextflow/config/Run_upto_quants_cluster.config`.
-4. Update the `runOptions` in the Singularity configuration file, `AWS_POC_Nextflow/config/biowulf_singularity.config`, as appropriate for your cluster 
-environment. 
-6. Finally, modify the path for the `export OUTDIR` variable in the script `Run_upto_quants.sh`. 
+# Setting up the workflow on biowulf
+1. The workflow is hosted on biowulf in khanlab space /data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow.
+2. All the pipeline config can be accessed using nextflow.config file. The workflow config is currently set up to work with Biowulf batch resources.
+4. For initial testing purposes we suggest running the workflow with outdir pointed to /data/khanlab2/NF_benchmarking. If needed, modify the path for the 
+`export OUTDIR` variable in the script `nf.sh` 
+ 
 
 # Running the workflow.
- The workflow can be started by executing the `Run_upto_quants.sh` script in a interactive node. This wrapper script spawns new jobs and submits them to the SLURM 
+ The workflow can be started by executing the `launch.sh` script in a interactive node. This wrapper script spawns new jobs and submits them to the SLURM 
 scheduling system.
 
 
  ```
-        sh Run_upto_quants.sh         
-        This script takes two inputs
+        sh launch.sh         
+        This script takes one input
         Provide Tag argument - This will add a tag to your resultsdir.
-        Provide Run_upto_counts_only argument - It takes value true/false
-        example: sh Run_upto_quants.sh projectname true #this will run upto RSEM and generates counts 
-        example: sh Run_upto_quants.sh projectname false #this will run the complete pipeline if all the references are added to the config
-
+        example: sh launch.sh projectname  #this will create work.projectname and results.projectname folders under `OUTDIR` path.
+        
  ```
 The following command should kick initiate the pipeline and display the status.
 
-`sh Run_upto_quants.sh Neuroblastoma_MAQC-III_SEQC true`
+`sh launch.sh `
 
 When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of 
 Nextflow, the input folder path, the results directory, and the work directory.
 
 
 ```
-+] Loading singularity  3.10.5  on cn42722
-[+] Loading java 17.0.2  ... 
-[+] Loading nextflow 22.10.2
-[+] Loading Graphviz v 2.40.1  ... 
-NXF_HOME=/data/khanlab3/kopardevn/AWS_MVP_test/results.vg1.2/.nextflow
-nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile Run_upto_quants 
-/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume --run_upto_counts true -with-trace -with-timeline 
-/data/khanlab3/kopardevn/AWS_MVP_test/results.vg1.2/timeline.html
-N E X T F L O W  ~  version 22.10.4
-Launching `/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf` [crazy_tuckerman] DSL2 - revision: 3e49210bb9
+[gangalapudiv2@cn4305 AWS_POC_Nextflow]$ ./launch.sh vg0416
+[+] Loading singularity  3.10.5  on cn4305 
+[+] Loading java 17.0.3.1  ... 
+[+] Loading nextflow  23.04.1 
+[+] Loading Graphviz v 2.46.1  ... 
+NXF_HOME=/data/khanlab2/NF_benchmarking/results.vg0416/.nextflow
+nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm 
+/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume -with-trace -with-timeline
+N E X T F L O W  ~  version 23.04.1
+Launching `/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf` [gigantic_moriondo] DSL2 - revision: 47347c03a7
 R N A S E Q - N F   P I P E L I N E  
 ===================================
-NF version   : 22.10.4
-runName      : crazy_tuckerman
+NF version   : 23.04.1
+runName      : gigantic_moriondo
 username     : gangalapudiv2
-configs      : [/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config, /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config]
-profile      : Run_upto_quants
-cmd line     : nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile Run_upto_quants 
-/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume --run_upto_counts true -with-trace -with-timeline 
-/data/khanlab3/kopardevn/AWS_MVP_test/results.vg1.2/timeline.html
-start time   : 2023-02-09T13:39:52.890203954-05:00
+configs      : [/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config, 
+/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config]
+profile      : biowulf_test_run_slurm
+cmd line     : nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm 
+/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume -with-trace -with-timeline
+start time   : 2023-07-14T08:38:30.805092321-04:00
 projectDir   : /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow
-launchDir    : /vf/users/khanlab3/kopardevn/AWS_MVP_test/results.vg1.2
-workdDir     : /data/khanlab3/kopardevn/AWS_MVP_test/work.vg1.2
+launchDir    : /gpfs/gsfs10/users/khanlab2/NF_benchmarking/results.vg0416
+workdDir     : /data/khanlab2/NF_benchmarking/work.vg0416
 homeDir      : /home/gangalapudiv2
-reads        : /data/khanlab/projects/fastq/*_{R1,R2}.fastq.gz
-
-[b5/33c3ef] process > Cutadapt (Test3_R_T)       [100%] 3 of 3, cached: 3 ✔
-[70/1fd193] process > Fastqc (Test3_R_T)         [100%] 3 of 3, cached: 3 ✔
+[bc/d5f459] process > RNAseq_multiple_libs:Common_RNAseq_WF:Cutadapt (Test1c_R_T)                           [100%] 2 of 2, cached: 2 ✔
+[19/393899] process > RNAseq_multiple_libs:Common_RNAseq_WF:Kraken (Test1_R_T)                              [100%] 2 of 2, cached: 2 ✔
+[a8/5dba33] process > RNAseq_multiple_libs:Common_RNAseq_WF:Krona (Test1c_R_T)                              [100%] 2 of 2, cached: 2 ✔
+[a1/839bd7] process > RNAseq_multiple_libs:Common_RNAseq_WF:Fastqc (Test1c_R_T)                             [100%] 2 of 2, cached: 2 ✔
+[6b/05eb55] process > RNAseq_multiple_libs:Common_RNAseq_WF:Star_RSEM:Star (Test1_R_T)                      [100%] 2 of 2, cached: 2 ✔
+[ad/fe60ba] process > RNAseq_multiple_libs:Common_RNAseq_WF:Star_RSEM:Strandedness (Test1_R_T)              [100%] 2 of 2, cached: 2 ✔
+[d5/1866a1] process > RNAseq_multiple_libs:Common_RNAseq_WF:Star_RSEM:Rsem (Test1_R_T)                      [100%] 2 of 2, cached: 2 ✔
+[70/0bb5d2] process > RNAseq_multiple_libs:Common_RNAseq_WF:Fusion_calling:Arriba (Test1c_R_T)              [100%] 2 of 2, cached: 2 ✔
 
 ```
 
