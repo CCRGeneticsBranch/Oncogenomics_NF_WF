@@ -69,12 +69,12 @@ export NXF_HOME="$RESULTSDIR/.nextflow"
 
 printenv|grep NXF
 
+if [ ! -d $RESULTSDIR ]; then mkdir -p $RESULTSDIR;fi
+cd $RESULTSDIR
+
 #run script to generate individual samplesheets
 python /data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/bin/split_samplesheet.py $SAMPLESHEET $RESULTSDIR
 
-# run
-if [ ! -d $RESULTSDIR ]; then mkdir -p $RESULTSDIR;fi
-cd $RESULTSDIR
 #nextflow run -profile biowulf main.nf -resume
 nf_cmd="nextflow"
 nf_cmd="$nf_cmd run"
