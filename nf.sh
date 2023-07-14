@@ -1,15 +1,14 @@
 #!/bin/bash
 
-if [[ "$#" -ne "3" ]];then
+if [[ "$#" -ne "2" ]];then
 	echo "This script takes two inputs"
 	echo "Provide Tag argument - This will add a tag to your resultsdir."
 	echo "Provide Run_upto_counts_only argument. It takes value true/false"
-        echo "example: sh nf.sh projectname true #this will run upto RSEM and generates counts "
-	echo "example: sh nf.sh projectname false #this will run the complete pipeline "
+        echo "example: sh nf.sh projectname  #this will run upto RSEM and generates counts "
+	echo "example: sh nf.sh projectname  #this will run the complete pipeline "
 
 	exit
 fi
-
 
 
 # list of profiles
@@ -17,7 +16,7 @@ fi
 # biowulf_test_run_slurm -> get interactive node and submit jobs to slurm
 # 
 
-# PROFILE="biowulf_test_run_local"
+#PROFILE="biowulf_test_run_local"
 PROFILE="biowulf_test_run_slurm"
 #PROFILE="biowulf_test_s3_slurm"
 set -e
@@ -31,7 +30,7 @@ WF_HOME=$SCRIPT_DIRNAME
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
 #adding casename parameter
-case="$3"
+#case="$3"
 
 #if [[ "${case//*=*/}" != "$case" ]]; then
 #  export CASENAME=`echo $case |cut -f2 -d "="`
@@ -42,7 +41,7 @@ case="$3"
 #  exit
 #fi
 
-export CASENAME=$case
+#export CASENAME=$case
 
 # load singularity and nextflow modules
 module load singularity nextflow graphviz
@@ -60,6 +59,7 @@ export OUTDIR="/data/khanlab2/NF_benchmarking"
 
 # export OUTTAG="9" # workDir will be $OUTDIR/work.$OUTTAG and resultsDir will be $OUTDIR/results.$OUTTAG and singularity cache is set to $OUTDIR/.singularity
 export OUTTAG=$1
+export SAMPLESHEET=$2
 export RESULTSDIR="$OUTDIR/results.$OUTTAG"
 export WORKDIR="$OUTDIR/work.$OUTTAG"
 
@@ -68,6 +68,9 @@ export NXF_HOME="$RESULTSDIR/.nextflow"
 # export SINGULARITY_BIND="/lscratch/$SLURM_JOB_ID"
 
 printenv|grep NXF
+
+#run script to generate individual samplesheets
+python /data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/bin/split_samplesheet.py $SAMPLESHEET $RESULTSDIR
 
 # run
 if [ ! -d $RESULTSDIR ]; then mkdir -p $RESULTSDIR;fi
@@ -78,7 +81,7 @@ nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
 #nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME  "
-nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --casename $CASENAME  " 
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume " 
 #nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME --json $JSON "
 # nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
