@@ -36,7 +36,7 @@ scheduling system.
 
 
  ```
-        sh launch.sh         
+        sh launch.sh tag /path/to/samplesheet        
         This script takes two inputs
         Provide Tag argument - This will add a tag to your resultsdir.
         Provide samplesheet with complete path
