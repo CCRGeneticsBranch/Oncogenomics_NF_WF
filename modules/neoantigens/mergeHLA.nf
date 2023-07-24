@@ -21,7 +21,7 @@ process MergeHLA {
     """
     set -exo pipefail
 
-    consensusHLA.pl ${hlaminer} ${seq2hla} |sort > ${meta.lib}.Calls.txt
+    consensusHLA.pl  ${seq2hla} ${hlaminer} |sort > ${meta.lib}.Calls.txt
 
     """
 }
