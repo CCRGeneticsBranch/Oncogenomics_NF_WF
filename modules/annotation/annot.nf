@@ -335,9 +335,10 @@ process AddAnnotationFull_somatic_variants {
      tuple val(meta2),path(final_annotation)
 
      output:
-     tuple val(meta),path("${meta.lib}.MuTect.annotatedFull.txt"), emit: mutect_annotationfull
-     tuple val(meta),path("${meta.lib}.strelka.indels.annotatedFull.txt"), emit: strelka_indels_annotationfull
-     tuple val(meta),path("${meta.lib}.strelka.snvs.annotatedFull.txt"), emit: strelka_snvs_annotationfull
+     tuple val(meta),
+     path("${meta.lib}.MuTect.annotatedFull.txt"),
+     path("${meta.lib}.strelka.indels.annotatedFull.txt"),
+     path("${meta.lib}.strelka.snvs.annotatedFull.txt")
 
 
      stub:

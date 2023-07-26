@@ -14,8 +14,16 @@ include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_RNAseq} from '../modules/Actionable.nf'
 include {Actionable_fusion} from '../modules/Actionable.nf'
 
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN MAIN WORKFLOW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
 workflow RNAseq_only {
 
+
+//config files
 combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
 somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
 
@@ -37,9 +45,10 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
     return fastq_meta
 }
 
-
+//Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
 
+//Create actionable fusions
 Actionable_fusion(
 Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[1] },
 Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[0] }
@@ -50,32 +59,40 @@ rnalib_qc_list_ch = Common_RNAseq_WF.out.rnalib_custum_qc.map { tuple -> tuple[1
 rnaseqmetrics_list_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[1] }
 rnaseqmetrics_meta_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[0] }
 
+//Run custom RNA QC
 RNAqc_TrancriptCoverage(
            rnalib_qc_list_ch,
            rnaseqmetrics_list_ch,
            rnaseqmetrics_meta_ch
 )
 
+//gather channels for makehotspotdb
 pileup_input_ch = Common_RNAseq_WF.out.pileup.map { tuple -> tuple[1] }
 pileup_meta_ch =Common_RNAseq_WF.out.pileup.map { tuple -> tuple[0] }
+
+//Run Makehotspotdb
 MakeHotSpotDB(pileup_input_ch,
              pileup_meta_ch
 )
   
-
+//Run FormatInput
 formatinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map { tuple -> tuple.drop(1) }
 FormatInput(
     formatinput_snpeff_ch,
     MakeHotSpotDB.out
 )
 
+//gather channels for circosplot
 merged_loh_ch = Common_RNAseq_WF.out.loh.map { tuple -> tuple[1] }
 meta_merged_loh = Common_RNAseq_WF.out.loh.map { tuple -> tuple[0] }
+
+//Run circos plot at case level
 CircosPlot(
     merged_loh_ch,
     meta_merged_loh
 )
 
+//Run Annotation subworkflow
 Annotation(FormatInput.out)
 
 merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation,by:[0])  
@@ -84,6 +101,8 @@ AddAnnotation(merged_ch)
 dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ tuple -> tuple.drop(1) } 
 dbinput_annot_ch = AddAnnotation.out.map{ tuple -> tuple.drop(1) }
 dbinput_meta_ch = AddAnnotation.out.map { tuple -> tuple[0] }
+
+//Run DBinput
 DBinput(
     dbinput_annot_ch,
     dbinput_snpeff_ch,
@@ -109,5 +128,4 @@ final_inputs = Common_RNAseq_WF.out.fusion_calls.join(Annotation.out.final_annot
 Allstepscomplete(final_inputs)
 
 
-//	python $script_home/fusionTools.py -i "$path/$patient_id/$case_id/Actionable/${patient_id}.fusion.actionable.txt" -o $out_file -t $threads -p $pfam_path -f $genome_fasta -g $gtf -n $can_file -d $domain_file
 }

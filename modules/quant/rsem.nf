@@ -28,7 +28,8 @@ process Rsem {
         tuple val(meta), path(T_bam), path(strandedness), path(genomeIndex)
  
         output:
-        tuple val(meta), path("${meta.lib}.genes.results")
+        tuple val(meta), path("${meta.lib}.genes.results"), emit: rsem_genes
+        tuple val(meta), path("${meta.lib}.isoforms.results"), emit: rsem_isoforms
 
         script:
         def args = task.ext.args   ?: ''
