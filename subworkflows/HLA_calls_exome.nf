@@ -11,7 +11,7 @@ workflow HLA_calls_exome {
         Seq2HLA_exome(samples_exome)
         MergeHLA(Seq2HLA_exome.out.combine(HLAminer_exome.out, by:0))
     emit:
-        MergeHLA.out
+        mergehla_exome = MergeHLA.out
         hlaminer_exome  = HLAminer_exome.out
         seq2hla_exome = Seq2HLA_exome.out
 }

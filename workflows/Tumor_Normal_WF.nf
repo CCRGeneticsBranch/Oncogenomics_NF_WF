@@ -144,14 +144,15 @@ somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
    .combine(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
 
-HLA_normals = Exome_common_WF.out.hlaminer_exome.branch {Normal: it[0].type == "Normal"}
-               .combine(Exome_common_WF.out.seq2hla_exome.branch {Normal: it[0].type == "Normal"},by:[0])
 Combine_variants(
     somatic_variants,
-    HLA_normals
+    Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "Normal"}
 )
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
+
+VEP.out.view()
+
 
 }
 

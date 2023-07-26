@@ -94,4 +94,5 @@ target_capture_ch = capture_ch
 HC_snpeff_snv_vcf2txt = Exome_GATK.out.HC_snpeff_snv_vcf2txt
 hlaminer_exome  = HLA_calls_exome.out.hlaminer_exome
 seq2hla_exome = HLA_calls_exome.out.seq2hla_exome
+mergehla_exome = HLA_calls_exome.out.mergehla_exome
 }
