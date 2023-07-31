@@ -11,6 +11,8 @@ include {AddAnnotation} from '../modules/annotation/annot'
 include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
 include {AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
 include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
+include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
+include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
 include {VEP} from '../modules/annotation/VEP.nf'
 
@@ -150,9 +152,71 @@ Combine_variants(
 )
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
+//AddAnnotation.out.view()
+//somatic_variants_txt.view()
+//Exome_common_WF.out.HC_snpeff_snv_vcf2txt.view()
+//AddAnnotation_somatic_variants.out.view()
 
-VEP.out.view()
+dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
+dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
+dbinput_HC_snpeff = combined_HC_vcf_ch.map{ tuple -> tuple.drop(1) }
+dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "Normal"}.map { tuple -> tuple[0] })
+dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "Tumor"}.map { tuple -> tuple[0] })
 
+Annotation_somatic(
+   dbinput_somatic_annot,
+   dbinput_somatic_snpeff,
+   dbinput_HC_snpeff,
+   dbinput_meta_tumor,
+   dbinput_meta_normal,
+   Annotation.out.rare_annotation
 
+)
+
+AddAnnotation.out.map { meta, file ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename
+    ]
+    [ meta2, file ]
+  }.groupTuple()
+   .map { meta, files -> [ meta, *files ] }
+   .filter { tuple ->
+    tuple.size() > 2
+  }
+   .set { dbinput_HC_annot_ch }
+
+dbinput_HC_annot_ch = dbinput_HC_annot_ch.map{ tuple -> tuple.drop(1) }
+
+Annotation_germline(
+   dbinput_HC_annot_ch,
+   dbinput_somatic_snpeff,
+   dbinput_HC_snpeff,
+   dbinput_meta_tumor,
+   dbinput_meta_normal,
+   Annotation.out.rare_annotation
+
+)
+Annotation_germline.out.germline.view()
 }
+/*
+addannotation
+[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/de/a4ea7f4aac5e2b87e590ea24004205/Test5_T1D_E.HC_Tumor.annotated.txt]
+[[id:Test8, lib:Test8_N2D_E, sc:clin.ex.v1, casename:NFtest0523, type:Normal, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/b2/f310a985ec143c8425c144169bb9bc/Test8_N2D_E.HC_Normal.annotated.txt]
 
+somatic_variants_txt.view()
+[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], 
+/data/khanlab2/NF_benchmarking/work.vg_case1/8c/844a48ec078717e88b1e5f268f49aa/Test5_T1D_E.MuTect_Tumor.snpEff.txt,
+/data/khanlab2/NF_benchmarking/work.vg_case1/d3/b6efcb388acfbc43ca6e4eeae1c536/Test5_T1D_E.strelka.indels_Tumor.snpEff.txt, 
+/data/khanlab2/NF_benchmarking/work.vg_case1/d3/55739948c34d51610c33a915518c1d/Test5_T1D_E.strelka.snvs_Tumor.snpEff.txt]
+
+[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/bf/be123bdc8c585e79276b0530bb6a8a/Test5_T1D_E.HC_Tumor.snpEff.txt]
+[[id:Test8, lib:Test8_N2D_E, sc:clin.ex.v1, casename:NFtest0523, type:Normal, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/a0/51d83dbfaed5702ad84cd805d75f59/Test8_N2D_E.HC_Normal.snpEff.txt]
+
+[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], 
+/data/khanlab2/NF_benchmarking/work.vg_case1/8d/19bf3e0ad69ad1182106653d3d043e/Test5_T1D_E.MuTect.annotated.txt, 
+/data/khanlab2/NF_benchmarking/work.vg_case1/8d/19bf3e0ad69ad1182106653d3d043e/Test5_T1D_E.strelka.indels.annotated.txt, 
+/data/khanlab2/NF_benchmarking/work.vg_case1/8d/19bf3e0ad69ad1182106653d3d043e/Test5_T1D_E.strelka.snvs.annotated.txt]
+
+
+*/

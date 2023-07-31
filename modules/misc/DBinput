@@ -68,3 +68,92 @@ process DBinput_multiple {
     fi
      """
 }
+
+process DBinput_multiples {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     path(dbinput_annot)
+     path(dbinput_somatic_snpeff)
+     path(dbinput_HC_snpeff)
+     val(meta)
+     val(meta2)
+     val(group)
+   
+     output:
+     tuple val(meta),
+        path("${meta.id}.${group}")
+
+     stub:
+     """
+     touch "${meta.id}.${group}"
+     """
+
+     script:
+
+     """
+     makeDBVariantFile.pl ${dbinput_annot.join(' ')}|AddSampleType.pl - "${meta2.lib} ${meta2.type} ${meta.lib} ${meta.type}" "${meta2.lib} ${meta2.sc} ${meta.lib} ${meta2.sc}" > ${meta.id}.${group}.tmp
+     addFS.pl ${meta.id}.${group}.tmp ${dbinput_HC_snpeff.join(' ')} ${dbinput_somatic_snpeff.join(' ')} > ${meta.id}.${group}
+     rm -rf ${meta.id}.${group}.tmp
+     """
+}
+
+
+process Somatic_actionable {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(annotation_coding_rare)
+     tuple val(meta2),path(somatic)
+     path somatic_actionable_sites
+     path combined_gene_list
+
+     output:
+     tuple val(meta),
+        path("${meta.id}.somatic.actionable.txt")
+
+     stub:
+     """
+     touch "${meta.id}.somatic.actionable.txt"
+     """
+     
+     script:
+     """
+     Actionable.v3.pl somatic ${somatic_actionable_sites} ${combined_gene_list} ${somatic} ${annotation_coding_rare} > ${meta.id}.somatic.actionable.txt
+
+     """
+}
+
+process Germline_actionable {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(annotation_coding_rare)
+     tuple val(meta2),path(germline)
+     path somatic_actionable_sites
+     path combined_gene_list
+
+     output:
+     tuple val(meta),
+        path("${meta.id}.somatic.actionable.txt")
+
+     stub:
+     """
+     touch "${meta.id}.somatic.actionable.txt"
+     """
+     
+     script:
+     """
+     Actionable.v3.pl somatic ${somatic_actionable_sites} ${combined_gene_list} ${somatic} ${annotation_coding_rare} > ${meta.id}.somatic.actionable.txt
+
+     """
+}
