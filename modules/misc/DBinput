@@ -104,7 +104,7 @@ process DBinput_multiples {
 
 process Somatic_actionable {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
 
@@ -132,7 +132,7 @@ process Somatic_actionable {
 
 process Germline_actionable {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
 
@@ -141,19 +141,20 @@ process Germline_actionable {
      tuple val(meta2),path(germline)
      path somatic_actionable_sites
      path combined_gene_list
+     tuple val(meta2),path(dbinput_somatic)
 
      output:
      tuple val(meta),
-        path("${meta.id}.somatic.actionable.txt")
+        path("${meta.id}.germline.actionable.txt")
 
      stub:
      """
-     touch "${meta.id}.somatic.actionable.txt"
+     touch "${meta.id}.germline.actionable.txt"
      """
      
      script:
      """
-     Actionable.v3.pl somatic ${somatic_actionable_sites} ${combined_gene_list} ${somatic} ${annotation_coding_rare} > ${meta.id}.somatic.actionable.txt
+     Actionable.v3.pl germline ${dbinput_somatic} ${germline} ${annotation_coding_rare} ${combined_gene_list} ${somatic_actionable_sites}  > ${meta.id}.germline.actionable.txt
 
      """
 }

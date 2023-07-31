@@ -1,24 +1,25 @@
 include {DBinput_multiples} from '../modules/misc/DBinput'
-include {Somatic_actionable} from '../modules/misc/DBinput'
+include {Germline_actionable} from '../modules/misc/DBinput'
 
-workflow Annotation_somatic {
+workflow Annotation_germline {
 
 
    somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
    combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
-   group               = Channel.from("somatic")
+   group               = Channel.from("germline")
 
 take:
-   dbinput_annot
+   dbinput_HC_annot
    dbinput_somatic_snpeff
    dbinput_HC_snpeff
    dbinput_meta_tumor
    dbinput_meta_normal
    annotation_coding_rare
+   dbinput_somatic
 
 main:
    DBinput_multiples(
-   dbinput_annot,
+   dbinput_HC_annot,
    dbinput_somatic_snpeff,
    dbinput_HC_snpeff,
    dbinput_meta_tumor,
@@ -26,17 +27,17 @@ main:
    group
    )
 
-   Somatic_actionable(
+   Germline_actionable(
    annotation_coding_rare,
    DBinput_multiples.out,
    somatic_actionable_sites,
-   combined_gene_list
+   combined_gene_list,
+   dbinput_somatic
 
    )
 
 emit:
 
-somatic_actionable = Somatic_actionable.out
-dbinput_somatic = DBinput_multiples.out
+germline = DBinput_multiples.out
 
 }

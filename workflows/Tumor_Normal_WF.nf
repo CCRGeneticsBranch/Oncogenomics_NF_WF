@@ -194,29 +194,9 @@ Annotation_germline(
    dbinput_HC_snpeff,
    dbinput_meta_tumor,
    dbinput_meta_normal,
-   Annotation.out.rare_annotation
+   Annotation.out.rare_annotation,
+   Annotation_somatic.out.dbinput_somatic
 
 )
-Annotation_germline.out.germline.view()
+
 }
-/*
-addannotation
-[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/de/a4ea7f4aac5e2b87e590ea24004205/Test5_T1D_E.HC_Tumor.annotated.txt]
-[[id:Test8, lib:Test8_N2D_E, sc:clin.ex.v1, casename:NFtest0523, type:Normal, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/b2/f310a985ec143c8425c144169bb9bc/Test8_N2D_E.HC_Normal.annotated.txt]
-
-somatic_variants_txt.view()
-[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], 
-/data/khanlab2/NF_benchmarking/work.vg_case1/8c/844a48ec078717e88b1e5f268f49aa/Test5_T1D_E.MuTect_Tumor.snpEff.txt,
-/data/khanlab2/NF_benchmarking/work.vg_case1/d3/b6efcb388acfbc43ca6e4eeae1c536/Test5_T1D_E.strelka.indels_Tumor.snpEff.txt, 
-/data/khanlab2/NF_benchmarking/work.vg_case1/d3/55739948c34d51610c33a915518c1d/Test5_T1D_E.strelka.snvs_Tumor.snpEff.txt]
-
-[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/bf/be123bdc8c585e79276b0530bb6a8a/Test5_T1D_E.HC_Tumor.snpEff.txt]
-[[id:Test8, lib:Test8_N2D_E, sc:clin.ex.v1, casename:NFtest0523, type:Normal, diagnosis:Osteosarcoma], /data/khanlab2/NF_benchmarking/work.vg_case1/a0/51d83dbfaed5702ad84cd805d75f59/Test8_N2D_E.HC_Normal.snpEff.txt]
-
-[[id:Test8, lib:Test5_T1D_E, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], 
-/data/khanlab2/NF_benchmarking/work.vg_case1/8d/19bf3e0ad69ad1182106653d3d043e/Test5_T1D_E.MuTect.annotated.txt, 
-/data/khanlab2/NF_benchmarking/work.vg_case1/8d/19bf3e0ad69ad1182106653d3d043e/Test5_T1D_E.strelka.indels.annotated.txt, 
-/data/khanlab2/NF_benchmarking/work.vg_case1/8d/19bf3e0ad69ad1182106653d3d043e/Test5_T1D_E.strelka.snvs.annotated.txt]
-
-
-*/
