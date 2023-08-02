@@ -298,7 +298,7 @@ process Read_depth {
    """
    echo -e "chr\tstart\tend\tgene\tposition\tdepth" >  ${prefix}.depth_per_base
    cut -f1-4 ${targetcapture} > intervals.bed
-   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -abam - -b intervals.bed -d >> ${prefix}.depth_per_base
+   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -split -a intervals.bed -b - -d >> ${prefix}.depth_per_base
 
    """
 

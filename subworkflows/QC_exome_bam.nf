@@ -40,7 +40,7 @@ workflow QC_exome_bam {
          )
          CircosPlot_lib(Genotyping.out.loh)
          Read_depth(GATK_exome_bam.combine(capture_ch, by:[0]))
-         //FailedExons_Genes(Read_depth.out) test on full sample
+         FailedExons_Genes(Read_depth.out)
          Bam2tdf(
           GATK_exome_bam
              .combine(genome)
