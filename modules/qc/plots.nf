@@ -418,7 +418,8 @@ process HSMetrics {
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     java -Xmx75g  -jar \$PICARDJAR CollectHsMetrics BAIT_INTERVALS= ${probe_intervals} TARGET_INTERVALS= ${target_intervals} INPUT= ${bam} OUTPUT= ${prefix}.hsmetrics METRIC_ACCUMULATION_LEVEL=ALL_READS REFERENCE_SEQUENCE= ${genome} QUIET=true  VALIDATION_STRINGENCY=SILENT
+     java -Xmx75g  -jar \$PICARDJAR CollectHsMetrics BAIT_INTERVALS= ${probe_intervals} TARGET_INTERVALS= ${target_intervals} INPUT= ${bam} OUTPUT= ${prefix}.histogram.hsmetrics METRIC_ACCUMULATION_LEVEL=ALL_READS REFERENCE_SEQUENCE= ${genome} QUIET=true  VALIDATION_STRINGENCY=SILENT
+     awk '/^## HISTOGRAM/ {{exit}} {{print}}' ${prefix}.histogram.hsmetrics > ${prefix}.hsmetrics
      """
 
 }
