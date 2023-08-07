@@ -385,8 +385,8 @@ process TargetIntervals {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
    
-     cat <(samtools view -H ${bam}) <(gawk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${design_ch} )> ${prefix}.probe.intervals
-     cat <(samtools view -H ${bam}) <(gawk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${targetcapture} )> ${prefix}.target.intervals
+     cat <(samtools view -H ${bam}) <(awk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${design_ch} )> ${prefix}.probe.intervals
+     cat <(samtools view -H ${bam}) <(awk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${targetcapture} )> ${prefix}.target.intervals
      """
 
 }
@@ -402,7 +402,9 @@ process HSMetrics {
         path(index),
         path(probe_intervals),
         path(target_intervals),
-        path(genome)
+        path(genome),
+        path(genome_fai),
+        path(genome_dict)
 
     output:
     tuple val(meta),
