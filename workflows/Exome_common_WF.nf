@@ -76,7 +76,6 @@ design_ch =  Exome_GATK.out.GATK_Exome_bam
 
 
 QC_exome_bam(
-
     Exome_GATK.out.GATK_Exome_bam,
     BWA_picard.out.bwa_bam,
     capture_ch,

@@ -72,6 +72,7 @@ workflow QC_exome_bam {
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
+        TargetIntervals.out.view()
         Conpair_pile(
           GATK_exome_bam
           .combine(genome)
@@ -81,7 +82,12 @@ workflow QC_exome_bam {
         )
         
         //Test this with full sample
-        //HSMetrics(GATK_exome_bam.combine(TargetIntervals.out, by:[0]).combine(genome))
+        HSMetrics(GATK_exome_bam
+          .combine(TargetIntervals.out, by:[0])
+          .combine(genome)
+          .combine(genome_fai)
+          .combine(genome_dict)  
+          )
    emit:
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out
