@@ -315,3 +315,34 @@ process Exome_QC {
      rm -rf ${prefix}.consolidated_QC.tmp
      """
 }
+
+process QC_summary_Patientlevel {
+
+    tag "$meta.id"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(tumor),
+        path(normal)
+    
+    output:
+    tuple val(meta),path("${meta.id}.consolidated_QC.txt")
+
+    stub:
+    """
+      touch "${meta.id}.consolidated_QC.txt"
+    """
+   
+    script:
+    """
+    cat ${tumor} ${normal} |sort|uniq|awk 'NF' > ${meta.id}.consolidated_QC.txt
+
+    """
+
+
+
+
+
+
+}

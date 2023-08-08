@@ -11,10 +11,31 @@ include {AddAnnotation} from '../modules/annotation/annot'
 include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
 include {AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
 include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
+include {MutationalSignature} from '../modules/misc/MutationalSignature.nf'
+include {Sequenza_annotation} from '../subworkflows/Sequenza_annotation'
 include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
 include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
 include {VEP} from '../modules/annotation/VEP.nf'
+include {QC_summary_Patientlevel} from '../modules/qc/qc'
+
+
+
+
+def combinelibraries(inputData) {
+    def processedData = inputData.map { meta, file ->
+        meta2 = [
+            id: meta.id,
+            casename: meta.casename
+        ]
+        [meta2, file]
+    }.groupTuple()
+     .map { meta, files -> [meta, *files] }
+     .filter { tuple ->
+        tuple.size() > 2
+     }
+    return processedData
+}
 
 workflow Tumor_Normal_WF {
 
@@ -141,6 +162,9 @@ AddAnnotationFull_somatic_variants(
 )
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
+//MutationalSignature(UnionSomaticCalls.out) 
+
+
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
@@ -198,5 +222,19 @@ Annotation_germline(
    Annotation_somatic.out.dbinput_somatic
 
 )
+/*
+Sequenza_annotation(
+    tumor_bam_channel.Tumor,
+    tumor_bam_channel.Normal
+)
+
+*/
+
+//Exome_common_WF.out.exome_qc.view()
+def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
+
+QC_summary_Patientlevel(qc_summary_ch)
+
+
 
 }
