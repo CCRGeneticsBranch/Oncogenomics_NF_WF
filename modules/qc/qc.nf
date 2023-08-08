@@ -296,7 +296,8 @@ process Exome_QC {
     tuple val(meta),
         path(bam),
         path(index),
-        path(Tbed)
+        path(Tbed),
+        path(hsmetrics)
 
     output:
     tuple val(meta),path("${meta.lib}.consolidated_QC")
@@ -310,6 +311,7 @@ process Exome_QC {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      QC_stats_Final.py  ${bam} ${Tbed} . ${meta.id} ${prefix} "${meta.diagnosis}" > ${prefix}.consolidated_QC.tmp
-
+     addAttributes.pl ${prefix} ${hsmetrics} ${prefix}.consolidated_QC.tmp ${prefix}.consolidated_QC
+     rm -rf ${prefix}.consolidated_QC.tmp
      """
 }

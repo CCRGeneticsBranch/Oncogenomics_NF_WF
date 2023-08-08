@@ -13,6 +13,7 @@ include {CoveragePlot} from  '../modules/qc/plots'
 include {TargetIntervals} from  '../modules/qc/plots'
 include {HSMetrics} from  '../modules/qc/plots'
 include {Conpair_pile} from  '../modules/qc/qc'
+include {Exome_QC} from '../modules/qc/qc.nf'
 
 workflow QC_exome_bam {
 
@@ -72,7 +73,7 @@ workflow QC_exome_bam {
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
-        TargetIntervals.out.view()
+
         Conpair_pile(
           GATK_exome_bam
           .combine(genome)
@@ -80,16 +81,20 @@ workflow QC_exome_bam {
           .combine(genome_dict)
           .combine(conpair_refbed)
         )
-        
-        //Test this with full sample
+         
         HSMetrics(GATK_exome_bam
           .combine(TargetIntervals.out, by:[0])
           .combine(genome)
           .combine(genome_fai)
           .combine(genome_dict)  
           )
+        Exome_QC(
+          GATK_exome_bam.combine(capture_ch, by:[0]).combine(HSMetrics.out, by:[0])
+        )
+
    emit:
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out
          loh = Genotyping.out.loh
+
 }
