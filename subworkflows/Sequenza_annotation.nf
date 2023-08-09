@@ -22,12 +22,12 @@ main:
         genome_dict,
         gc50base   
     )
-/*  build docker with procps for this to work
+//  build docker with procps for this to work
     Sequenza(
         Sequenza_utils.out,
         sequenza_Rscript
     )
-*/
+
 
 emit:
     sequenza = Sequenza_utils.out

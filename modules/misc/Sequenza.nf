@@ -43,11 +43,11 @@ process Sequenza {
      
      output:
      tuple val(meta),
-     path("${meta.lib}_CN_bars.pdf")
+     path("${meta.lib}/${meta.lib}_CN_bars.pdf")
 
     stub:
     """   
-    touch "${meta.lib}_CN_bars.pdf"
+    touch "${meta.lib}/${meta.lib}_CN_bars.pdf"
 
     """
 
@@ -55,5 +55,6 @@ process Sequenza {
 
     """
      ${sequenza_Rscript} --sample ${meta.lib}
+
     """
 }
