@@ -113,6 +113,7 @@ SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
                .combine(Biowulf_snpEff_config)
                .combine(strelka_indelch)
     )
+
 Vcf2txt(SnpEff.out.combine(strelka_indelch))
 
 Mutect_WF(
@@ -162,7 +163,7 @@ AddAnnotationFull_somatic_variants(
 )
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
-//MutationalSignature(UnionSomaticCalls.out) 
+MutationalSignature(UnionSomaticCalls.out) 
 
 
 
@@ -222,13 +223,13 @@ Annotation_germline(
    Annotation_somatic.out.dbinput_somatic
 
 )
-/*
+
 Sequenza_annotation(
     tumor_bam_channel.Tumor,
     tumor_bam_channel.Normal
 )
 
-*/
+
 
 //Exome_common_WF.out.exome_qc.view()
 def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
