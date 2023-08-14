@@ -50,7 +50,7 @@ process VEP {
   /opt/vep/src/ensembl-vep/vep -i ${combined_vcf_tmp} --format vcf --plugin Downstream \
                   --terms SO --offline --cache --dir ${vep_cache} \
                    --assembly GRCh37 \
-                  --output_file ${prefix}.final.vcf --vcf --force_overwrite
+                  --output_file ${prefix}.final.vcf --vcf --force_overwrite --no_check_variants_order 
   """
 
 
