@@ -163,6 +163,7 @@ AddAnnotationFull_somatic_variants(
 )
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
+//Test mutational signature only with full sample
 MutationalSignature(UnionSomaticCalls.out) 
 
 
@@ -177,10 +178,7 @@ Combine_variants(
 )
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
-//AddAnnotation.out.view()
-//somatic_variants_txt.view()
-//Exome_common_WF.out.HC_snpeff_snv_vcf2txt.view()
-//AddAnnotation_somatic_variants.out.view()
+
 
 dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
 dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
@@ -223,10 +221,11 @@ Annotation_germline(
    Annotation_somatic.out.dbinput_somatic
 
 )
-
+tumor_target_capture = Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "Tumor"}
 Sequenza_annotation(
     tumor_bam_channel.Tumor,
-    tumor_bam_channel.Normal
+    tumor_bam_channel.Normal,
+    tumor_target_capture
 )
 
 
@@ -237,5 +236,8 @@ def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 QC_summary_Patientlevel(qc_summary_ch)
 
 
+//Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "Tumor"}.view()
+
+//[[id:NCI0439, lib:NCI0439_T1D_E_HTNCJBGX9, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/Clinomics/Ref/khanlab/design/Agilent_SureSelect_Clinical_Research_Exome.target.hg19.merged.bed]
 
 }
