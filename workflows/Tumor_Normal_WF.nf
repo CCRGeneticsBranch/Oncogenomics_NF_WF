@@ -12,6 +12,8 @@ include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
 include {AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
 include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
 include {MutationalSignature} from '../modules/misc/MutationalSignature.nf'
+include {Cosmic3Signature} from '../modules/misc/MutationalSignature.nf'
+include {MutationBurden} from '../modules/misc/MutationBurden.nf'
 include {Sequenza_annotation} from '../subworkflows/Sequenza_annotation'
 include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
 include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
@@ -52,6 +54,10 @@ workflow Tumor_Normal_WF {
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     vep_cache              = Channel.of(file(params.vep_cache, checkIfExists:true))
+    cosmic_indel_rda       = Channel.of(file(params.cosmic_indel_rda, checkIfExists:true))
+    cosmic_genome_rda      = Channel.of(file(params.cosmic_genome_rda, checkIfExists:true))
+    cosmic_dbs_rda         = Channel.of(file(params.cosmic_dbs_rda, checkIfExists:true))
+
 // Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
 .splitCsv(header:true)
@@ -167,11 +173,16 @@ UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 MutationalSignature(UnionSomaticCalls.out) 
 
 
-
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
    .combine(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
 
+Cosmic3Signature(
+    somatic_variants,
+    cosmic_indel_rda,
+    cosmic_genome_rda,
+    cosmic_dbs_rda
+)
 Combine_variants(
     somatic_variants,
     Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "Normal"}
@@ -228,16 +239,48 @@ Sequenza_annotation(
     tumor_target_capture
 )
 
-
-
-//Exome_common_WF.out.exome_qc.view()
+highconfidence_somatic_threshold = tumor_target_capture
+   .map {tuple ->
+        def meta = tuple[0]
+        def bam = tuple[1]
+        def Normal = ''
+        def Tumor = ''
+        def VAF =  ''
+        if (meta.sc == 'clin.ex.v1' || meta.sc == 'nextera.ex.v1'|| meta.sc == 'vcrome2.1_pkv2' || meta.sc == 'seqcapez.hu.ex.v3' || meta.sc == 'seqcapez.hu.ex.utr.v1' || meta.sc == 'agilent.v7'|| meta.sc == 'panel_paed_v5_w5.1') {
+            Normal = params.highconfidence_somatic_threshold['threshold_1']['Normal']
+            Tumor = params.highconfidence_somatic_threshold['threshold_1']['Tumor']
+            VAF = params.highconfidence_somatic_threshold['threshold_1']['VAF']
+        } else if (meta.sc == 'clin.snv.v1'|| meta.sc == 'clin.snv.v2') {
+            Normal = params.highconfidence_somatic_threshold['threshold_2']['Normal']
+            Tumor = params.highconfidence_somatic_threshold['threshold_2']['Tumor']
+            VAF = params.highconfidence_somatic_threshold['threshold_2']['VAF']
+        } else if (meta.sc == 'seqcapez.rms.v1') {
+            Normal = params.highconfidence_somatic_threshold['threshold_3']['Normal']
+            Tumor = params.highconfidence_somatic_threshold['threshold_3']['Tumor']
+            VAF = params.highconfidence_somatic_threshold['threshold_3']['VAF']
+        } else if (meta.sc == 'wholegenome'){
+            Normal = params.highconfidence_somatic_threshold['threshold_4']['Normal']
+            Tumor = params.highconfidence_somatic_threshold['threshold_4']['Tumor']
+            VAF = params.highconfidence_somatic_threshold['threshold_4']['VAF']
+        }
+        return [meta,Normal,Tumor,VAF] 
+   }
+/*
+MutationBurden(
+    AddAnnotationFull_somatic_variants.out,
+    params.clin_ex_v1_MB,
+    highconfidence_somatic_threshold,
+    mutect_ch,
+    strelka_indelch,
+    strelka_snvsch
+)
+//highconfidence_somatic_threshold.view()
+//tumor_target_capture.view()
+*/
 def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 
 QC_summary_Patientlevel(qc_summary_ch)
 
 
-//Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "Tumor"}.view()
-
-//[[id:NCI0439, lib:NCI0439_T1D_E_HTNCJBGX9, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/Clinomics/Ref/khanlab/design/Agilent_SureSelect_Clinical_Research_Exome.target.hg19.merged.bed]
 
 }
