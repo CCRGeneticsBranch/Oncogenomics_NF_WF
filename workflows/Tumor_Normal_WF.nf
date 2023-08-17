@@ -20,6 +20,9 @@ include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
 include {VEP} from '../modules/annotation/VEP.nf'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
+include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
+include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
+
 
 
 
@@ -57,6 +60,7 @@ workflow Tumor_Normal_WF {
     cosmic_indel_rda       = Channel.of(file(params.cosmic_indel_rda, checkIfExists:true))
     cosmic_genome_rda      = Channel.of(file(params.cosmic_genome_rda, checkIfExists:true))
     cosmic_dbs_rda         = Channel.of(file(params.cosmic_dbs_rda, checkIfExists:true))
+    cnv_ref_access         = Channel.of(file(params.cnv_ref_access, checkIfExists:true))
 
 // Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
@@ -107,6 +111,16 @@ tumor_bam_channel = bam_target_ch.branch {
     Tumor: it[0].type == "Tumor"
     Normal: it[0].type == "Normal"
 }
+
+CNVkitPaired(
+    tumor_bam_channel.Tumor,
+    tumor_bam_channel.Normal.map { tuple -> tuple.take(tuple.size() - 1) },
+    cnv_ref_access,
+    genome,
+    genome_fai,
+    genome_dict
+)
+CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
 Manta_Strelka(
     tumor_bam_channel.Tumor,
@@ -274,9 +288,10 @@ MutationBurden(
     strelka_indelch,
     strelka_snvsch
 )
-//highconfidence_somatic_threshold.view()
-//tumor_target_capture.view()
 */
+
+//tumor_target_capture.view()
+//[[id:NCI0439, lib:NCI0439_T1D_E_HTNCJBGX9, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/Clinomics/Ref/khanlab/design/Agilent_SureSelect_Clinical_Research_Exome.target.hg19.merged.bed]
 def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 
 QC_summary_Patientlevel(qc_summary_ch)
