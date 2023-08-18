@@ -22,7 +22,7 @@ include {VEP} from '../modules/annotation/VEP.nf'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
-
+include {TcellExtrect} from '../modules/misc/TcellExtrect'
 
 
 
@@ -61,6 +61,7 @@ workflow Tumor_Normal_WF {
     cosmic_genome_rda      = Channel.of(file(params.cosmic_genome_rda, checkIfExists:true))
     cosmic_dbs_rda         = Channel.of(file(params.cosmic_dbs_rda, checkIfExists:true))
     cnv_ref_access         = Channel.of(file(params.cnv_ref_access, checkIfExists:true))
+    genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
 
 // Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
@@ -82,6 +83,8 @@ samples_exome = Channel.fromPath("Tumor_Normal.csv")
 
 //Run the common exome workflow, this workflow runs all the steps from BWA to GATK and QC steps
 Exome_common_WF(samples_exome)
+
+
 
 //Create a combined channel of libraries pileup  to generate hotspotdb at Patient-case level
 Exome_common_WF.out.pileup.map { meta, file ->
@@ -252,6 +255,9 @@ Sequenza_annotation(
     tumor_bam_channel.Normal,
     tumor_target_capture
 )
+tcellextrect_input = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0]).combine(Sequenza_annotation.out.alternate).combine(genome_version_tcellextrect)
+
+TcellExtrect(tcellextrect_input)
 
 highconfidence_somatic_threshold = tumor_target_capture
    .map {tuple ->
@@ -297,5 +303,5 @@ def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 QC_summary_Patientlevel(qc_summary_ch)
 
 
-
+//data/khanlab2/NF_benchmarking/work.vg_NCI0439/37/53b3dd612c5d2ec23959eafa24fde8/test/split
 }
