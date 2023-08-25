@@ -7,7 +7,9 @@ process Arriba {
     tuple val(meta),path(trim),path(reffa),path(star_genomeIndex),path(gtf)
  
     output:
-    tuple val(meta),path("${meta.lib}.arriba-fusion.txt")
+    tuple val(meta),path("${meta.lib}.arriba-fusion.txt"), emit: arriba_fusion
+    tuple val(meta),path("arriba_out/${meta.lib}.fusions.discarded.tsv"), emit: arriba_discarded
+    tuple val(meta),path("arriba_out/${meta.lib}.fusions.pdf") , emit: arriba_pdf
  
     stub:
     """
@@ -87,7 +89,7 @@ process Arriba {
     samtools index -@ ${task.cpus} ${prefix}.arriba.Aligned.sortedByCoords.out.bam
     
     # process fusions    
-    
+    mkdir arriba_out
     NFUSIONS=`wc -l ${prefix}.fusions.tsv`
         
     if [ "\$NFUSIONS" -gt "1" ];then
@@ -102,7 +104,11 @@ process Arriba {
         touch ${prefix}.fusions.pdf
     fi
 
-    mv ${prefix}.fusions.tsv ${prefix}.arriba-fusion.txt
+    cp ${prefix}.fusions.tsv ${prefix}.arriba-fusion.txt
+    
+    
+    mv ${prefix}.fusions.* ./arriba_out
+    
     """
 
 }

@@ -28,7 +28,7 @@ workflow Fusion_calling {
     )
     Starfusion(starfusioninput)
 
-    Mfinput = Arriba.out.join(Fusioncatcher.out.fc_output, by: [0]).join(Starfusion.out,by: [0])
+    Mfinput = Arriba.out.arriba_fusion.join(Fusioncatcher.out.fc_output, by: [0]).join(Starfusion.out,by: [0])
     Mergefusion(Mfinput)
   
 
