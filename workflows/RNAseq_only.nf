@@ -11,7 +11,7 @@ include {AddAnnotation} from '../modules/annotation/annot'
 include {DBinput} from '../modules/misc/DBinput'
 include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CircosPlot} from '../modules/qc/qc'
-include {Actionable_RNAseq} from '../modules/Actionable.nf'
+include {Actionable_variants} from '../modules/Actionable.nf'
 include {Actionable_fusion} from '../modules/Actionable.nf'
 
 
@@ -26,6 +26,7 @@ workflow RNAseq_only {
 //config files
 combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
 somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
+group               = Channel.from("rnaseq")
 
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNAseq.csv")
@@ -109,10 +110,11 @@ DBinput(
     dbinput_meta_ch
 )
 
-Actionable_RNAseq(DBinput.out
+Actionable_variants(DBinput.out
        .combine(Annotation.out.rare_annotation,by:[0])
        .combine(combined_gene_list)
        .combine(somatic_actionable_sites)
+       .combine(group)
 )
 
 //Common_RNAseq_WF.out.rsem_counts.view()

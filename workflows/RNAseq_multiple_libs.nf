@@ -10,7 +10,7 @@ include {AddAnnotation} from '../modules/annotation/annot'
 include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
 include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_fusion} from '../modules/Actionable.nf'
-include {Actionable_RNAseq} from '../modules/Actionable.nf'
+include {Actionable_variants} from '../modules/Actionable.nf'
 include {DBinput_multiple} from '../modules/misc/DBinput'
 
 
@@ -28,6 +28,7 @@ genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_an
 genome_version = Channel.from(params.genome_version)
 pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
 genome  = Channel.of(file(params.genome, checkIfExists:true))
+group               = Channel.from("rnaseq")
 
 
 //create a sample channel using meta hashmap
@@ -258,7 +259,7 @@ DBinput_multiple(
 )
 
 //Run Actionable_RNAseq to generate .rnaseq files
-Actionable_RNAseq(DBinput_multiple.out
+Actionable_variants(DBinput_multiple.out
        .combine(Annotation.out.rare_annotation,by:[0])
        .combine(combined_gene_list)
        .combine(somatic_actionable_sites)
