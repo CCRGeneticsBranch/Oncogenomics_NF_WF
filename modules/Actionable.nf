@@ -1,4 +1,4 @@
-process Actionable_RNAseq {
+process Actionable_variants {
 
      tag "$meta.lib"
 
@@ -6,29 +6,30 @@ process Actionable_RNAseq {
 
      input:
      tuple val(meta),
-      path(rnaseq),
+      path(dbinput),
       path(annotation_coding_rare),
       path(combined_gene_list),
-      path(somatic_actionable_sites)
+      path(somatic_actionable_sites),
+      val(group)
 
      output:
      tuple val(meta),
-        path("${meta.id}.rnaseq.actionable.txt")
+        path("${meta.id}.${group}.actionable.txt")
 
      stub:
      """
-     touch "${meta.id}.rnaseq.actionable.txt"
+     touch "${meta.id}.${group}.actionable.txt"
      """
 
      script:
 
      """
-     touch ${rnaseq}.dummy
+     touch ${dbinput}.dummy
 
-     Actionable.v3.pl rnaseq ${rnaseq}.dummy ${rnaseq} ${annotation_coding_rare} ${combined_gene_list} ${somatic_actionable_sites} > ${meta.id}.rnaseq.actionable.txt.gl
-     Actionable.v3.pl somatic ${somatic_actionable_sites} ${combined_gene_list} ${rnaseq} ${annotation_coding_rare} > ${meta.id}.rnaseq.actionable.txt.som
-     germlineOnly.pl ${meta.id}.rnaseq.actionable.txt.gl ${meta.id}.rnaseq.actionable.txt.som > ${meta.id}.rnaseq.actionable.txt
-     rm -rf ${meta.id}.rnaseq.actionable.txt.gl ${meta.id}.rnaseq.actionable.txt.som ${rnaseq}.dummy
+     Actionable.v3.pl rnaseq ${dbinput}.dummy ${dbinput} ${annotation_coding_rare} ${combined_gene_list} ${somatic_actionable_sites} > ${meta.id}.${group}.actionable.txt.gl
+     Actionable.v3.pl somatic ${somatic_actionable_sites} ${combined_gene_list} ${dbinput} ${annotation_coding_rare} > ${meta.id}.${group}.actionable.txt.som
+     germlineOnly.pl ${meta.id}.${group}.actionable.txt.gl ${meta.id}.${group}.actionable.txt.som > ${meta.id}.${group}.actionable.txt
+     rm -rf ${meta.id}.${group}.actionable.txt.gl ${meta.id}.${group}.actionable.txt.som ${dbinput}.dummy
 
      """
 }
