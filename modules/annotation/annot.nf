@@ -251,8 +251,8 @@ ${docm_out}
 ${candl_out}
 ${tcc_out}
 ${mcg_out}
-${pcg_out}
-${civic_out}" > list
+${civic_out}
+${pcg_out}" > list
      
      CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
      GeneAnnotation.pl ${ACMG} AnnotationInput.annotations.final.txt.tmp > ${meta.id}.Annotations.final.txt
@@ -282,7 +282,7 @@ process AddAnnotation {
      
      """
      
-     addAnnotations2vcf.pl ${snpeff_txt} ${rare_annotation}  > ${meta.lib}.HC_${meta.type}.annotated.txt 
+     addAnnotations2vcf.pl  ${rare_annotation} ${snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt 
 
      """
 
@@ -351,9 +351,9 @@ process AddAnnotationFull_somatic_variants {
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     addAnnotations2vcf.pl ${mutect_txt} ${final_annotation}   > ${prefix}.MuTect.annotatedFull.txt
-     addAnnotations2vcf.pl ${strelka_indels_txt} ${final_annotation}   > ${prefix}.strelka.indels.annotatedFull.txt
-     addAnnotations2vcf.pl ${strelka_snvs_txt} ${final_annotation}   > ${prefix}.strelka.snvs.annotatedFull.txt
+     addAnnotations2vcf.pl  ${final_annotation} ${mutect_txt}  > ${prefix}.MuTect.annotatedFull.txt
+     addAnnotations2vcf.pl  ${final_annotation} ${strelka_indels_txt}  > ${prefix}.strelka.indels.annotatedFull.txt
+     addAnnotations2vcf.pl  ${final_annotation} ${strelka_snvs_txt}  > ${prefix}.strelka.snvs.annotatedFull.txt
 
      """
 
