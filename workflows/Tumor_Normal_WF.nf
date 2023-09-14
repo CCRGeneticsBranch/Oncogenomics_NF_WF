@@ -285,7 +285,7 @@ highconfidence_somatic_threshold = tumor_target_capture
         }
         return [meta,Normal,Tumor,VAF] 
    }
-/*
+
 MutationBurden(
     AddAnnotationFull_somatic_variants.out,
     params.clin_ex_v1_MB,
@@ -294,10 +294,8 @@ MutationBurden(
     strelka_indelch,
     strelka_snvsch
 )
-*/
 
-//tumor_target_capture.view()
-//[[id:NCI0439, lib:NCI0439_T1D_E_HTNCJBGX9, sc:clin.ex.v1, casename:NFtest0523, type:Tumor, diagnosis:Osteosarcoma], /data/Clinomics/Ref/khanlab/design/Agilent_SureSelect_Clinical_Research_Exome.target.hg19.merged.bed]
+
 def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 
 QC_summary_Patientlevel(qc_summary_ch)
