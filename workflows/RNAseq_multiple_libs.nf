@@ -12,6 +12,7 @@ include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_fusion} from '../modules/Actionable.nf'
 include {Actionable_variants} from '../modules/Actionable.nf'
 include {DBinput_multiple} from '../modules/misc/DBinput'
+include {Multiqc} from '../modules/qc/qc'
 
 
 /*
@@ -19,6 +20,23 @@ include {DBinput_multiple} from '../modules/misc/DBinput'
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+def combinelibraries(inputData) {
+    def processedData = inputData.map { meta, file ->
+        meta2 = [
+            id: meta.id,
+            casename: meta.casename
+        ]
+        [meta2, file]
+    }.groupTuple()
+     .map { meta, files -> [meta, *files] }
+     .filter { tuple ->
+        tuple.size() > 2
+     }
+    return processedData
+}
+
+
 workflow RNAseq_multiple_libs {
 
 //config files
@@ -88,7 +106,7 @@ Common_RNAseq_WF.out.rsem_isoforms.map { meta, file ->
   }
    .set { combined_rsem_ch }
 
-/* Test this with full sample
+/*
 Fusion_Annotation(
     combined_rsem_ch.map { tuple -> tuple.drop(1) },
     Actionable_fusion.out.combine(pfamdb).combine(genome),
@@ -236,6 +254,7 @@ Common_RNAseq_WF.out.snpeff_vcf.map { meta, file ->
   }
    .set { dbinput_combined_snpeff_txt }
 
+
 //create combined Annotation channel of multiple libraries
 AddAnnotation.out.map { meta, file ->
     meta2 = [
@@ -263,6 +282,7 @@ Actionable_variants(DBinput_multiple.out
        .combine(Annotation.out.rare_annotation,by:[0])
        .combine(combined_gene_list)
        .combine(somatic_actionable_sites)
+       .combine(group)
 )
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
@@ -270,8 +290,18 @@ multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup
                    .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                    .join(Common_RNAseq_WF.out.rsem_genes, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                    .join(Common_RNAseq_WF.out.circos_plot, by: [0])
-//multiqc_input.view()
+
+multiqc_input.map { meta, fastqc, pileup, coverage, chimeric, rsem, rnaseqc, circos ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename,
+        type: meta.type
+    ]
+    [ meta2, fastqc, pileup, coverage, chimeric, rsem, rnaseqc, circos ]
+  }.groupTuple()
+   .map { meta, fastqcs, pileups, coverages, chimerics, rsems, rnaseqcs, circoss -> [ meta, *fastqcs, *pileups, *coverages, *chimerics, *rsems, *rnaseqcs, *circoss ] }
+   .set { multiqc_ch }
+Multiqc(multiqc_ch)
 
 
 }
-
