@@ -18,7 +18,7 @@ process Mergefusion {
 
     script:
     """
-    ActionableFusion.v1.pl  ${meta.lib} ${FC} ${SF} ${arriba} $PWD | awk 'NR<2{print \$0;next}{print \$0| "sort "}' > ${meta.lib}.actionable.fusion.txt
+    ActionableFusion.v1.pl  ${meta.lib} ${FC} ${SF} ${arriba}  | awk 'NR<2{print \$0;next}{print \$0| "sort "}' > ${meta.lib}.actionable.fusion.txt
 
     """
 }

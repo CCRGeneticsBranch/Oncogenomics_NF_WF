@@ -13,15 +13,15 @@ my $library        = $ARGV[0];
 my $fusioncatcher  = $ARGV[1];
 my $star_fusion	   = $ARGV[2];
 my $arriba         = $ARGV[3];
-my $destination    = $ARGV[4];
+
 print "#LeftGene\tRightGene\tChr_Left\tPosition\tChr_Right\tPosition\tSample\tTool\tSpanReadCount\n";
 ###########################################################
 unless (open(FC, "$fusioncatcher")){
         print STDERR "Can not open the file $fusioncatcher\n";
         exit;
 }
-unless (open(FC_OUT, ">$destination/$library.fusion-catcher.txt")){
-	print STDERR "Can not open the file $destination/$library.fusion-catcher.txt\n";
+unless (open(FC_OUT, ">$library.filtered_fusion-catcher.txt")){
+	print STDERR "Can not open the file $library.fusion-catcher.txt\n";
 	die $!;
 }
 while(<FC>){
@@ -42,8 +42,8 @@ unless (open(SF, "$star_fusion")){
         print STDERR "Can not open the file $star_fusion\n";
         exit;
 }
-unless (open(SF_OUT, ">$destination/$library.STAR-fusion.txt")){
-        print STDERR "Can not open the file $destination/$library.STAR-fusion.txt\n";
+unless (open(SF_OUT, ">$library.filtered_STAR-fusion.txt")){
+        print STDERR "Can not open the file $library.STAR-fusion.txt\n";
         die $!;
 }
 while(<SF>){
@@ -64,8 +64,8 @@ unless (open(AR, "$arriba")){
         print STDERR "Can not open the file $arriba\n";
         exit;
 }
-unless (open(AR_OUT, ">$destination/$library.arriba-fusion.txt")){
-        print STDERR "Can not open the file $destination/$library.arriba-fusion.txt\n";
+unless (open(AR_OUT, ">$library.filtered_arriba-fusion.txt")){
+        print STDERR "Can not open the file $library.arriba-fusion.txt\n";
         die $!;
 }
 while(<AR>){
