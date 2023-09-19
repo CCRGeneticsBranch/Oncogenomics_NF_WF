@@ -64,7 +64,7 @@ process Actionable_fusion {
         grep -v "LeftGene" ${meta.id}.fusion.actionable.txt.tmp >>${meta.id}.fusion.actionable.txt
         rm -rf ${meta.id}.fusion.actionable.txt.tmp
      else
-        touch ${meta.id}.fusion.actionable.txt
+        echo -e "#LeftGene\tRightGene\tChr_Left\tPosition\tChr_Right\tPosition\tSample\tTool\tSpanReadCount" > ${meta.id}.fusion.actionable.txt
      fi
 
      """
