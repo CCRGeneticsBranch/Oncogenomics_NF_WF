@@ -37,7 +37,7 @@ process Actionable_variants {
 
 process Actionable_fusion {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
 
