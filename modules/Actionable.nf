@@ -57,7 +57,7 @@ process Actionable_fusion {
      script:
 
      """
-     if [ \$(wc -l < ${libs.join(' ')}) -ge 2];
+     if [ \$(wc -l < ${libs.join(' ')}) -ge 2 ];
      then
         cat ${libs.join(' ')} |sort |uniq > ${meta.id}.fusion.actionable.txt.tmp
         grep "LeftGene" ${meta.id}.fusion.actionable.txt.tmp >${meta.id}.fusion.actionable.txt
