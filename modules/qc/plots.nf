@@ -108,11 +108,13 @@ process Bamutil {
 
      output:
      tuple val(meta),
-        path("${meta.lib}.final.squeeze.bam")
+        path("${meta.lib}.final.squeeze.bam"),
+        path("${meta.lib}.final.squeeze.bam.bai")
 
      stub:
      """
      touch "${meta.lib}.final.squeeze.bam"
+     touch "${meta.lib}.final.squeeze.bam.bai"
      """
 
      script:
