@@ -13,7 +13,8 @@ include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_variants} from '../modules/Actionable.nf'
 include {Actionable_fusion} from '../modules/Actionable.nf'
-
+include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
+include {Merge_fusion_annotation} from '../modules/annotation/Fusion_Annotation'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -27,6 +28,11 @@ workflow RNAseq_only {
 combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
 somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
 group               = Channel.from("rnaseq")
+pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
+genome  = Channel.of(file(params.genome, checkIfExists:true))
+genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_annotation)
+genome_version = Channel.from(params.genome_version)
+
 
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNAseq.csv")
@@ -49,11 +55,28 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
 
+
 //Create actionable fusions
 Actionable_fusion(
 Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[1] },
 Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[0] }
 )
+Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms.join(Common_RNAseq_WF.out.fusion_calls, by:[0])
+Fusion_Annotation_input.view()
+Fusion_Annotation(
+    Fusion_Annotation_input,
+    pfamdb,
+    genome,
+    genome_version_fusion_annotation,
+    genome_version
+)
+Fusion_Annotation.out.view()
+Merge_fusion_annotation(
+    Fusion_Annotation.out.map { tuple -> tuple[1] },
+    Fusion_Annotation.out.map { tuple -> tuple[0] },
+    genome_version
+)
+
 
 //Converting meta channel to list channel
 rnalib_qc_list_ch = Common_RNAseq_WF.out.rnalib_custum_qc.map { tuple -> tuple[1] }
