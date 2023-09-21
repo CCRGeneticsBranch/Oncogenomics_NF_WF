@@ -13,7 +13,7 @@ process Mergefusion {
 
     stub:
     """
-    touch "${meta.id}.actionable.fusion.txt"
+    touch "${meta.lib}.actionable.fusion.txt"
     """
 
     script:
