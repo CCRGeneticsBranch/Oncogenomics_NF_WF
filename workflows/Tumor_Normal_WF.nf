@@ -213,7 +213,7 @@ dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
 dbinput_HC_snpeff = combined_HC_vcf_ch.map{ tuple -> tuple.drop(1) }
 dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "Normal"}.map { tuple -> tuple[0] })
 dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "Tumor"}.map { tuple -> tuple[0] })
-
+/*
 Annotation_somatic(
    dbinput_somatic_annot,
    dbinput_somatic_snpeff,
@@ -223,7 +223,7 @@ Annotation_somatic(
    Annotation.out.rare_annotation
 
 )
-
+*/
 AddAnnotation.out.map { meta, file ->
     meta2 = [
         id: meta.id,
@@ -238,7 +238,7 @@ AddAnnotation.out.map { meta, file ->
    .set { dbinput_HC_annot_ch }
 
 dbinput_HC_annot_ch = dbinput_HC_annot_ch.map{ tuple -> tuple.drop(1) }
-
+/*
 Annotation_germline(
    dbinput_HC_annot_ch,
    dbinput_somatic_snpeff,
@@ -249,12 +249,15 @@ Annotation_germline(
    Annotation_somatic.out.dbinput_somatic
 
 )
+*/
 tumor_target_capture = Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "Tumor"}
+
 Sequenza_annotation(
     tumor_bam_channel.Tumor,
     tumor_bam_channel.Normal,
     tumor_target_capture
 )
+
 tcellextrect_input = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0]).combine(Sequenza_annotation.out.alternate).combine(genome_version_tcellextrect)
 
 TcellExtrect(tcellextrect_input)

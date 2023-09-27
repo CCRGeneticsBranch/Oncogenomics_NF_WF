@@ -47,7 +47,7 @@ process VEP {
   script:
   def prefix = task.ext.prefix ?: "${meta.lib}"
   """
-  /opt/vep/src/ensembl-vep/vep -i ${combined_vcf_tmp} --format vcf --plugin Downstream \
+  /opt/vep/src/ensembl-vep/vep -i ${combined_vcf_tmp} --format vcf --plugin Downstream --plugin Wildtype \
                   --terms SO --offline --cache --dir ${vep_cache} \
                    --assembly GRCh37 \
                   --output_file ${prefix}.final.vcf --vcf --force_overwrite --no_check_variants_order 
