@@ -210,6 +210,12 @@ VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
 
 Split_vcf(VEP.out)
 
+normal_hla_calls = Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "Normal"}.map{ tuple -> tuple.drop(1) }
+
+pvacseq_input = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, it] } }.combine(normal_hla_calls)
+
+
+
 
 
 dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
