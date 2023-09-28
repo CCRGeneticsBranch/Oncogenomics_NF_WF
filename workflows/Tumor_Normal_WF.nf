@@ -23,7 +23,8 @@ include {QC_summary_Patientlevel} from '../modules/qc/qc'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {TcellExtrect} from '../modules/misc/TcellExtrect'
-
+include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
+include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 
 
 
@@ -206,6 +207,9 @@ Combine_variants(
 )
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
+
+Split_vcf(VEP.out)
+
 
 
 dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
