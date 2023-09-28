@@ -37,11 +37,11 @@ process VEP {
   tuple val(meta),path(combined_vcf_tmp),path(vep_cache)
 
   output:
-  tuple val(meta),path("${meta.lib}.final.vcf") 
+  tuple val(meta),path("${meta.lib}_final.vcf") 
 
   stub:
   """
-  touch "${meta.lib}.final.vcf"
+  touch "${meta.lib}_final.vcf"
   """
 
   script:
@@ -50,7 +50,7 @@ process VEP {
   /opt/vep/src/ensembl-vep/vep -i ${combined_vcf_tmp} --format vcf --plugin Downstream --plugin Wildtype \
                   --terms SO --offline --cache --dir ${vep_cache} \
                    --assembly GRCh37 \
-                  --output_file ${prefix}.final.vcf --vcf --force_overwrite --no_check_variants_order 
+                  --output_file ${prefix}_final.vcf --vcf --force_overwrite --no_check_variants_order 
   """
 
 
