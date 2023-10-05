@@ -62,7 +62,7 @@ Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[1] },
 Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[0] }
 )
 Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms.join(Common_RNAseq_WF.out.fusion_calls, by:[0])
-Fusion_Annotation_input.view()
+
 Fusion_Annotation(
     Fusion_Annotation_input,
     pfamdb,
@@ -70,7 +70,7 @@ Fusion_Annotation(
     genome_version_fusion_annotation,
     genome_version
 )
-Fusion_Annotation.out.view()
+
 Merge_fusion_annotation(
     Fusion_Annotation.out.map { tuple -> tuple[1] },
     Fusion_Annotation.out.map { tuple -> tuple[0] },
