@@ -1,6 +1,6 @@
 process Arriba {
     tag "$meta.lib"
-
+    scratch true
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}"
 
     input:
@@ -21,10 +21,9 @@ process Arriba {
     """
     set -exo pipefail
     
-    # if running on biowulf SLURM
-    if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
-        TMPDIR="/lscratch/${SLURM_JOB_ID}/${prefix}_STAR"
-        if [ -d \${TMPDIR} ];then rm -rf \${TMPDIR};fi
+    TMP=tmp/
+    mkdir \$TMP
+    trap 'rm -rf "\$TMP"' EXIT
             
         STAR --genomeDir ${star_genomeIndex} \
             --readFilesIn ${trim[0]} ${trim[1]} \
@@ -45,35 +44,10 @@ process Arriba {
             --chimScoreSeparation 1 \
             --chimSegmentReadGapMax 3 \
             --chimMultimapNmax 50 \
-            --outTmpDir \${TMPDIR} \
             --outFileNamePrefix ${prefix}.arriba.
         
-        samtools sort -@ ${task.cpus} -T \$TMPDIR -o ${prefix}.arriba.Aligned.sortedByCoords.out.bam -O BAM ${prefix}.arriba.Aligned.out.bam
+        samtools sort -@ ${task.cpus} -T \$TMP -o ${prefix}.arriba.Aligned.sortedByCoords.out.bam -O BAM ${prefix}.arriba.Aligned.out.bam
         
-    else
-        STAR --genomeDir ${star_genomeIndex} \
-            --readFilesIn ${trim[0]} ${trim[1]} \
-            --readFilesCommand zcat \
-            --runThreadN ${task.cpus} \
-            --outSAMtype BAM Unsorted \
-            --outSAMunmapped Within \
-            --outBAMcompression 0 \
-            --outFilterMultimapNmax 50 \
-            --peOverlapNbasesMin 10 \
-            --alignSplicedMateMapLminOverLmate 0.5 \
-            --alignSJstitchMismatchNmax 5 -1 5 5 \
-            --chimSegmentMin 10 \
-            --chimOutType WithinBAM HardClip \
-            --chimJunctionOverhangMin 10 \
-            --chimScoreDropMax 30 \
-            --chimScoreJunctionNonGTAG 0 \
-            --chimScoreSeparation 1 \
-            --chimSegmentReadGapMax 3 \
-            --chimMultimapNmax 50 \
-            --outFileNamePrefix ${prefix}.arriba.
-        
-        samtools sort -@ ${task.cpus} -o ${prefix}.arriba.Aligned.sortedByCoords.out.bam -O BAM ${prefix}.arriba.Aligned.out.bam
-    fi
     
     # Run arriba
     arriba \
@@ -105,7 +79,6 @@ process Arriba {
     fi
 
     cp ${prefix}.fusions.tsv ${prefix}.arriba-fusion.txt
-    
     
     mv ${prefix}.fusions.* ./arriba_out
     
