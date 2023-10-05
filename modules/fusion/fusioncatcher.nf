@@ -3,7 +3,7 @@
 
 process Fusioncatcher {
     tag "$meta.lib"
-
+    
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}"
  
     input:
@@ -22,30 +22,19 @@ process Fusioncatcher {
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
     """
-    # if running on biowulf SLURM
-    if [ -d "/lscratch/${SLURM_JOB_ID}" ];then
-        TMPDIR="/lscratch/${SLURM_JOB_ID}/${prefix}_STAR"
-        if [ -d \${TMPDIR} ];then rm -rf \${TMPDIR};fi
+    TMP=tmp/
+    mkdir \$TMP
+    trap 'rm -rf "\$TMP"' EXIT
 
         fusioncatcher.py \
             -p ${task.cpus} \
             -d ${db} \
             -i ${trim[0]},${trim[1]} \
-            -o \${TMPDIR}
+            -o \$TMP
         
-        cp \${TMPDIR}/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
-        cp \${TMPDIR}/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt
-    else
-        mkdir fusioncatcher/
-        fusioncatcher.py \
-            -p ${task.cpus} \
-            -d ${db} \
-            -i ${trim[0]},${trim[1]} \
-            -o fusioncatcher/
+        cp \$TMP/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
+        cp \$TMP/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt
 
-        cp fusioncatcher/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
-        cp fusioncatcher/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt       
-    fi
 
     """
 
