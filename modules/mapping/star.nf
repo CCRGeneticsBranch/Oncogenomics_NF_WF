@@ -22,9 +22,9 @@ process Star {
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
     """
-    set -exo pipefail
-    echo $PWD
-    echo $SLURM_JOB_ID
+    TMP=tmp/
+    mkdir \$TMP
+    trap 'rm -rf "\$TMP"' EXIT
     
         
         # run STAR alignment
@@ -47,7 +47,7 @@ process Star {
             --quantMode TranscriptomeSAM 
             
         # sort files
-        samtools sort -@ !{task.cpus}  -o ${prefix}.Aligned.sortedByCoord.out.bam -O BAM ${prefix}.Aligned.out.bam
+        samtools sort -@ ${task.cpus}  -T \$TMP -o ${prefix}.Aligned.sortedByCoord.out.bam -O BAM ${prefix}.Aligned.out.bam
     
 
     # index files
