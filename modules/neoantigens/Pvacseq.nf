@@ -25,3 +25,56 @@ process Split_vcf {
 } 
 
 
+process Pvacseq {
+   tag "$meta.lib"
+
+   //publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen/split", mode: "${params.publishDirMode}"
+
+  input:
+  tuple val(meta),path(split_vcf),path(combined_HLA_normalsamples)
+
+  output:
+  tuple val(meta),path("*filtered.tsv"), emit: pvacseq_output_ch
+
+  stub:
+  """
+  touch "*filtered.tsv"
+  """
+  script:
+  def prefix = task.ext.prefix ?: "${meta.lib}"
+  """
+  SAMPLE=`basename ${split_vcf} .vcf`
+  mkdir \$SAMPLE
+  pvacseq_script.sh ${combined_HLA_normalsamples} ${split_vcf} \$SAMPLE \$SAMPLE ${task.cpus}
+  cp \$SAMPLE/MHC_Class_I/*filtered.tsv .
+
+  """
+
+}
+
+process Merge_Pvacseq_vcf {
+  tag "$meta.lib"
+
+  publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}"
+
+  input:
+  path(vcf_files)
+  val(meta)
+
+  output:
+  tuple val(meta),path("${meta.lib}.final.txt")
+
+  stub:
+  """
+  touch "${meta.lib}.final.txt"
+  """
+
+  script:
+  def prefix = task.ext.prefix ?: "${meta.lib}"
+  """
+  awk 'FNR>1 || NR==1' ${vcf_files.join(' ')} > ${meta.lib}.filtered.tsv
+  awk 'NR == 1; NR > 1 {print \$0 | "sort -n"}' ${meta.lib}.filtered.tsv|uniq > ${meta.lib}.final.txt
+  """
+
+
+}

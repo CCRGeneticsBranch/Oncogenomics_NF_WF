@@ -25,6 +25,7 @@ include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
+include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
 
 
 
@@ -214,9 +215,13 @@ normal_hla_calls = Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type
 
 pvacseq_input = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, it] } }.combine(normal_hla_calls)
 
+Pvacseq(pvacseq_input)
 
+combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, *files ] }     
+pvacseq_files_ch = combined_pvacseq.map { tuple -> tuple.drop(1) }
+pvacseq_meta_ch = combined_pvacseq.map { tuple -> tuple[0] }
 
-
+Merge_Pvacseq_vcf(pvacseq_files_ch,pvacseq_meta_ch)
 
 dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
 dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
