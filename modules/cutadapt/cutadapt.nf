@@ -1,12 +1,13 @@
 process Cutadapt {
         tag "$meta.lib"
-        publishDir "$params.resultsdir/${meta.id}/${meta.casename}/${meta.lib}/Cutadapt", mode: 'copy'
+//        publishDir "$params.resultsdir/${meta.id}/${meta.casename}/${meta.lib}/Cutadapt", mode: 'copy'
 
         input:
         tuple val(meta), path(r1fq), path(r2fq)
 
         output:
         tuple val(meta), path("*.gz") , emit: trim_reads
+         path "versions.yml"             , emit: versions
 
         script:
         def args = task.ext.args   ?: ''
@@ -23,7 +24,12 @@ process Cutadapt {
 	-j $task.cpus \\
         -o ${prefix}_R1.trim.fastq.gz \\
         -p ${prefix}_R2.trim.fastq.gz \\
-	$r1fq $r2fq      
+	$r1fq $r2fq
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bwa_mem2: \$(cutadapt --version)
+        END_VERSIONS      
         """
 
 }
