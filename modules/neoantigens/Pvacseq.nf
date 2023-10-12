@@ -73,7 +73,8 @@ process Merge_Pvacseq_vcf {
   def prefix = task.ext.prefix ?: "${meta.lib}"
   """
   awk 'FNR>1 || NR==1' ${vcf_files.join(' ')} > ${meta.lib}.filtered.tsv
-  awk 'NR == 1; NR > 1 {print \$0 | "sort -n"}' ${meta.lib}.filtered.tsv|uniq > ${meta.lib}.final.txt
+  awk 'NR == 1; NR > 1 {print \$0 | "sort -n"}' ${meta.lib}.filtered.tsv|uniq > ${meta.lib}.final.uniq.tsv
+  process_pVACSeq.pl ${meta.lib}.final.uniq.tsv |awk 'NR == 1; NR > 1 {print \$0 |"sort -n"}'|uniq > ${meta.lib}.final.txt
   """
 
 
