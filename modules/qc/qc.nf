@@ -11,11 +11,13 @@ process Kraken {
     path("${meta.lib}.kraken.taxa.txt"), emit: kraken_taxa
     tuple val(meta),
     path("${meta.lib}.krakenout"), emit : kraken_out
+    path "versions.yml"             , emit: versions
 
     stub:
     """
     touch "${meta.lib}.kraken.taxa.txt"
     touch "${meta.lib}.krakenout"
+    
     """
 
 
@@ -25,9 +27,13 @@ process Kraken {
     """
     kraken --db ${kraken_bacteria} --fastq-input --gzip-compressed --threads ${task.cpus} --output ${prefix}.krakenout --preload --paired ${r1fq} ${r2fq}
     kraken-translate --mpa-format --db ${kraken_bacteria} ${prefix}.krakenout |cut -f2|sort|uniq -c|sort -k1,1nr > ${prefix}.krakentaxa
-    #cut -f2,3 ${prefix}.krakenout |ktImportTaxonomy - -o ${prefix}.kronahtml
+
     mv ${prefix}.krakentaxa ${prefix}.kraken.taxa.txt
-    #mv ${prefix}.kronahtml ${prefix}.krona.html
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Kraken: \$(kraken --version|head -1|awk '{print \$3}')
+    END_VERSIONS
     """
 }
 
@@ -64,13 +70,15 @@ process Krona {
 process Fastqc {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy'
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy',pattern: "fastqc"
     
     input:
     tuple val(meta), path(trim), path(r1fq), path(r2fq)
     
     output:
-    tuple val(meta), path("fastqc") 
+    tuple val(meta), path("fastqc") , emit: fastqc_results
+    path "versions.yml"             , emit: versions
+
     
     script:
     def args = task.ext.args   ?: ''
@@ -79,6 +87,11 @@ process Fastqc {
     """
     if [ ! -d fastqc ];then mkdir -p fastqc;fi
     fastqc --extract ${trim[0]} ${trim[1]} $r1fq $r2fq -t $task.cpus -o fastqc
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Fastqc: \$(fastqc --version|awk '{print \$2}')
+    END_VERSIONS
     """
 }
 
@@ -115,13 +128,13 @@ process Fastq_screen {
 
 
 process Multiqc {
-    tag "$meta.lib"
+    tag "$meta.id"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(meta),
-        path("*")
+    path(qc_files)
+    val(meta)
  
 
     output:
@@ -130,7 +143,9 @@ process Multiqc {
 
     script:
     """
-    multiqc . -f
+    
+    echo  "${qc_files.join('\n')}" > multiqc_input_files
+    multiqc --file-list multiqc_input_files -f
 
     
     """
