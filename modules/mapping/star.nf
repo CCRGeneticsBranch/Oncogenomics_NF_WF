@@ -1,7 +1,7 @@
 process Star {
     tag "$meta.lib"
     scratch true
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "copy"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "copy",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(trim),path(star_genomeIndex),path(gtf)
@@ -11,6 +11,7 @@ process Star {
     tuple val(meta), path("${meta.lib}.Aligned.sortedByCoord.out.bam"), emit: genome_bam
     tuple val(meta), path("${meta.lib}.Aligned.sortedByCoord.out.bam.bai"), emit: genome_bai
     tuple val(meta), path("${meta.lib}.Chimeric.out.junction"), emit: chimeric_junction
+    path "versions.yml"             , emit: versions
 
     stub:
     """
@@ -52,5 +53,10 @@ process Star {
 
     # index files
     samtools index -@ ${task.cpus} ${prefix}.Aligned.sortedByCoord.out.bam
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        STAR: \$(STAR --version)
+    END_VERSIONS
     """
 }
