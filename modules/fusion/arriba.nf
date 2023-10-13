@@ -1,7 +1,7 @@
 process Arriba {
     tag "$meta.lib"
     scratch true
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),path(trim),path(reffa),path(star_genomeIndex),path(gtf)
@@ -10,6 +10,7 @@ process Arriba {
     tuple val(meta),path("${meta.lib}.arriba-fusion.txt"), emit: arriba_fusion
     tuple val(meta),path("arriba_out/${meta.lib}.fusions.discarded.tsv"), emit: arriba_discarded
     tuple val(meta),path("arriba_out/${meta.lib}.fusions.pdf") , emit: arriba_pdf
+    path "versions.yml"             , emit: versions
  
     stub:
     """
@@ -81,6 +82,11 @@ process Arriba {
     cp ${prefix}.fusions.tsv ${prefix}.arriba-fusion.txt
     
     mv ${prefix}.fusions.* ./arriba_out
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Arriba: \$(arriba -h |grep '^Version' | sed 's/.*Version: //')
+    END_VERSIONS    
     
     """
 
