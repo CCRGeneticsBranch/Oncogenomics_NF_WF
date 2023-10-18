@@ -48,7 +48,7 @@ process GATK_RTC_IR {
 
 	java -jar -Xmx40g \$GATK_JAR -T RealignerTargetCreator -nt 10 -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam -o ${meta.lib}.realignment.intervals
 
-        java -jar -Xmx40g \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals ${meta.lib}.realignment.intervals -o ${meta.lib}.Ir.bam        
+        java -jar -Xmx40g \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals ${meta.lib}.realignment.intervals -o ${meta.lib}.Ir.bam
 
         """
 }
@@ -79,7 +79,7 @@ process GATK_BR_PR {
         def prefix = task.ext.prefix ?: "${meta.lib}"
         """
 
-        java -jar -Xmx40g \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o ${prefix}.recalibration.matrix.txt 
+        java -jar -Xmx40g \$GATK_JAR -T BaseRecalibrator -R $genome -knownSites $phase1_1000g -knownSites $Mills_and_1000g -I $bam -o ${prefix}.recalibration.matrix.txt
 
         java -jar -Xmx40g \$GATK_JAR -T PrintReads -R $genome -I $bam -o ${prefix}.final.bam -BQSR ${prefix}.recalibration.matrix.txt
 
@@ -105,8 +105,8 @@ process RNAseq_HaplotypeCaller {
         path(dbsnp)
 
      output:
-     tuple val(meta),
-        path("${meta.lib}.HC_RNASeq.raw.vcf")
+     tuple val(meta),path("${meta.lib}.HC_RNASeq.raw.vcf"), emit: rna_HC
+     path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -119,6 +119,12 @@ process RNAseq_HaplotypeCaller {
      set -exo pipefail
      java -jar -Xmx40g \$GATK_JAR -T HaplotypeCaller -R ${genome} -I ${bam} -o ${prefix}.vcf --dbsnp ${dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -nct ${task.cpus}
      java -jar -Xmx40g \$GATK_JAR -T VariantFiltration -R ${genome} -V ${prefix}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2.0" -filterName "RNASeqFilters_FS_QD" -o ${prefix}.HC_RNASeq.raw.vcf
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        GATK: \$(java -jar \$GATK_JAR -T HaplotypeCaller --version)
+    END_VERSIONS
+
      """
 }
 
@@ -137,7 +143,7 @@ process Exome_HaplotypeCaller {
         path(genome_fai),
         path(genome_dict),
         path(dbsnp)
-        
+
 
      output:
      tuple val(meta),
