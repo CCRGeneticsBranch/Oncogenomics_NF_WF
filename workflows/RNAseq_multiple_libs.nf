@@ -58,14 +58,14 @@ samples_rnaseq = Channel.fromPath("RNA_lib.csv")
     meta.id    =  row.sample
     meta.lib   =  row.library
     meta.sc    =  row.sample_captures
-    meta.casename  = row.casename 
+    meta.casename  = row.casename
     meta.type     = row.type
     meta.diagnosis =row.Diagnosis
     def fastq_meta = []
     fastq_meta = [ meta,  file(row.read1), file(row.read2)  ]
 
     return fastq_meta
-}    
+}
 
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
@@ -146,7 +146,7 @@ Common_RNAseq_WF.out.picard_rnaseqmetrics.map { meta, file ->
   }
    .set { combined_rnaseqmetrics_ch }
 
-//gather channels for custum qc
+//gather channels for custom qc
 combined_RNAqc_list_ch = combined_RNAqc_ch.map { tuple -> tuple.drop(1) }
 combined_rnaseqmetrics_list_ch = combined_rnaseqmetrics_ch.map { tuple -> tuple.drop(1) }
 combined_rnaseqmetrics_meta_ch = combined_rnaseqmetrics_ch.map { tuple -> tuple[0] }
@@ -175,7 +175,7 @@ Common_RNAseq_WF.out.pileup.map { meta, file ->
    .set { combined_pileup_ch }
 
 //gather channels for makehotspotdb
-pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) }  
+pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) }
 pileup_meta_ch = combined_pileup_ch.map { tuple -> tuple[0] }
 
 //Run Makehotspotdb
@@ -235,7 +235,7 @@ updated_tuples = merged_ch.map { tuple ->
     [tuple[0], tuple[1], tuple[3]]
 }
 //Run AddAnnotation
-AddAnnotation(updated_tuples)    
+AddAnnotation(updated_tuples)
 
 
 //create combined snpeff channel of multiple libraries
@@ -302,6 +302,5 @@ multiqc_input.map { meta, fastqc, pileup, coverage, chimeric, rsem, rnaseqc, cir
    .map { meta, fastqcs, pileups, coverages, chimerics, rsems, rnaseqcs, circoss -> [ meta, *fastqcs, *pileups, *coverages, *chimerics, *rsems, *rnaseqcs, *circoss ] }
    .set { multiqc_ch }
 Multiqc(multiqc_ch)
-
 
 }
