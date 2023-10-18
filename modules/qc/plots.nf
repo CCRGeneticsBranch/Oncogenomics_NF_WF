@@ -58,7 +58,7 @@ process Hotspot_Boxplot {
      script:
      """
      set -exo pipefail
-     boxplot.R \$PWD/ ${meta.id}.hotspot_coverage.png ${meta.lib} 
+     boxplot.R \$PWD/ ${meta.id}.hotspot_coverage.png ${meta.lib}
 
      """
 }
@@ -67,7 +67,7 @@ process Flagstat {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
      tuple val(meta),
@@ -75,8 +75,9 @@ process Flagstat {
         path(index)
 
      output:
-     tuple val(meta),
-        path("${meta.lib}.flagstat.txt")
+     tuple val(meta),path("${meta.lib}.flagstat.txt"), emit: flagstat
+     path "versions.yml"             , emit: versions
+
 
      stub:
      """
@@ -85,8 +86,14 @@ process Flagstat {
 
      script:
      """
+     echo ${workflow.homeDir}
      set -exo pipefail
      samtools flagstat ${bam} > ${meta.lib}.flagstat.txt
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Samtools: \$(samtools --version|head -n 1 |sed 's/.*samtools //')
+    END_VERSIONS
 
      """
 }
@@ -110,6 +117,7 @@ process Bamutil {
      tuple val(meta),
         path("${meta.lib}.final.squeeze.bam"),
         path("${meta.lib}.final.squeeze.bam.bai")
+     path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -123,7 +131,11 @@ process Bamutil {
      set -exo pipefail
      bam squeeze --in ${bam} --out ${prefix}.final.squeeze.bam --refFile ${genome}  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
      samtools index ${prefix}.final.squeeze.bam
-    
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         Samtools: \$(samtools --version|head -n 1 |sed 's/.*samtools //')
+     END_VERSIONS
+
      """
 }
 
@@ -172,7 +184,7 @@ process MakeHotSpotDB {
      path(libs)
      val(meta)
      //tuple val(meta), path(pileup)
-   
+
      output:
      tuple val(meta),
         path("${meta.id}.hotspot")
@@ -183,7 +195,7 @@ process MakeHotSpotDB {
      """
 
      script:
- 
+
      """
      cat ${libs.join(' ')} |sort > ${meta.id}.hotspot
      """
@@ -222,7 +234,7 @@ process Bam2tdf {
 }
 
 process Coverage {
-   
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
@@ -245,13 +257,13 @@ process Coverage {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      bedtools coverage -abam ${bam} -b  ${targetcapture} -hist |grep "^all" > ${prefix}.coverage.txt
-         
+
      """
 
 }
 
 process CoveragePlot {
-   
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
@@ -278,7 +290,7 @@ process CoveragePlot {
 }
 
 process Read_depth {
-   
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
@@ -307,7 +319,7 @@ process Read_depth {
 }
 
 process VerifyBamID {
-    
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/verifyBamID", mode: "${params.publishDirMode}"
 
@@ -334,7 +346,7 @@ process VerifyBamID {
 }
 
 process FailedExons_Genes {
-   
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
@@ -361,7 +373,7 @@ process FailedExons_Genes {
 
 
 process TargetIntervals {
-   
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
@@ -386,7 +398,7 @@ process TargetIntervals {
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-   
+
      cat <(samtools view -H ${bam}) <(awk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${design_ch} )> ${prefix}.probe.intervals
      cat <(samtools view -H ${bam}) <(awk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${targetcapture} )> ${prefix}.target.intervals
      """
@@ -425,4 +437,3 @@ process HSMetrics {
      """
 
 }
-
