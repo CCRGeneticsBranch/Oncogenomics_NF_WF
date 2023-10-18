@@ -15,7 +15,7 @@ include {Actionable_variants} from '../modules/Actionable.nf'
 include {Actionable_fusion} from '../modules/Actionable.nf'
 include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
 include {Merge_fusion_annotation} from '../modules/annotation/Fusion_Annotation'
-
+include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -43,7 +43,7 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
     meta.id    =  row.sample
     meta.lib   =  row.library
     meta.sc    =  row.sample_captures
-    meta.casename  = row.casename 
+    meta.casename  = row.casename
     meta.type     = row.type
     meta.diagnosis =row.Diagnosis
     def fastq_meta = []
@@ -54,6 +54,7 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
+
 
 
 //Create actionable fusions
@@ -98,7 +99,7 @@ pileup_meta_ch =Common_RNAseq_WF.out.pileup.map { tuple -> tuple[0] }
 MakeHotSpotDB(pileup_input_ch,
              pileup_meta_ch
 )
-  
+
 //Run FormatInput
 formatinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map { tuple -> tuple.drop(1) }
 FormatInput(
@@ -119,10 +120,10 @@ CircosPlot(
 //Run Annotation subworkflow
 Annotation(FormatInput.out)
 
-merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation,by:[0])  
-AddAnnotation(merged_ch) 
+merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation,by:[0])
+AddAnnotation(merged_ch)
 
-dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ tuple -> tuple.drop(1) } 
+dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ tuple -> tuple.drop(1) }
 dbinput_annot_ch = AddAnnotation.out.map{ tuple -> tuple.drop(1) }
 dbinput_meta_ch = AddAnnotation.out.map { tuple -> tuple[0] }
 
@@ -147,10 +148,18 @@ multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                       .join(Common_RNAseq_WF.out.circos_plot, by: [0])
-Multiqc(multiqc_input)
+Multiqc(multiqc_input.map { tuple -> tuple.drop(1) },
+        multiqc_input.map { tuple -> tuple[0] })
 
 final_inputs = Common_RNAseq_WF.out.fusion_calls.join(Annotation.out.final_annotation,by:[0]).join(Multiqc.out,by:[0])
 Allstepscomplete(final_inputs)
+
+Common_RNAseq_WF.out.ch_versions.unique().collectFile(name: 'collated_versions.yml').view()
+
+
+CUSTOM_DUMPSOFTWAREVERSIONS (
+        Common_RNAseq_WF.out.ch_versions.unique().collectFile(name: 'collated_versions.yml')
+        )
 
 
 }
