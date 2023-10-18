@@ -10,10 +10,14 @@ workflow Exome_common_WF {
 
 kraken_bacteria = Channel.of(file(params.kraken_bacteria, checkIfExists:true))
 
-take: 
+take:
      samples_exome_ch
 
-main: 
+main:
+
+//Initiate empty channel for versions
+ch_versions = Channel.empty()
+
 
 BWA_picard(samples_exome_ch)
 
@@ -30,7 +34,7 @@ capture_ch = BWA_picard.out.picard_MD
         def bam = tuple[1]
         def bai = tuple[2]
         def target_file = ''
-        
+
         if (meta.sc == 'clin.ex.v1') {
             target_file = params.clin_ex_v1
         } else if (meta.sc == 'seqcapez.hu.ex.v3') {
@@ -46,19 +50,20 @@ capture_ch = BWA_picard.out.picard_MD
         return [meta,target_file]
     }
 
-   
+
 
 Exome_GATK(BWA_picard.out.picard_MD,
            capture_ch
 )
 
+//update design channel
 design_ch =  Exome_GATK.out.GATK_Exome_bam
    .map { tuple ->
         def meta = tuple[0]
         def bam = tuple[1]
         def bai = tuple[2]
         def design_file = ''
-        
+
         if (meta.sc == 'clin.ex.v1') {
             design_file = params.clin_ex_v1_design
         } else if (meta.sc == 'seqcapez.hu.ex.v3') {
@@ -94,4 +99,5 @@ HC_snpeff_snv_vcf2txt = Exome_GATK.out.HC_snpeff_snv_vcf2txt
 hlaminer_exome  = HLA_calls_exome.out.hlaminer_exome
 seq2hla_exome = HLA_calls_exome.out.seq2hla_exome
 mergehla_exome = HLA_calls_exome.out.mergehla_exome
+exome_qc = QC_exome_bam.out.Exome_qc
 }
