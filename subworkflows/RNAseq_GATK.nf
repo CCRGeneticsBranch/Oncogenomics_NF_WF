@@ -50,7 +50,7 @@ workflow RNAseq_GATK {
              .combine(dbsnp)
      )
       SnpEff(
-        RNAseq_HaplotypeCaller.out
+        RNAseq_HaplotypeCaller.out.rna_HC
              .combine(dbNSFP2_4)
              .combine(dbNSFP2_4_tbi)
              .combine(Biowulf_snpEff_config)
@@ -60,4 +60,5 @@ workflow RNAseq_GATK {
     emit:
      GATK_RNAseq_bam =  GATK_BR_PR.out
      SnpEff_vcf      = Vcf2txt.out
+     GATK_version   = RNAseq_HaplotypeCaller.out.versions
 }
