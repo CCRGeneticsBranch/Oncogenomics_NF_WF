@@ -15,7 +15,7 @@ process Picard_AddReadgroups {
         """
         set -exo pipefail
         printenv
-          
+
         java -Xmx10g  -jar \$PICARDJAR AddOrReplaceReadGroups -VALIDATION_STRINGENCY SILENT -INPUT $bam  -OUTPUT trim_${prefix}_star.bam -SORT_ORDER coordinate -RGLB trim_${prefix} -RGPU trim_${prefix} -RGPL ILLUMINA -RGSM trim_${prefix} -RGCN khanlab
 
         java -Xmx10g  -jar \$PICARDJAR BuildBamIndex  -INPUT trim_${prefix}_star.bam -OUTPUT trim_${prefix}_star.bam.bai
@@ -26,7 +26,7 @@ process Picard_CollectRNAseqmetrics {
 
         tag "$meta.lib"
 
-       publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+       publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
         input:
         tuple val(meta),
@@ -39,6 +39,7 @@ process Picard_CollectRNAseqmetrics {
         output:
         tuple val(meta),path("${meta.lib}.RnaSeqMetrics.txt") , emit: rnaseq_metrics
         tuple val(meta),path("${meta.lib}.RnaSeqMetrics.pdf") , emit: rnaseq_metrics_pdf
+        path "versions.yml"             , emit: versions
 
 
         script:
@@ -47,6 +48,10 @@ process Picard_CollectRNAseqmetrics {
         STRAND=`strandedness.py ${prefix}_strandedness.txt picard`
         java -Xmx10g -jar \$PICARDJAR CollectRnaSeqMetrics STRAND_SPECIFICITY=\$STRAND VALIDATION_STRINGENCY=SILENT REF_FLAT=$ref_flat  RIBOSOMAL_INTERVALS=$rRNA_interval INPUT=$bam OUTPUT=${prefix}.RnaSeqMetrics.txt CHART_OUTPUT=${prefix}.RnaSeqMetrics.pdf
 
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+                Picard: \$(java -jar \$PICARDJAR AddOrReplaceReadGroups --version 2>&1 |sed 's/Version://')
+        END_VERSIONS
         """
 }
 
@@ -123,7 +128,7 @@ process RNAlibrary_customQC {
         def prefix = task.ext.prefix ?: "${meta.lib}"
         """
         rnaseqQC.pl ${fastqc}/${prefix}_R1.trim_fastqc/fastqc_data.txt ${picard_alignmentsummarymetrics} ${picard_rnametrics_txt} ${meta.id} ${prefix} ${meta.diagnosis} > ${prefix}.RnaSeqQC.txt
-        
+
         """
 }
 
@@ -142,7 +147,7 @@ process RNAqc_TrancriptCoverage {
         //path(picard_rnametrics_txt),
         //path(picard_rnametrics_pdf)
 
- 
+
         output:
         tuple val(meta),
         path("${meta.id}.RnaSeqQC.txt")
@@ -150,12 +155,12 @@ process RNAqc_TrancriptCoverage {
 
 
         script:
-        
+
         """
         export LC_ALL=C
         cat ${RNA_customqc_libs.join(' ')}  |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
         transcript_coverage.R -f "${RNA_rnaseqmetrics_libs.join(' ')}" -s "${meta.id}" -o ${meta.id}.transcriptCoverage.png
 
-        
+
         """
 }
