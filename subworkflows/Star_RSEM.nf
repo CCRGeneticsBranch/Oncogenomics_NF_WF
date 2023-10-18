@@ -36,6 +36,7 @@ workflow Star_RSEM {
      chimeric_junction = Star.out.chimeric_junction
      rsem_genes = Rsem.out.rsem_genes
      rsem_isoforms = Rsem.out.rsem_isoforms
-     strandedness = Strandedness.out 
+     strandedness = Strandedness.out
+     star_version = Star.out.versions
+     rsem_version = Rsem.out.versions
 }
-
