@@ -30,9 +30,13 @@ workflow Fusion_calling {
 
     Mfinput = Arriba.out.arriba_fusion.join(Fusioncatcher.out.fc_output, by: [0]).join(Starfusion.out.star_fusion,by: [0])
     Mergefusion(Mfinput)
-  
+
 
     emit:
      merge_fusion =  Mergefusion.out
- 
+     Arriba_version = Arriba.out.versions
+     Fusioncatcher_version = Fusioncatcher.out.versions
+     Starfusion_version = Starfusion.out.versions
+
+
 }
