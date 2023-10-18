@@ -55,4 +55,6 @@ workflow QC_from_finalBAM {
     emit:
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out
+         flagstat_version = Flagstat.out.versions
+         bamutil_version = Bamutil.out.versions
 }
