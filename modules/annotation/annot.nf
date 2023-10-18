@@ -65,7 +65,7 @@ process Twolib_FormatInput {
 }
 
 process Annovar {
- 
+
      tag "$meta.lib"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
@@ -85,7 +85,7 @@ process Annovar {
         path("AnnotationInput.cadd"),
         path("AnnotationInput.pcg"),
         path("AnnotationInput.gene")
-     
+
      stub:
      """
      touch "AnnotationInput.cosmic"
@@ -94,27 +94,27 @@ process Annovar {
      touch "AnnotationInput.pcg"
      touch "AnnotationInput.gene"
      """
-        
+
      script:
-   
+
      """
      set -exo pipefail
      table_annovar.pl ${annotation} ${annovar_data} -buildver hg19 --dot2underline -out AnnotationInput.anno.cosmic -remove -protocol cosmic78 -operation f -polish -nastring "NA"
      mv AnnotationInput.anno.cosmic.hg19_multianno.txt AnnotationInput.cosmic
-     
+
      annotate_variation.pl  ${annotation} ${annovar_data} -buildver hg19 -otherinfo --outfile AnnotationInput.anno.clinseq -filter -dbtype generic -genericdbfile `basename ${clinseq} `
      awk '{OFS="\t"};{print \$3,\$4,\$5,\$6,\$7,\$2}' AnnotationInput.anno.clinseq.hg19_generic_dropped |sed -e 's/,/\t/g' > AnnotationInput.clinseq
      head -1 ${annovar_data}/hg19_clinseq_951.txt >>AnnotationInput.clinseq
-     
+
      annotate_variation.pl ${annotation} ${annovar_data} -buildver hg19 -otherinfo  -filter -dbtype cadd
      annotate_variation.pl AnnotationInput.anno.hg19_cadd_filtered ${annovar_data} -buildver hg19 -otherinfo -filter -dbtype caddindel
      cut -f 2-7 AnnotationInput.anno.hg19_cadd_dropped AnnotationInput.anno.hg19_cadd_filtered.hg19_caddindel_dropped|sed -e 's/,/\t/g' |awk '{OFS="\t"};{print \$3,\$4,\$5,\$6,\$7,\$1,\$2}' >AnnotationInput.cadd
      head -1 ${annovar_data}/hg19_caddindel.txt >>AnnotationInput.cadd
-     
+
      annotate_variation.pl ${annotation} ${annovar_data} -buildver hg19 -otherinfo --outfile AnnotationInput.anno.pcg -filter -dbtype generic -genericdbfile `basename ${pcg} `
      awk -F "\t" '{OFS="\t"};{print \$3,\$4,\$5,\$6,\$7,\$2}' AnnotationInput.anno.pcg.hg19_generic_dropped |sed -e 's/,/\t/g' >AnnotationInput.pcg
      head -1 ${annovar_data}/hg19_PCG_042616.txt >>AnnotationInput.pcg
-     
+
      table_annovar.pl  ${annotation} ${annovar_data} -buildver hg19 -out AnnotationInput.anno.gene -remove -protocol refGene,cytoBand,snp138,1000g2014oct_all,1000g2014oct_eur,1000g2014oct_afr,1000g2014oct_amr,1000g2014oct_eas,1000g2014oct_sas,esp6500_all,esp6500_ea,esp6500_aa,exac03nontcga,exac03,cg69,nci60 -operation g,r,f,f,f,f,f,f,f,f,f,f,f,f,f,f -nastring "-1" -polish  --argument "-hgvs",,,,,,,,,,,,,,,
      mv AnnotationInput.anno.gene.hg19_multianno.txt AnnotationInput.gene
 
@@ -168,7 +168,7 @@ process Custom_annotation {
      """
 
      script:
-   
+
      """
        addAnnotation.pl ${clinvar} ${annotation} >AnnotationInput.clinvar
        addAnnotation.pl ${hgmd} ${annotation} >AnnotationInput.hgmd
@@ -211,17 +211,17 @@ process Combine_annotation {
 
     output:
 
-   tuple val(meta),path("${meta.id}.Annotations.coding.rare.txt") , emit: rare_annotation       
+   tuple val(meta),path("${meta.id}.Annotations.coding.rare.txt") , emit: rare_annotation
    tuple val(meta),path("${meta.id}.Annotations.final.txt") , emit: final_annotation
 
      stub:
      """
        touch "${meta.id}.Annotations.coding.rare.txt"
-       touch "${meta.id}.Annotations.final.txt"   
+       touch "${meta.id}.Annotations.final.txt"
      """
 
    script:
-   
+
      """
 
 echo "Anno_input_final: ${Anno_input_final}"
@@ -253,8 +253,8 @@ ${tcc_out}
 ${mcg_out}
 ${civic_out}
 ${pcg_out}" > list
-     
-     CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp     
+
+     CombineAnnotations.pl list > AnnotationInput.annotations.final.txt.tmp
      GeneAnnotation.pl ${ACMG} AnnotationInput.annotations.final.txt.tmp > ${meta.id}.Annotations.final.txt
      ProteinCodingRare.pl ${hg19_BLsites} ${hg19_WLsites} ${meta.id}.Annotations.final.txt 0.05 > ${meta.id}.Annotations.coding.rare.txt
      """
@@ -269,7 +269,7 @@ process AddAnnotation {
 
      input:
      tuple val(meta),path(snpeff_txt),path(rare_annotation)
-     
+
 
      output:
      tuple val(meta),path("${meta.lib}.HC_${meta.type}.annotated.txt") , emit: hc_anno_txt
@@ -279,10 +279,10 @@ process AddAnnotation {
        touch "${meta.lib}.HC_${meta.type}.annotated.txt"
      """
      script:
-     
+
      """
-     
-     addAnnotations2vcf.pl  ${rare_annotation} ${snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt 
+
+     addAnnotations2vcf.pl  ${rare_annotation} ${snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt
 
      """
 
@@ -309,15 +309,15 @@ process AddAnnotation_somatic_variants {
        touch "${meta.lib}.MuTect.annotated.txt"
        touch "${meta.lib}.strelka.indels.annotated.txt"
        touch "${meta.lib}.strelka.snvs.annotated.txt"
-       
+
      """
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     
-     addAnnotations2vcf.pl ${mutect_txt} ${rare_annotation}   > ${prefix}.MuTect.annotated.txt 
-     addAnnotations2vcf.pl ${strelka_indels_txt} ${rare_annotation}   > ${prefix}.strelka.indels.annotated.txt
-     addAnnotations2vcf.pl ${strelka_snvs_txt} ${rare_annotation}   > ${prefix}.strelka.snvs.annotated.txt
+
+     addAnnotations2vcf.pl  ${rare_annotation} ${mutect_txt}  > ${prefix}.MuTect.annotated.txt
+     addAnnotations2vcf.pl  ${rare_annotation} ${strelka_indels_txt}  > ${prefix}.strelka.indels.annotated.txt
+     addAnnotations2vcf.pl  ${rare_annotation} ${strelka_snvs_txt}  > ${prefix}.strelka.snvs.annotated.txt
 
     """
 
@@ -346,7 +346,7 @@ process AddAnnotationFull_somatic_variants {
        touch "${meta.lib}.MuTect.annotatedFull.txt"
        touch "${meta.lib}.strelka.indels.annotatedFull.txt"
        touch "${meta.lib}.strelka.snvs.annotatedFull.txt"
-       
+
      """
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
