@@ -38,9 +38,9 @@ process GATK_RTC_IR {
         path(Mills_and_1000g)
 
         output:
-        tuple val(meta),
-        path("${meta.lib}.Ir.bam"),
-        path("${meta.lib}.Ir.bai")
+        tuple val(meta),path("${meta.lib}.Ir.bam"), emit: Ir_bam
+        tuple val(meta),path("${meta.lib}.Ir.bai"), emit: Ir_bai
+        path "versions.yml"             , emit: versions
 
 
         script:
@@ -50,6 +50,10 @@ process GATK_RTC_IR {
 
         java -jar -Xmx40g \$GATK_JAR -T IndelRealigner -R $genome -known $phase1_1000g -known $Mills_and_1000g -I $bam --targetIntervals ${meta.lib}.realignment.intervals -o ${meta.lib}.Ir.bam
 
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            GATK: \$(java -jar \$GATK_JAR -T RealignerTargetCreator --version)
+        END_VERSIONS
         """
 }
 
@@ -71,9 +75,10 @@ process GATK_BR_PR {
         path(Mills_and_1000g)
 
         output:
-        tuple val(meta),
-        path("${meta.lib}.final.bam"),
-        path("${meta.lib}.final.bam.bai")
+        tuple val(meta),path("${meta.lib}.final.bam"), emit: final_bam
+        tuple val(meta),path("${meta.lib}.final.bam.bai"), emit: final_bai
+        path "versions.yml"             , emit: versions
+
 
         script:
         def prefix = task.ext.prefix ?: "${meta.lib}"
@@ -85,6 +90,10 @@ process GATK_BR_PR {
 
         mv ${prefix}.final.bai ${prefix}.final.bam.bai
 
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            GATK: \$(java -jar \$GATK_JAR -T PrintReads --version)
+        END_VERSIONS
         """
 }
 
@@ -146,8 +155,8 @@ process Exome_HaplotypeCaller {
 
 
      output:
-     tuple val(meta),
-        path("${meta.lib}.HC_DNASeq.raw.vcf")
+     tuple val(meta),path("${meta.lib}.HC_DNASeq.raw.vcf"), emit: exome_HC
+     path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -160,5 +169,9 @@ process Exome_HaplotypeCaller {
      set -exo pipefail
      java -jar -Xmx100g \$GATK_JAR -T HaplotypeCaller -R ${genome} -I ${bam} -o ${prefix}.HC_DNASeq.raw.vcf --dbsnp ${dbsnp} -L ${Capture_bed} -mbq 20 -mmq 30 -nct ${task.cpus}
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        GATK: \$(java -jar \$GATK_JAR -T HaplotypeCaller --version)
+    END_VERSIONS
      """
 }
