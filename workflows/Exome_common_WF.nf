@@ -46,6 +46,9 @@ capture_ch = BWA_picard.out.picard_MD
         } else if (meta.sc == 'SmartRNA') {
             target_file = params.smartrna_target
         }
+        } else if (meta.sc == 'agilent.v7') {
+            target_file = params.agilent.v7_target
+        }
 
         return [meta,target_file]
     }
