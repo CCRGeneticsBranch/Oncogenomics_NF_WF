@@ -102,7 +102,10 @@ process Picard_MarkDuplicates {
         java  -jar -Xmx10g \$PICARDJAR MarkDuplicates AS=true M=trim_${prefix}.markdup.txt INPUT=$bam OUTPUT=trim_${prefix}.dd.bam REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
 
         java  -jar -Xmx10g \$PICARDJAR BuildBamIndex  -INPUT trim_${prefix}.dd.bam -OUTPUT trim_${prefix}.dd.bam.bai
-
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+                Picard: \$(java -jar \$PICARDJAR MarkDuplicates --version 2>&1 |sed 's/Version://')
+        END_VERSIONS
         """
 }
 
