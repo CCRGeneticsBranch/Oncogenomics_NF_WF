@@ -13,8 +13,8 @@ process SnpEff {
         val(tool_ch)
 
      output:
-     tuple val(meta),
-        path("${meta.lib}.*${meta.type}.raw.snpEff.vcf")
+     tuple val(meta),path("${meta.lib}.*${meta.type}.raw.snpEff.vcf"), emit: raw_snpeff
+     path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -29,6 +29,10 @@ process SnpEff {
 
      java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db ${dbNSFP2_4}  -c ${Biowulf_snpEff_config} -a ${vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon GRCh37.75 > ${prefix}.${tool_ch}_${meta.type}.raw.snpEff.vcf
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Arriba: \$(arriba -h |grep '^Version' | sed 's/.*Version: //')
+    END_VERSIONS
      """
 }
 
@@ -62,5 +66,3 @@ process Vcf2txt {
 
      """
 }
-
-
