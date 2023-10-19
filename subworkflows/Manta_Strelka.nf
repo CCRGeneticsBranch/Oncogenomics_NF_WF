@@ -14,7 +14,7 @@ workflow Manta_Strelka {
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     strelka_snvch           = Channel.from("strelka.snvs")
-take: 
+take:
     tumor_bam
     normal_bam
 
@@ -50,7 +50,7 @@ main:
                .combine(Biowulf_snpEff_config)
                .combine(strelka_snvch)
     )
-    Vcf2txt(SnpEff.out.combine(strelka_snvch))
+    Vcf2txt(SnpEff.out.raw_snpeff.combine(strelka_snvch))
 
 
 emit:
