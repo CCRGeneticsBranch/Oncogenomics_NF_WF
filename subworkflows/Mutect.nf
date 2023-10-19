@@ -19,7 +19,7 @@ take:
     normal_bam
 
 main:
-     
+
     Mutect(
         tumor_bam,
         normal_bam.map { tuple -> tuple.take(tuple.size() - 1) },
@@ -38,7 +38,7 @@ main:
            .combine(Biowulf_snpEff_config)
            .combine(mutect_ch)
     )
-    Vcf2txt(SnpEff.out.combine(mutect_ch))
+    Vcf2txt(SnpEff.out.raw_snpeff.combine(mutect_ch))
 emit:
     mutect_snpeff_snv_vcf2txt = Vcf2txt.out
     mutect_raw_vcf = Mutect_order.out
