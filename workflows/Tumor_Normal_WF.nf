@@ -74,7 +74,7 @@ samples_exome = Channel.fromPath("Tumor_Normal.csv")
     meta.id    =  row.sample
     meta.lib   =  row.library
     meta.sc    =  row.sample_captures
-    meta.casename  = row.casename 
+    meta.casename  = row.casename
     meta.type     = row.type
     meta.diagnosis =row.Diagnosis
     def fastq_meta = []
@@ -101,18 +101,18 @@ Exome_common_WF.out.pileup.map { meta, file ->
     tuple.size() > 2
   }
    .set { combined_pileup_ch }
- 
 
-pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) }  
+
+pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) }
 pileup_meta_ch = combined_pileup_ch.map { tuple -> tuple[0] }
 
 MakeHotSpotDB(pileup_input_ch,
                    pileup_meta_ch
 )
 
-//tag the bam channel for Tumor 
+//tag the bam channel for Tumor
 bam_target_ch = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0])
-tumor_bam_channel = bam_target_ch.branch { 
+tumor_bam_channel = bam_target_ch.branch {
     Tumor: it[0].type == "Tumor"
     Normal: it[0].type == "Normal"
 }
@@ -176,7 +176,7 @@ AddAnnotation(AddAnnotation_input_ch)
 somatic_variants_txt =Mutect_WF.out.mutect_snpeff_snv_vcf2txt
                             .combine(Vcf2txt.out,by:[0])
                             .combine(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt,by:[0])
-                
+
 AddAnnotation_somatic_variants(
     somatic_variants_txt,
     Annotation.out.rare_annotation
@@ -189,7 +189,7 @@ AddAnnotationFull_somatic_variants(
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-MutationalSignature(UnionSomaticCalls.out) 
+MutationalSignature(UnionSomaticCalls.out)
 
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
@@ -217,7 +217,7 @@ pvacseq_input = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, it
 
 Pvacseq(pvacseq_input)
 
-combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, *files ] }     
+combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, *files ] }
 pvacseq_files_ch = combined_pvacseq.map { tuple -> tuple.drop(1) }
 pvacseq_meta_ch = combined_pvacseq.map { tuple -> tuple[0] }
 
@@ -301,7 +301,7 @@ highconfidence_somatic_threshold = tumor_target_capture
             Tumor = params.highconfidence_somatic_threshold['threshold_4']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_4']['VAF']
         }
-        return [meta,Normal,Tumor,VAF] 
+        return [meta,Normal,Tumor,VAF]
    }
 
 MutationBurden(
@@ -319,5 +319,4 @@ def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 QC_summary_Patientlevel(qc_summary_ch)
 
 
-//data/khanlab2/NF_benchmarking/work.vg_NCI0439/37/53b3dd612c5d2ec23959eafa24fde8/test/split
 }
