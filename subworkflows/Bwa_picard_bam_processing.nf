@@ -10,10 +10,10 @@ take:samples_exome
 
 main:
      BWA(samples_exome.combine(bwa_genomeindex))
-     Picard_MarkDuplicates(BWA.out)
+     Picard_MarkDuplicates(BWA.out.bwa_bam.combine(BWA.out.bwa_bai,by:[0]))
 
 
-emit: 
-     bwa_bam = BWA.out
-     picard_MD =  Picard_MarkDuplicates.out
+emit:
+     bwa_bam = (BWA.out.bwa_bam.combine(BWA.out.bwa_bai,by:[0]))
+     picard_MD =  Picard_MarkDuplicates.out.dedup_bam.combine(Picard_MarkDuplicates.out.dedup_bam_bai,by:[0])
 }
