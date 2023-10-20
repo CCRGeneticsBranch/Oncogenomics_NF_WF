@@ -11,13 +11,12 @@ process Sequenza_utils {
      path genome_fai
      path genome_dict
      path gc50base
-     
+
      output:
-     tuple val(meta),
-     path("${meta.lib}.seqz_small.gz")
+     tuple val(meta),path("${meta.lib}.seqz_small.gz") , emit: sequenza_bin
 
     stub:
-    """   
+    """
         touch "${meta.lib}.seqz_small.gz"
 
     """
@@ -28,6 +27,10 @@ process Sequenza_utils {
     sequenza-utils bam2seqz --normal ${Nbam} --tumor ${Tbam} --fasta ${genome} -gc ${gc50base} -o ${meta.lib}.seqz.gz
     sequenza-utils seqz_binning -w 50 -s ${meta.lib}.seqz.gz | gzip > ${meta.lib}.seqz_small.gz
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        sequenza-utils: \$(sequenza-utils --version 2>&1 |grep -E '^This is version'|cut -f4 -d " ")
+    END_VERSIONS
     """
 }
 
@@ -40,16 +43,16 @@ process Sequenza {
      input:
      tuple val(meta),path(seqz_small)
      path sequenza_Rscript
-     
+
      output:
      tuple val(meta), path("${meta.lib}/${meta.lib}_segments.txt"), emit: segments
      tuple val(meta), path("${meta.lib}/${meta.lib}*pdf"), emit: pdf
      tuple val(meta), path("${meta.lib}/${meta.lib}_mutations.txt"), emit: mutations
-     tuple val(meta), path("${meta.lib}/${meta.lib}_alternative_solutions.txt"), emit: alternate
+     path("${meta.lib}/${meta.lib}_alternative_solutions.txt"), emit: alternate
      tuple val(meta), path("${meta.lib}/${meta.lib}_confints_CP.txt"), emit: confints
-     
+
     stub:
-    """   
+    """
     touch "${meta.lib}/${meta.lib}_segments.txt"
 
     """
@@ -71,16 +74,16 @@ process Sequenza_annot {
      input:
      tuple val(meta),path(segments),path(capture_bed)
      path combined_gene_list
-     
+
      output:
      tuple val(meta),
      path("${meta.lib}.txt")
-    
+
     stub:
-    """   
+    """
     touch "${meta.lib}.txt"
 
-    """   
+    """
 
     script:
 
