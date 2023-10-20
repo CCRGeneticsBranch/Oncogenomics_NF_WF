@@ -29,7 +29,7 @@ main:
 
 
     Strelka(
-        tumor_bam.combine(Manta.out,by:[0]),
+        tumor_bam.combine(Manta.out.manta_indels_vcf,by:[0]).combine(Manta.out.manta_indels_tbi,by:[0]),
         normal_bam.map { tuple -> tuple.take(tuple.size() - 1) },
         genome,
         genome_fai,
