@@ -2,10 +2,10 @@ process Kraken {
     tag "$meta.lib"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/kraken", mode: 'copy', pattern: "*.txt"
-    
+
     input:
     tuple val(meta), path(r1fq), path(r2fq),path(kraken_bacteria)
-    
+
     output:
     tuple val(meta),
     path("${meta.lib}.kraken.taxa.txt"), emit: kraken_taxa
@@ -17,13 +17,13 @@ process Kraken {
     """
     touch "${meta.lib}.kraken.taxa.txt"
     touch "${meta.lib}.krakenout"
-    
+
     """
 
 
     script:
     def prefix   = task.ext.prefix ?: "${meta.lib}"
-    
+
     """
     kraken --db ${kraken_bacteria} --fastq-input --gzip-compressed --threads ${task.cpus} --output ${prefix}.krakenout --preload --paired ${r1fq} ${r2fq}
     kraken-translate --mpa-format --db ${kraken_bacteria} ${prefix}.krakenout |cut -f2|sort|uniq -c|sort -k1,1nr > ${prefix}.krakentaxa
@@ -41,10 +41,10 @@ process Krona {
     tag "$meta.lib"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/kraken", mode: 'copy'
-    
+
     input:
     tuple val(meta), path(krakenout)
-    
+
     output:
     tuple val(meta),
     path("${meta.lib}.krona.html")
@@ -56,7 +56,7 @@ process Krona {
 
     script:
     def prefix   = task.ext.prefix ?: "${meta.lib}"
-    
+
     """
     cut -f2,3 ${krakenout} |ktImportTaxonomy - -o ${prefix}.kronahtml
     mv ${prefix}.kronahtml ${prefix}.krona.html
@@ -71,19 +71,19 @@ process Fastqc {
     tag "$meta.lib"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy',pattern: "fastqc"
-    
+
     input:
     tuple val(meta), path(trim), path(r1fq), path(r2fq)
-    
+
     output:
     tuple val(meta), path("fastqc") , emit: fastqc_results
     path "versions.yml"             , emit: versions
 
-    
+
     script:
     def args = task.ext.args   ?: ''
     def prefix   = task.ext.prefix ?: "${meta.lib}"
-    
+
     """
     if [ ! -d fastqc ];then mkdir -p fastqc;fi
     fastqc --extract ${trim[0]} ${trim[1]} $r1fq $r2fq -t $task.cpus -o fastqc
@@ -99,10 +99,10 @@ process Fastq_screen {
     tag "$meta.lib"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/fastq_screen/", mode: 'copy'
-    
+
     input:
     tuple val(meta),path(trim),path(fastq_screen_config),path(fqs_human)
-    
+
     stub:
     """
     touch "${meta.lib}_R1_screen.html"
@@ -110,15 +110,15 @@ process Fastq_screen {
     """
 
     output:
-    tuple val(meta), 
+    tuple val(meta),
     path("${meta.lib}_R1_screen.html"),
     path("${meta.lib}_R2_screen.html")
 
-    
+
     script:
     def args = task.ext.args   ?: ''
     def prefix   = task.ext.prefix ?: "${meta.lib}"
-    
+
     """
     #--subset 1000000  add this parameter after testing.
     if [ ! -d fastq_screen ];then mkdir -p fastq_screen;fi
@@ -135,7 +135,7 @@ process Multiqc {
     input:
     path(qc_files)
     val(meta)
- 
+
 
     output:
     tuple val(meta),path("multiqc_report.html")
@@ -143,11 +143,11 @@ process Multiqc {
 
     script:
     """
-    
+
     echo  "${qc_files.join('\n')}" > multiqc_input_files
     multiqc --file-list multiqc_input_files -f
 
-    
+
     """
 
 }
@@ -168,6 +168,7 @@ process Genotyping {
     output:
     tuple val(meta),path("${meta.lib}.gt") , emit: gt
     tuple val(meta),path("${meta.lib}.loh"), emit: loh
+    path "versions.yml"             , emit: versions
 
     stub:
     """
@@ -184,13 +185,17 @@ process Genotyping {
 
     vcf2loh.pl ${prefix}.samtools.vcf  > ${prefix}.loh
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        bcftools: \$(bcftools --version|grep -E '^bcftools'|sed 's/.*bcftools //')
+    END_VERSIONS
 
     """
 }
 
 
 process CircosPlot_lib {
-    
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
@@ -215,7 +220,7 @@ process CircosPlot_lib {
 }
 
 process CircosPlot {
-    
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
@@ -266,13 +271,13 @@ process RNAseQC {
     script:
      """
      java -jar \$RNASEQCJAR -r ${genome} -rRNA ${rRNA_interval} -o rnaseqc -s "${meta.lib}|${bam}|${meta.lib}" -t ${transcript_gtf}
- 
+
      """
 
 }
 
 process Conpair_pile {
-   
+
     tag "$meta.lib"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
@@ -340,7 +345,7 @@ process QC_summary_Patientlevel {
     tuple val(meta),
         path(tumor),
         path(normal)
-    
+
     output:
     tuple val(meta),path("${meta.id}.consolidated_QC.txt")
 
@@ -348,7 +353,7 @@ process QC_summary_Patientlevel {
     """
       touch "${meta.id}.consolidated_QC.txt"
     """
-   
+
     script:
     """
     cat ${tumor} ${normal} |sort|uniq|awk 'NF' > ${meta.id}.consolidated_QC.txt
