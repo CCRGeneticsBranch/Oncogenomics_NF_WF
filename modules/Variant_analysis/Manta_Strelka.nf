@@ -10,14 +10,14 @@ process Manta {
      path genome
      path genome_fai
      path genome_dict
-     
+
      output:
-     tuple val(meta),
-     path("candidateSmallIndels.vcf.gz"),
-     path("candidateSmallIndels.vcf.gz.tbi")
+     tuple val(meta),path("candidateSmallIndels.vcf.gz"), emit: manta_indels_vcf
+     tuple val(meta),path("candidateSmallIndels.vcf.gz.tbi"), emit: manta_indels_tbi
+     path "versions.yml"             , emit: versions
 
     stub:
-    """   
+    """
         touch "candidateSmallIndels.vcf.gz"
 
     """
@@ -29,6 +29,11 @@ process Manta {
     ./manta/runWorkflow.py
     cp ./manta/results/variants/candidateSmallIndels.vcf.gz .
     cp ./manta/results/variants/candidateSmallIndels.vcf.gz.tbi .
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        manta: \$(configManta.py 2>&1  |grep -E '^Version:'|sed 's/Version: //')
+    END_VERSIONS
     """
 }
 
@@ -51,7 +56,7 @@ process Strelka {
      path("somatic.snvs.vcf.gz"),path("somatic.snvs.vcf.gz.tbi"), emit: strelka_snv
      tuple val(meta),
      path("somatic.indels.vcf.gz"),path("somatic.indels.vcf.gz.tbi"), emit: strelka_indels
-
+     path "versions.yml"             , emit: versions
      stub:
      """
      touch "somatic.snvs.vcf.gz"
@@ -70,7 +75,11 @@ process Strelka {
     cp ./strelka/results/variants/somatic.snvs.vcf.gz.tbi .
     cp ./strelka/results/variants/somatic.indels.vcf.gz .
     cp ./strelka/results/variants/somatic.indels.vcf.gz.tbi .
-    
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        strelka: \$(configureStrelkaSomaticWorkflow.py 2>&1  |grep -E '^Version:'|sed 's/Version: //')
+    END_VERSIONS
     """
 
 }
@@ -90,7 +99,8 @@ process Strelka_vcf_processing {
      output:
      tuple val(meta),path("${meta.lib}.strelka.snvs.raw.vcf"), emit: strelka_snv
      tuple val(meta),path("${meta.lib}.strelka.indels.raw.vcf"), emit: strelka_indel
-    
+     path "versions.yml"             , emit: versions
+
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
     """
@@ -101,6 +111,10 @@ process Strelka_vcf_processing {
     sed -i "s/FORMAT\tNORMAL\tTUMOR/FORMAT\t${meta2.lib}\t${prefix}/g" ${prefix}.strelka.snvs.raw.vcf
     sed -i "s/FORMAT\tNORMAL\tTUMOR/FORMAT\t${meta2.lib}\t${prefix}/g" ${prefix}.strelka.indels.raw.vcf
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        vcftools: \$(vcftools 2>&1  |grep -E '^VCFtools'|sed 's/VCFtools //'|awk -F'[()]' '{print \$2}')
+    END_VERSIONS
     """
 
 }
