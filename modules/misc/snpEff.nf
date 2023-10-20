@@ -2,7 +2,7 @@ process SnpEff {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
      tuple val(meta),
@@ -31,7 +31,7 @@ process SnpEff {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        Arriba: \$(arriba -h |grep '^Version' | sed 's/.*Version: //')
+        Snpsift: \$(java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp 2>&1 |grep -E '^SnpSift'|cut -f3 -d " ")
     END_VERSIONS
      """
 }
