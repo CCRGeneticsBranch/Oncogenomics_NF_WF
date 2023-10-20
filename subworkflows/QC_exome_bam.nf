@@ -98,5 +98,8 @@ workflow QC_exome_bam {
          coverageplot = CoveragePlot.out
          loh = Genotyping.out.loh
          Exome_qc = Exome_QC.out
+         hsmetrics = HSMetrics.out.hsmetrics_out
+         flagstat = Flagstat.out.flagstat
+         verifybamid = VerifyBamID.out.verifybamid_out
 
 }

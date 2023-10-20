@@ -103,4 +103,7 @@ seq2hla_exome = HLA_calls_exome.out.seq2hla_exome
 mergehla_exome = HLA_calls_exome.out.mergehla_exome
 exome_qc = QC_exome_bam.out.Exome_qc
 markdup_txt = BWA_picard.out.markdup_txt
+hsmetrics = QC_exome_bam.out.hsmetrics
+flagstat = QC_exome_bam.out.flagstat
+verifybamid = QC_exome_bam.out.verifybamid
 }
