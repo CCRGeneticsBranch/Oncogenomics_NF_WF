@@ -13,7 +13,7 @@ workflow Sequenza_annotation {
 
 take:
     tumor_bam
-    normal_bam 
+    normal_bam
     target_capture
 
 main:
@@ -23,15 +23,15 @@ main:
         genome,
         genome_fai,
         genome_dict,
-        gc50base   
+        gc50base
     )
 
     Sequenza(
-        Sequenza_utils.out,
+        Sequenza_utils.out.sequenza_bin,
         sequenza_Rscript
     )
-    
-   
+
+
     Sequenza_annot(
     Sequenza.out.segments.combine(target_capture,by:[0]),
     combined_gene_list
@@ -39,5 +39,6 @@ main:
 
 emit:
     sequenza = Sequenza_annot.out
+    alternate = Sequenza.out.alternate
 
 }
