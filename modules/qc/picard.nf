@@ -93,6 +93,7 @@ process Picard_MarkDuplicates {
         output:
         tuple val(meta), path("trim_${meta.lib}.dd.bam"), emit: dedup_bam
         tuple val(meta), path("trim_${meta.lib}.dd.bam.bai"), emit: dedup_bam_bai
+        tuple val(meta), path("trim_${meta.lib}.markdup.txt"), emit: markdup_txt
         path "versions.yml"             , emit: versions
 
 

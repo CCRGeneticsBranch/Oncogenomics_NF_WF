@@ -102,4 +102,5 @@ hlaminer_exome  = HLA_calls_exome.out.hlaminer_exome
 seq2hla_exome = HLA_calls_exome.out.seq2hla_exome
 mergehla_exome = HLA_calls_exome.out.mergehla_exome
 exome_qc = QC_exome_bam.out.Exome_qc
+markdup_txt = BWA_picard.out.markdup_txt
 }

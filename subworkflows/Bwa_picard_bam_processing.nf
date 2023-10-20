@@ -16,4 +16,5 @@ main:
 emit:
      bwa_bam = (BWA.out.bwa_bam.combine(BWA.out.bwa_bai,by:[0]))
      picard_MD =  Picard_MarkDuplicates.out.dedup_bam.combine(Picard_MarkDuplicates.out.dedup_bam_bai,by:[0])
+     markdup_txt = Picard_MarkDuplicates.out.markdup_txt
 }
