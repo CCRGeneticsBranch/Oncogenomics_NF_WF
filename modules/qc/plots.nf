@@ -92,7 +92,7 @@ process Flagstat {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        Samtools: \$(samtools --version|head -n 1 |sed 's/.*samtools //')
+        samtools: \$(samtools --version|head -n 1 |sed 's/.*samtools //')
     END_VERSIONS
 
      """
@@ -133,7 +133,7 @@ process Bamutil {
      samtools index ${prefix}.final.squeeze.bam
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
-         Samtools: \$(samtools --version|head -n 1 |sed 's/.*samtools //')
+         samtools: \$(samtools --version|head -n 1 |sed 's/.*samtools //')
      END_VERSIONS
 
      """
@@ -217,8 +217,8 @@ process Bam2tdf {
         path(genome_dict)
 
      output:
-     tuple val(meta),
-        path("${meta.lib}.final.bam.tdf")
+     tuple val(meta),path("${meta.lib}.final.bam.tdf"), emit: tdf_out
+     path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -230,6 +230,10 @@ process Bam2tdf {
      set -exo pipefail
      igvtools count ${bam} ${meta.lib}.final.bam.tdf  ${genome}
 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         igvtools: \$(igvtools 2>&1|grep -E '^Program'|cut -f5 -d " ")
+     END_VERSIONS
      """
 }
 
@@ -245,8 +249,9 @@ process Coverage {
         path(targetcapture)
 
     output:
-    tuple val(meta),
-       path("${meta.lib}.coverage.txt")
+    tuple val(meta),path("${meta.lib}.coverage.txt"), emit:coverage_out
+    path "versions.yml"             , emit: versions
+
 
     stub:
      """
@@ -257,6 +262,11 @@ process Coverage {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      bedtools coverage -abam ${bam} -b  ${targetcapture} -hist |grep "^all" > ${prefix}.coverage.txt
+
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         bedtools: \$(bedtools --version|sed 's/.*bedtools //')
+     END_VERSIONS
 
      """
 
@@ -301,8 +311,8 @@ process Read_depth {
         path(targetcapture)
 
    output:
-    tuple val(meta),
-       path("${meta.lib}.depth_per_base")
+    tuple val(meta),path("${meta.lib}.depth_per_base"), emit: read_depth_output
+    path "versions.yml"             , emit: versions
    stub:
      """
      touch "${meta.lib}.depth_per_base"
@@ -314,6 +324,10 @@ process Read_depth {
    cut -f1-4 ${targetcapture} > intervals.bed
    samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -split -a intervals.bed -b - -d >> ${prefix}.depth_per_base
 
+   cat <<-END_VERSIONS > versions.yml
+   "${task.process}":
+       samtools: \$(samtools --version|grep -E '^samtools'|sed 's/.*samtools //')
+   END_VERSIONS
    """
 
 }
@@ -330,8 +344,9 @@ process VerifyBamID {
         path(recode_vcf)
 
     output:
-    tuple val(meta),
-        path("${meta.lib}.selfSM")
+    tuple val(meta),path("${meta.lib}.selfSM"), emit: verifybamid_out
+    path "versions.yml"             , emit: versions
+
 
     stub:
     """
@@ -342,6 +357,12 @@ process VerifyBamID {
 
      """
      verifyBamID --vcf ${recode_vcf} --bam ${bam} --maxDepth 3000 --ignoreRG --site --chip-none --precise --minMapQ 30 --minQ 20 --minAF 0.05 --out \$PWD/${meta.lib}
+
+   cat <<-END_VERSIONS > versions.yml
+   "${task.process}":
+       verifyBamID: \$(verifyBamID 2>&1|grep -E '^verifyBamID'|cut -f2 -d " ")
+   END_VERSIONS
+
      """
 }
 
@@ -385,9 +406,9 @@ process TargetIntervals {
         path(design_ch)
 
     output:
-    tuple val(meta),
-       path("${meta.lib}.probe.intervals"),
-       path("${meta.lib}.target.intervals")
+    tuple val(meta),path("${meta.lib}.probe.intervals"), emit: probe_intervals
+    tuple val(meta),path("${meta.lib}.target.intervals"), emit: target_intervals
+    path "versions.yml"             , emit: versions
 
     stub:
      """
@@ -401,6 +422,11 @@ process TargetIntervals {
 
      cat <(samtools view -H ${bam}) <(awk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${design_ch} )> ${prefix}.probe.intervals
      cat <(samtools view -H ${bam}) <(awk '{{print \$1 "\t" \$2+1 "\t" \$3 "\t+\tinterval_" NR}}' ${targetcapture} )> ${prefix}.target.intervals
+
+   cat <<-END_VERSIONS > versions.yml
+   "${task.process}":
+       samtools: \$(samtools --version|grep -E '^samtools'|sed 's/.*samtools //')
+   END_VERSIONS
      """
 
 }
@@ -421,8 +447,8 @@ process HSMetrics {
         path(genome_dict)
 
     output:
-    tuple val(meta),
-       path("${meta.lib}.hsmetrics")
+    tuple val(meta),path("${meta.lib}.hsmetrics"), emit: hsmetrics_out
+    path "versions.yml"             , emit: versions
 
     stub:
      """
@@ -434,6 +460,11 @@ process HSMetrics {
      """
      java -Xmx75g  -jar \$PICARDJAR CollectHsMetrics BAIT_INTERVALS= ${probe_intervals} TARGET_INTERVALS= ${target_intervals} INPUT= ${bam} OUTPUT= ${prefix}.histogram.hsmetrics METRIC_ACCUMULATION_LEVEL=ALL_READS REFERENCE_SEQUENCE= ${genome} QUIET=true  VALIDATION_STRINGENCY=SILENT
      awk '/^## HISTOGRAM/ {{exit}} {{print}}' ${prefix}.histogram.hsmetrics > ${prefix}.hsmetrics
+
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         Picard: \$(java -jar \$PICARDJAR MarkDuplicates --version 2>&1 |sed 's/Version://')
+     END_VERSIONS
      """
 
 }
