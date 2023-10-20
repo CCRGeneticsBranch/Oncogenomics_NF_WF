@@ -2,7 +2,7 @@ process Mutect {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
      tuple val(meta),path(Tbam),path(Tindex),path(Tbed)

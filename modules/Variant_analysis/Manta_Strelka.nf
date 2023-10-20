@@ -2,7 +2,7 @@ process Manta {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "candidateSmallIndels*"
 
      input:
      tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
@@ -41,7 +41,7 @@ process Strelka {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "somatic*"
 
      input:
      tuple val(meta),path(Tbam),path(Tindex),path(Tbed),path(vcf),path(tbi)
@@ -88,7 +88,7 @@ process Strelka {
 process Strelka_vcf_processing {
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
      tuple val(meta),path(Tbam),path(Tindex),path(Tbed)

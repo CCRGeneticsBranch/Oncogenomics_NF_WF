@@ -31,7 +31,7 @@ process VEP {
 
    tag "$meta.lib"
 
-   publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}"
+   publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
   input:
   tuple val(meta),path(combined_vcf_tmp),path(vep_cache)

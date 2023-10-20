@@ -103,7 +103,7 @@ process Bamutil {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
      tuple val(meta),
@@ -206,7 +206,7 @@ process Bam2tdf {
 
      tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
      tuple val(meta),
@@ -240,7 +240,7 @@ process Bam2tdf {
 process Coverage {
 
     tag "$meta.lib"
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),
@@ -302,7 +302,7 @@ process CoveragePlot {
 process Read_depth {
 
     tag "$meta.lib"
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),
@@ -335,7 +335,7 @@ process Read_depth {
 process VerifyBamID {
 
     tag "$meta.lib"
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/verifyBamID", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/verifyBamID", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),
@@ -396,7 +396,7 @@ process FailedExons_Genes {
 process TargetIntervals {
 
     tag "$meta.lib"
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),
@@ -434,7 +434,7 @@ process TargetIntervals {
 process HSMetrics {
 
     tag "$meta.lib"
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),

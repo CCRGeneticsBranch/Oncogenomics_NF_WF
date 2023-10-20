@@ -1,7 +1,7 @@
 process Seq2HLA {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/seq2HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/seq2HLA", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(trim)
@@ -30,7 +30,7 @@ process Seq2HLA {
 process Seq2HLA_exome {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/seq2HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/seq2HLA", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(r1fq),path(r2fq)

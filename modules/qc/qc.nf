@@ -154,7 +154,7 @@ process Multiqc {
 
 process Genotyping {
     tag "$meta.lib"
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta),

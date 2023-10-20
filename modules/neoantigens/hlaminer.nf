@@ -32,7 +32,7 @@ process HLAminer {
 process HLAminer_exome {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/HLAminer", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA/HLAminer", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(r1fq),path(r2fq)
