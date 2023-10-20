@@ -41,7 +41,7 @@ workflow QC_exome_bam {
          )
          CircosPlot_lib(Genotyping.out.loh)
          Read_depth(GATK_exome_bam.combine(capture_ch, by:[0]))
-         FailedExons_Genes(Read_depth.out)
+         FailedExons_Genes(Read_depth.out.read_depth_output)
          Bam2tdf(
           GATK_exome_bam
              .combine(genome)
@@ -69,7 +69,7 @@ workflow QC_exome_bam {
         Coverage(
         GATK_exome_bam.combine(capture_ch, by:[0])
         )
-        CoveragePlot(Coverage.out)
+        CoveragePlot(Coverage.out.coverage_out)
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
@@ -81,15 +81,16 @@ workflow QC_exome_bam {
           .combine(genome_dict)
           .combine(conpair_refbed)
         )
-         
+
         HSMetrics(GATK_exome_bam
-          .combine(TargetIntervals.out, by:[0])
+          .combine(TargetIntervals.out.probe_intervals, by:[0])
+          .combine(TargetIntervals.out.target_intervals, by:[0])
           .combine(genome)
           .combine(genome_fai)
-          .combine(genome_dict)  
+          .combine(genome_dict)
           )
         Exome_QC(
-          GATK_exome_bam.combine(capture_ch, by:[0]).combine(HSMetrics.out, by:[0])
+          GATK_exome_bam.combine(capture_ch, by:[0]).combine(HSMetrics.out.hsmetrics_out, by:[0])
         )
 
    emit:
