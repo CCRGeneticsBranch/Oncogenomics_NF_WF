@@ -18,6 +18,7 @@ process Mutect {
      tuple val(meta),path("${meta.lib}.MuTect_raw.vcf"),    emit: mutect_raw_vcf
      tuple val(meta), path("${meta.lib}.mutect.call_stats.txt"),          emit: mutect_stats
      tuple val(meta),path("${meta.lib}.mutect.coverage.wig.txt"),        emit: coverage_wig
+     path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -39,8 +40,12 @@ process Mutect {
             --out  ${prefix}.mutect.call_stats.txt \
             --vcf ${prefix}.MuTect_raw.vcf \
             --max_alt_allele_in_normal_fraction 0.05 \
-            --max_alt_alleles_in_normal_count 4 --min_qscore 20 -rf MappingQuality -mmq 30 
+            --max_alt_alleles_in_normal_count 4 --min_qscore 20 -rf MappingQuality -mmq 30
 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         mutect: \$(java  -jar /opt/mutect-1.1.7.jar -T MuTect -version)
+     END_VERSIONS
      """
 }
 
@@ -61,7 +66,7 @@ process Mutect_order {
      """
      touch "${meta.lib}.MuTect.raw.vcf
      """
-    
+
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
      """
@@ -71,4 +76,3 @@ process Mutect_order {
      """
 
 }
-
