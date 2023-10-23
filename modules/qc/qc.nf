@@ -73,10 +73,11 @@ process Fastqc {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy',pattern: "fastqc"
 
     input:
-    tuple val(meta), path(trim), path(r1fq), path(r2fq)
+    path(samples)
+    val(meta)
 
     output:
-    tuple val(meta), path("fastqc") , emit: fastqc_results
+    tuple val(meta), path("fastqc_${meta.lib}") , emit: fastqc_results
     path "versions.yml"             , emit: versions
 
 
@@ -85,8 +86,8 @@ process Fastqc {
     def prefix   = task.ext.prefix ?: "${meta.lib}"
 
     """
-    if [ ! -d fastqc ];then mkdir -p fastqc;fi
-    fastqc --extract ${trim[0]} ${trim[1]} $r1fq $r2fq -t $task.cpus -o fastqc
+    if [ ! -d fastqc_${meta.lib} ];then mkdir -p fastqc_${meta.lib};fi
+    fastqc --extract ${samples.join(' ')} -t $task.cpus -o fastqc_${meta.lib}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -145,6 +146,33 @@ process Multiqc {
     """
 
     echo  "${qc_files.join('\n')}" > multiqc_input_files
+    multiqc --file-list multiqc_input_files -f
+
+
+    """
+
+}
+
+process Multiqc_TN {
+    tag "$meta.id"
+
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    path(normal_files)
+    path(tumor_files)
+    val(meta)
+
+
+    output:
+    path("multiqc_report.html")
+    //path "versions.yml"
+
+    script:
+    """
+
+    echo  "${normal_files.join('\n')}" > multiqc_input_files
+    echo  "${tumor_files.join('\n')}"  >>multiqc_input_files
     multiqc --file-list multiqc_input_files -f
 
 
