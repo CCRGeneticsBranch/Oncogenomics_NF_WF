@@ -68,8 +68,8 @@ design_ch =  Exome_GATK.out.GATK_Exome_bam
 
         if (meta.sc == 'clin.ex.v1') {
             design_file = params.clin_ex_v1_design
-        } else if (meta.sc == 'seqcapez.hu.ex.v3') {
-            design_file = params.seqcapez.hu.ex.v3
+        } else if (meta.sc == 'agilent.v7') {
+            design_file = params.agilent.v7_design
         } else if (meta.sc == 'polya') {
             design_file = params.polya_target
         } else if (meta.sc == 'ribozero') {
@@ -106,4 +106,7 @@ markdup_txt = BWA_picard.out.markdup_txt
 hsmetrics = QC_exome_bam.out.hsmetrics
 flagstat = QC_exome_bam.out.flagstat
 verifybamid = QC_exome_bam.out.verifybamid
+Fastqc_out = BWA_picard.out.Fastqc_out
+krona = Krona.out
+kraken = Kraken.out.kraken_out
 }
