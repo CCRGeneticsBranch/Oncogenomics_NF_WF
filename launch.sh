@@ -10,4 +10,4 @@ fi
 export TAG=$1
 export SAMPLESHEET=$2
 
-sh /data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nf.sh $TAG  $SAMPLESHEET
+sh /data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nf.sh $TAG  $SAMPLESHEET
