@@ -41,6 +41,9 @@ workflow QC_exome_bam {
          )
          CircosPlot_lib(Genotyping.out.loh)
          Read_depth(GATK_exome_bam.combine(capture_ch, by:[0]))
+
+         ch_versions = Genotyping.out.versions.mix(Read_depth.out.versions)
+
          FailedExons_Genes(Read_depth.out.read_depth_output)
          Bam2tdf(
           GATK_exome_bam
@@ -48,13 +51,22 @@ workflow QC_exome_bam {
              .combine(genome_fai)
              .combine(genome_dict)
          )
+
+         ch_versions = ch_versions.mix(Bam2tdf.out.versions)
+
          Flagstat(GATK_exome_bam)
+
+         ch_versions = ch_versions.mix(Flagstat.out.versions)
+
          Bamutil(
           GATK_exome_bam
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
          )
+
+         ch_versions = ch_versions.mix(Bamutil.out.versions)
+
         HotspotPileup(
           GATK_exome_bam
              .combine(genome)
@@ -66,13 +78,21 @@ workflow QC_exome_bam {
           GATK_exome_bam
              .combine(recode_vcf)
         )
+
+        ch_versions = ch_versions.mix(VerifyBamID.out.versions)
+
         Coverage(
         GATK_exome_bam.combine(capture_ch, by:[0])
         )
+
+        ch_versions = ch_versions.mix(Coverage.out.versions)
+
         CoveragePlot(Coverage.out.coverage_out)
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
+
+        ch_versions = ch_versions.mix(TargetIntervals.out.versions)
 
         Conpair_pile(
           GATK_exome_bam
@@ -89,6 +109,9 @@ workflow QC_exome_bam {
           .combine(genome_fai)
           .combine(genome_dict)
           )
+
+        ch_versions = ch_versions.mix(HSMetrics.out.versions)
+
         Exome_QC(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(HSMetrics.out.hsmetrics_out, by:[0])
         )
@@ -101,5 +124,6 @@ workflow QC_exome_bam {
          hsmetrics = HSMetrics.out.hsmetrics_out
          flagstat = Flagstat.out.flagstat
          verifybamid = VerifyBamID.out.verifybamid_out
+         ch_versions = ch_versions
 
 }

@@ -15,8 +15,7 @@ take:
 
 main:
 
-//Initiate empty channel for versions
-ch_versions = Channel.empty()
+
 
 
 BWA_picard(samples_exome_ch)
@@ -24,9 +23,14 @@ BWA_picard(samples_exome_ch)
 Kraken(samples_exome_ch
     .combine(kraken_bacteria)
 )
+
+ch_versions = BWA_picard.out.ch_versions.mix(Kraken.out.versions)
+
 Krona(Kraken.out.kraken_out)
 
 HLA_calls_exome(samples_exome_ch)
+
+ch_versions = ch_versions.mix(HLA_calls_exome.out.ch_versions)
 
 capture_ch = BWA_picard.out.picard_MD
     .map { tuple ->
@@ -57,6 +61,9 @@ capture_ch = BWA_picard.out.picard_MD
 Exome_GATK(BWA_picard.out.picard_MD,
            capture_ch
 )
+
+
+ch_versions = ch_versions.mix(Exome_GATK.out.ch_versions)
 
 //update design channel
 design_ch =  Exome_GATK.out.GATK_Exome_bam
@@ -89,6 +96,7 @@ QC_exome_bam(
     design_ch
 )
 
+ch_versions = ch_versions.mix(QC_exome_bam.out.ch_versions)
 
 emit:
 coverageplot = QC_exome_bam.out.coverageplot
@@ -109,4 +117,5 @@ verifybamid = QC_exome_bam.out.verifybamid
 Fastqc_out = BWA_picard.out.Fastqc_out
 krona = Krona.out
 kraken = Kraken.out.kraken_out
+ch_versions = ch_versions
 }
