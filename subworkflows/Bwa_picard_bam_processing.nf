@@ -11,10 +11,21 @@ take:samples_exome
 
 main:
 
+     //Initiate empty channel for versions
+     ch_versions = Channel.empty()
+
      Fastqc(samples_exome.map { tuple -> tuple.drop(1) },
             samples_exome.map { tuple -> tuple[0] })
+
+     ch_versions = ch_versions.mix(Fastqc.out.versions)
+
      BWA(samples_exome.combine(bwa_genomeindex))
+
+     ch_versions = ch_versions.mix(BWA.out.versions)
+
      Picard_MarkDuplicates(BWA.out.bwa_bam.combine(BWA.out.bwa_bai,by:[0]))
+
+     ch_versions = ch_versions.mix(Picard_MarkDuplicates.out.versions)
 
 
 emit:
@@ -22,5 +33,6 @@ emit:
      picard_MD =  Picard_MarkDuplicates.out.dedup_bam.combine(Picard_MarkDuplicates.out.dedup_bam_bai,by:[0])
      markdup_txt = Picard_MarkDuplicates.out.markdup_txt
      Fastqc_out = Fastqc.out.fastqc_results
+     ch_versions = ch_versions
 
 }
