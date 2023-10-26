@@ -35,6 +35,9 @@ main:
              .combine(phase1_1000g)
              .combine(Mills_and_1000g)
      )
+
+     //ch_versions = GATK_RTC_IR.out.versions.mix(GATK_BR_PR.out.versions)
+
      Exome_HaplotypeCaller(
              GATK_BR_PR.out.final_bam.combine(GATK_BR_PR.out.final_bai,by:[0])
              .combine(Capture_bed,by:[0])
@@ -44,6 +47,8 @@ main:
              .combine(dbsnp)
      )
 
+     ch_versions = GATK_BR_PR.out.versions.mix(Exome_HaplotypeCaller.out.versions)
+
      SnpEff(
         Exome_HaplotypeCaller.out.exome_HC
              .combine(dbNSFP2_4)
@@ -51,10 +56,14 @@ main:
              .combine(Biowulf_snpEff_config)
              .combine(HC_ch)
      )
+
+     ch_versions = ch_versions.mix(SnpEff.out.versions)
+
       Vcf2txt(SnpEff.out.raw_snpeff.combine(HC_ch))
 
 emit:
      GATK_Exome_bam =  GATK_BR_PR.out.final_bam.combine(GATK_BR_PR.out.final_bai,by:[0])
      SnpEff_vcf      = SnpEff.out.raw_snpeff
      HC_snpeff_snv_vcf2txt = Vcf2txt.out
+     ch_versions = ch_versions
 }
