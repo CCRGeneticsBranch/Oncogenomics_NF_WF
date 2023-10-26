@@ -3,6 +3,8 @@
 import yaml
 import platform
 from textwrap import dedent
+import sys
+from datetime import datetime
 
 
 def _make_versions_html(versions):
@@ -44,13 +46,14 @@ def _make_versions_html(versions):
     return "\\n".join(html)
 
 
+task_process = sys.argv[3]
 versions_this_module = {}
-versions_this_module["${task.process}"] = {
+versions_this_module[task_process] = {
     "python": platform.python_version(),
     "yaml": yaml.__version__,
 }
 
-with open("collated_versions.yml") as f:
+with open(sys.argv[1]) as f:
     versions_by_process = yaml.load(f, Loader=yaml.BaseLoader) | versions_this_module
 
 # aggregate versions by the module name (derived from fully-qualified process name)
@@ -67,23 +70,15 @@ for process, process_versions in versions_by_process.items():
         versions_by_module[module] = process_versions
 
 versions_by_module["Workflow"] = {
-    "Nextflow": "$workflow.nextflow.version",
-    "$workflow.manifest.name": "$workflow.manifest.version",
+    "Nextflow": sys.argv[2],
 }
 
-versions_mqc = {
-    "id": "software_versions",
-    "section_name": "${workflow.manifest.name} Software Versions",
-    "section_href": "https://github.com/${workflow.manifest.name}",
-    "plot_type": "html",
-    "description": "are collected at run time from the software output.",
-    "data": _make_versions_html(versions_by_module),
-}
+timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+Patient = sys.argv[4]
+output_file = f"{Patient}.config.{timestamp}.txt"
 
-with open("software_versions.yml", "w") as f:
+with open(output_file, "w") as f:
     yaml.dump(versions_by_module, f, default_flow_style=False)
-with open("software_versions_mqc.yml", "w") as f:
-    yaml.dump(versions_mqc, f, default_flow_style=False)
 
 with open("versions.yml", "w") as f:
     yaml.dump(versions_this_module, f, default_flow_style=False)
