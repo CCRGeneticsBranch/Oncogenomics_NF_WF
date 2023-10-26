@@ -40,5 +40,6 @@ main:
 emit:
     sequenza = Sequenza_annot.out
     alternate = Sequenza.out.alternate
+    versions = Sequenza_utils.out.versions
 
 }
