@@ -30,6 +30,7 @@ main:
         cosmic_v67_hg19_vcf
     )
 
+
     Mutect_order(Mutect.out.mutect_raw_vcf)
 
     SnpEff(Mutect_order.out
@@ -42,4 +43,6 @@ main:
 emit:
     mutect_snpeff_snv_vcf2txt = Vcf2txt.out
     mutect_raw_vcf = Mutect_order.out
+    versions = Mutect.out.versions
+
 }

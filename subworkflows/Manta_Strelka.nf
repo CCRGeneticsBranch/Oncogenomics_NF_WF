@@ -37,12 +37,16 @@ main:
         strelka_config
     )
 
+    ch_versions = Manta.out.versions.mix(Strelka.out.versions)
+
     Strelka_vcf_processing(
         tumor_bam,
         Strelka.out.strelka_snv,
         Strelka.out.strelka_indels,
         normal_bam.map { tuple -> tuple.take(tuple.size() - 1) }
     )
+
+    ch_versions = ch_versions.mix(Strelka_vcf_processing.out.versions)
 
     SnpEff(Strelka_vcf_processing.out.strelka_snv
                .combine(dbNSFP2_4)
@@ -57,5 +61,7 @@ emit:
     strelka_indel_raw_vcf = Strelka_vcf_processing.out.strelka_indel
     strelka_snvs_raw_vcf = Strelka_vcf_processing.out.strelka_snv
     strelka_snpeff_snv_vcf2txt = Vcf2txt.out
+    ch_versions = ch_versions
+
 
 }
