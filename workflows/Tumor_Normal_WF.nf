@@ -19,6 +19,8 @@ include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
 include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
 include {VEP} from '../modules/annotation/VEP.nf'
+include {DBinput_multiples as DBinput_somatic} from '../modules/misc/DBinput'
+include {DBinput_multiples as DBinput_germline} from '../modules/misc/DBinput'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
@@ -26,7 +28,8 @@ include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
-
+include {Multiqc_TN} from '../modules/qc/qc'
+include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 
 def combinelibraries(inputData) {
@@ -68,7 +71,7 @@ workflow Tumor_Normal_WF {
 // Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "Tumor" || row.type == "Normal" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -113,8 +116,8 @@ MakeHotSpotDB(pileup_input_ch,
 //tag the bam channel for Tumor
 bam_target_ch = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0])
 tumor_bam_channel = bam_target_ch.branch {
-    Tumor: it[0].type == "Tumor"
-    Normal: it[0].type == "Normal"
+    Tumor: it[0].type == "tumor_DNA"
+    Normal: it[0].type == "normal_DNA"
 }
 
 CNVkitPaired(
@@ -125,12 +128,18 @@ CNVkitPaired(
     genome_fai,
     genome_dict
 )
+
+ch_versions = Exome_common_WF.out.ch_versions.mix(CNVkitPaired.out.versions)
+
+
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
 Manta_Strelka(
     tumor_bam_channel.Tumor,
     tumor_bam_channel.Normal
 )
+
+ch_versions = ch_versions.mix(Manta_Strelka.out.ch_versions)
 
 SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
                .combine(dbNSFP2_4)
@@ -139,12 +148,14 @@ SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
                .combine(strelka_indelch)
     )
 
-Vcf2txt(SnpEff.out.combine(strelka_indelch))
+Vcf2txt(SnpEff.out.raw_snpeff.combine(strelka_indelch))
 
 Mutect_WF(
     tumor_bam_channel.Tumor,
     tumor_bam_channel.Normal
 )
+
+ch_versions = ch_versions.mix(Mutect_WF.out.versions)
 
 Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
     meta2 = [
@@ -202,16 +213,19 @@ Cosmic3Signature(
     cosmic_genome_rda,
     cosmic_dbs_rda
 )
+
 Combine_variants(
     somatic_variants,
-    Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "Normal"}
+    Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "normal_DNA"}
 )
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
 
-Split_vcf(VEP.out)
+ch_versions = ch_versions.mix(VEP.out.versions)
 
-normal_hla_calls = Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "Normal"}.map{ tuple -> tuple.drop(1) }
+Split_vcf(VEP.out.vep_out)
+
+normal_hla_calls = Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "normal_DNA"}.map{ tuple -> tuple.drop(1) }
 
 pvacseq_input = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, it] } }.combine(normal_hla_calls)
 
@@ -226,19 +240,19 @@ Merge_Pvacseq_vcf(pvacseq_files_ch,pvacseq_meta_ch)
 dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
 dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
 dbinput_HC_snpeff = combined_HC_vcf_ch.map{ tuple -> tuple.drop(1) }
-dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "Normal"}.map { tuple -> tuple[0] })
-dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "Tumor"}.map { tuple -> tuple[0] })
-/*
-Annotation_somatic(
+dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "normal_DNA"}.map { tuple -> tuple[0] })
+dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple[0] })
+somatic_group               = Channel.from("somatic")
+
+DBinput_somatic(
    dbinput_somatic_annot,
    dbinput_somatic_snpeff,
    dbinput_HC_snpeff,
    dbinput_meta_tumor,
    dbinput_meta_normal,
-   Annotation.out.rare_annotation
-
+   somatic_group
 )
-*/
+
 AddAnnotation.out.map { meta, file ->
     meta2 = [
         id: meta.id,
@@ -253,25 +267,27 @@ AddAnnotation.out.map { meta, file ->
    .set { dbinput_HC_annot_ch }
 
 dbinput_HC_annot_ch = dbinput_HC_annot_ch.map{ tuple -> tuple.drop(1) }
-/*
-Annotation_germline(
+germline_group               = Channel.from("germline")
+
+DBinput_germline(
    dbinput_HC_annot_ch,
    dbinput_somatic_snpeff,
    dbinput_HC_snpeff,
    dbinput_meta_tumor,
    dbinput_meta_normal,
-   Annotation.out.rare_annotation,
-   Annotation_somatic.out.dbinput_somatic
-
+   germline_group
 )
-*/
-tumor_target_capture = Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "Tumor"}
+
+
+tumor_target_capture = Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "tumor_DNA"}
 
 Sequenza_annotation(
     tumor_bam_channel.Tumor,
     tumor_bam_channel.Normal,
     tumor_target_capture
 )
+
+ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
 
 tcellextrect_input = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0]).combine(Sequenza_annotation.out.alternate).combine(genome_version_tcellextrect)
 
@@ -317,6 +333,31 @@ MutationBurden(
 def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 
 QC_summary_Patientlevel(qc_summary_ch)
+
+multiqc_input = Exome_common_WF.out.Fastqc_out
+            .join(Exome_common_WF.out.verifybamid)
+            .join(Exome_common_WF.out.flagstat)
+            .join(Exome_common_WF.out.exome_final_bam)
+            .join(Exome_common_WF.out.hsmetrics)
+            .join(Exome_common_WF.out.krona)
+            .join(Exome_common_WF.out.kraken)
+            .join(Exome_common_WF.out.exome_qc)
+            .join(Exome_common_WF.out.markdup_txt)
+
+normal_ch = multiqc_input.branch {Normal: it[0].type == "normal_DNA"}.map { tuple -> tuple.drop(1) }
+tumor_ch = multiqc_input.branch { Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple.drop(1) }
+tumor_meta = multiqc_input.branch { Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple[0] }
+
+Multiqc_TN(normal_ch,
+           tumor_ch,
+           tumor_meta)
+
+ch_versions = ch_versions.mix(Multiqc_TN.out.versions)
+
+CUSTOM_DUMPSOFTWAREVERSIONS (
+        tumor_meta,
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+        )
 
 
 }
