@@ -8,7 +8,7 @@ process Split_vcf {
   tuple val(meta),path(vep_vcf)
 
   output:
-  tuple val(meta),path("split/*vcf") 
+  tuple val(meta),path("split/*vcf")
 
   stub:
   """
@@ -18,11 +18,11 @@ process Split_vcf {
   script:
   def prefix = task.ext.prefix ?: "${meta.lib}"
   """
-  mkdir -p split  
+  mkdir -p split
   split_vcf.py ${vep_vcf} split/
   """
 
-} 
+}
 
 
 process Pvacseq {
@@ -46,8 +46,13 @@ process Pvacseq {
   SAMPLE=`basename ${split_vcf} .vcf`
   mkdir \$SAMPLE
   pvacseq_script.sh ${combined_HLA_normalsamples} ${split_vcf} \$SAMPLE \$SAMPLE ${task.cpus}
-  cp \$SAMPLE/MHC_Class_I/*filtered.tsv .
 
+  if [ -f \$SAMPLE/MHC_Class_I/*filtered.tsv ]
+  then
+    cp \$SAMPLE/MHC_Class_I/*filtered.tsv .
+  else
+    touch \$SAMPLE.filtered.tsv
+  fi
   """
 
 }
