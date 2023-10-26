@@ -1,13 +1,14 @@
 process CUSTOM_DUMPSOFTWAREVERSIONS {
     label 'process_low'
-
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}",pattern: "*config*.txt"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}",mode: "${params.publishDirMode}",pattern: "successful.txt"
     input:
+    val(meta)
     path versions
 
     output:
-    path "software_versions.yml"    , emit: yml
-    path "software_versions_mqc.yml", emit: mqc_yml
-    path "versions.yml"             , emit: versions
+    path "*config*.txt"    , emit: config
+    path "successful.txt"   , emit: successful
 
     when:
     task.ext.when == null || task.ext.when
@@ -15,8 +16,8 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
     script:
     def args = task.ext.args ?: ''
     """
-    cat ${versions}
-    echo ${task.process}
-    dumpsoftwareversions.py
+
+    dumpsoftwareversions.py ${versions} ${nextflow.version} Software_versions ${meta.id}
+    touch successful.txt
     """
 }
