@@ -14,18 +14,19 @@ fi
 # list of profiles
 # biowulf_test_run_local -> get interactive node and run there
 # biowulf_test_run_slurm -> get interactive node and submit jobs to slurm
-# 
+#
 
 #PROFILE="biowulf_test_run_local"
 PROFILE="biowulf_test_run_slurm"
 #PROFILE="biowulf_test_s3_slurm"
+#PROFILE="biowulf_mouse_RNA_slurm"
 set -e
 
 SCRIPT_NAME="$0"
 SCRIPT_DIRNAME=$(readlink -f $(dirname $0))
 SCRIPT_BASENAME=$(basename $0)
 WF_HOME=$SCRIPT_DIRNAME
-#WF_HOME="/data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow"
+#WF_HOME="/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF"
 
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
@@ -44,7 +45,7 @@ CONFIG_FILE="$WF_HOME/nextflow.config"
 #export CASENAME=$case
 
 # load singularity and nextflow modules
-module load singularity nextflow graphviz
+module load singularity nextflow/23.04.3 graphviz
 
 # set workDir ... by default it goes to `pwd`/work
 # this can also be set using "workDir" in nextflow.config
@@ -74,14 +75,14 @@ cd $RESULTSDIR
 
 #run script to generate individual samplesheets
 python $WF_HOME/bin/split_samplesheet.py $SAMPLESHEET $RESULTSDIR
-
+#cp $SAMPLESHEET $RESULTSDIR/ - for mouse data
 #nextflow run -profile biowulf main.nf -resume
 nf_cmd="nextflow"
 nf_cmd="$nf_cmd run"
 nf_cmd="$nf_cmd -c $CONFIG_FILE"
 nf_cmd="$nf_cmd -profile $PROFILE"
 #nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME  "
-nf_cmd="$nf_cmd $WF_HOME/main.nf -resume " 
+nf_cmd="$nf_cmd $WF_HOME/main.nf -resume "
 #nf_cmd="$nf_cmd $WF_HOME/main.nf -resume --run_upto_counts $2 --casename $CASENAME --json $JSON "
 # nf_cmd="$nf_cmd -with-report $RESULTSDIR/report.html"
 nf_cmd="$nf_cmd -with-trace"
@@ -92,4 +93,3 @@ nf_cmd="$nf_cmd -with-timeline"
 echo $nf_cmd
 
 eval $nf_cmd
-
