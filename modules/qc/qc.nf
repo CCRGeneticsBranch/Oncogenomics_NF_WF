@@ -156,7 +156,7 @@ process Multiqc {
 process Multiqc_TN {
     tag "$meta.id"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}",pattern: "*html"
 
     input:
     path(normal_files)
@@ -165,8 +165,8 @@ process Multiqc_TN {
 
 
     output:
-    path("multiqc_report.html")
-    //path "versions.yml"
+    path("multiqc_report.html") , emit: multiqc_report
+    path "versions.yml"             , emit: versions
 
     script:
     """
@@ -175,7 +175,10 @@ process Multiqc_TN {
     echo  "${tumor_files.join('\n')}"  >>multiqc_input_files
     multiqc --file-list multiqc_input_files -f
 
-
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    multiqc: \$(multiqc --version|sed 's/.*version //')
+END_VERSIONS
     """
 
 }
