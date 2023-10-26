@@ -14,6 +14,7 @@ process Sequenza_utils {
 
      output:
      tuple val(meta),path("${meta.lib}.seqz_small.gz") , emit: sequenza_bin
+     path "versions.yml"             , emit: versions
 
     stub:
     """
