@@ -5,11 +5,15 @@ process Manta {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "candidateSmallIndels*"
 
      input:
-     tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
-     tuple val(meta2),path(Nbam),path(Nindex)
-     path genome
-     path genome_fai
-     path genome_dict
+     tuple val(meta),
+     path(Nbam),
+     path(Nindex),
+     path(Tbam),
+     path(Tindex),
+     path(Tbed),
+     path(genome),
+     path(genome_fai),
+     path(genome_dict)
 
      output:
      tuple val(meta),path("candidateSmallIndels.vcf.gz"), emit: manta_indels_vcf
@@ -44,18 +48,24 @@ process Strelka {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "somatic*"
 
      input:
-     tuple val(meta),path(Tbam),path(Tindex),path(Tbed),path(vcf),path(tbi)
-     tuple val(meta2),path(Nbam),path(Nindex)
-     path genome
-     path genome_fai
-     path genome_dict
-     path strelka_config
+     tuple val(meta),
+     path(Nbam),
+     path(Nindex),
+     path(Tbam),
+     path(Tindex),
+     path(Tbed),
+     path(vcf),
+     path(tbi),
+     path(genome),
+     path(genome_fai),
+     path(genome_dict),
+     path(strelka_config)
 
      output:
-     tuple val(meta),
-     path("somatic.snvs.vcf.gz"),path("somatic.snvs.vcf.gz.tbi"), emit: strelka_snv
-     tuple val(meta),
-     path("somatic.indels.vcf.gz"),path("somatic.indels.vcf.gz.tbi"), emit: strelka_indels
+     tuple val(meta),path("somatic.snvs.vcf.gz"), emit: strelka_snvs_raw_vcf
+     tuple val(meta),path("somatic.snvs.vcf.gz.tbi"), emit: strelka_snvs_raw_tbi
+     tuple val(meta),path("somatic.indels.vcf.gz"), emit: strelka_indels_vcf
+     tuple val(meta),path("somatic.indels.vcf.gz.tbi"), emit: strelka_indels_tbi
      path "versions.yml"             , emit: versions
      stub:
      """
@@ -91,10 +101,17 @@ process Strelka_vcf_processing {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
-     tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
-     tuple val(meta),path(snvs_vcf),path(snvs_vcf_tbi)
-     tuple val(meta),path(indels_vcf),path(indels_vcf_tbi)
-     tuple val(meta2),path(Nbam),path(Nindex)
+     tuple val(meta),
+     path(Nbam),
+     path(Nindex),
+     path(Tbam),
+     path(Tindex),
+     path(Tbed),
+     path(snvs_vcf),
+     path(snvs_vcf_tbi),
+     path(indels_vcf),
+     path(indels_vcf_tbi)
+    
 
      output:
      tuple val(meta),path("${meta.lib}.strelka.snvs.raw.vcf"), emit: strelka_snv
@@ -108,8 +125,8 @@ process Strelka_vcf_processing {
     mv -f ${prefix}.strelka.snvs.raw.vcf.recode.vcf ${prefix}.strelka.snvs.raw.vcf
     vcftools --gzvcf ${indels_vcf} --bed  ${Tbed} --out ${prefix}.strelka.indels.raw.vcf --recode --keep-INFO-all
     mv -f ${prefix}.strelka.indels.raw.vcf.recode.vcf ${prefix}.strelka.indels.raw.vcf
-    sed -i "s/FORMAT\tNORMAL\tTUMOR/FORMAT\t${meta2.lib}\t${prefix}/g" ${prefix}.strelka.snvs.raw.vcf
-    sed -i "s/FORMAT\tNORMAL\tTUMOR/FORMAT\t${meta2.lib}\t${prefix}/g" ${prefix}.strelka.indels.raw.vcf
+    sed -i "s/FORMAT\tNORMAL\tTUMOR/FORMAT\t${meta.normal_id}\t${prefix}/g" ${prefix}.strelka.snvs.raw.vcf
+    sed -i "s/FORMAT\tNORMAL\tTUMOR/FORMAT\t${meta.normal_id}\t${prefix}/g" ${prefix}.strelka.indels.raw.vcf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

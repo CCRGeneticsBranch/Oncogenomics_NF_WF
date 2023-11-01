@@ -15,35 +15,35 @@ workflow Manta_Strelka {
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     strelka_snvch           = Channel.from("strelka.snvs")
 take:
-    tumor_bam
-    normal_bam
+    bam_variant_calling_pair
 
 main:
     Manta(
-        tumor_bam,
-        normal_bam.map { tuple -> tuple.take(tuple.size() - 1) },
-        genome,
-        genome_fai,
-        genome_dict
+        bam_variant_calling_pair
+        .combine(genome)
+        .combine(genome_fai)
+        .combine(genome_dict)
     )
 
 
     Strelka(
-        tumor_bam.combine(Manta.out.manta_indels_vcf,by:[0]).combine(Manta.out.manta_indels_tbi,by:[0]),
-        normal_bam.map { tuple -> tuple.take(tuple.size() - 1) },
-        genome,
-        genome_fai,
-        genome_dict,
-        strelka_config
+        bam_variant_calling_pair
+        .combine(Manta.out.manta_indels_vcf,by:[0])
+        .combine(Manta.out.manta_indels_tbi,by:[0])
+        .combine(genome)
+        .combine(genome_fai)
+        .combine(genome_dict)
+        .combine(strelka_config)
     )
 
     ch_versions = Manta.out.versions.mix(Strelka.out.versions)
 
     Strelka_vcf_processing(
-        tumor_bam,
-        Strelka.out.strelka_snv,
-        Strelka.out.strelka_indels,
-        normal_bam.map { tuple -> tuple.take(tuple.size() - 1) }
+        bam_variant_calling_pair
+        .combine(Strelka.out.strelka_snvs_raw_vcf,by:[0])
+        .combine(Strelka.out.strelka_snvs_raw_tbi,by:[0])
+        .combine(Strelka.out.strelka_indels_vcf,by:[0])
+        .combine(Strelka.out.strelka_indels_tbi,by:[0])
     )
 
     ch_versions = ch_versions.mix(Strelka_vcf_processing.out.versions)
