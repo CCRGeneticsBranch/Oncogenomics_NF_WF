@@ -113,33 +113,59 @@ MakeHotSpotDB(pileup_input_ch,
                    pileup_meta_ch
 )
 
+
+
 //tag the bam channel for Tumor
 bam_target_ch = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0])
-tumor_bam_channel = bam_target_ch.branch {
-    Tumor: it[0].type == "tumor_DNA"
-    Normal: it[0].type == "normal_DNA"
+
+bam_variant_calling_status = bam_target_ch.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
 }
 
+
+
+// All Germline samples
+bam_variant_calling_normal_to_cross = bam_variant_calling_status.normal.map{ meta, bam, bai, bed -> [ meta.id, meta, bam, bai, bed ] }
+
+ // All tumor samples
+bam_variant_calling_pair_to_cross = bam_variant_calling_status.tumor.map{ meta, bam, bai, bed -> [ meta.id, meta, bam, bai, bed ] }
+
+
+bam_variant_calling_pair = bam_variant_calling_normal_to_cross.cross(bam_variant_calling_pair_to_cross)
+            .map { normal, tumor ->
+                def meta = [:]
+
+                meta.id         = tumor[1].id
+                meta.normal_id  = normal[1].lib
+                meta.normal_type = normal[1].type
+                meta.casename        = normal[1].casename
+                meta.lib   = tumor[1].lib
+                meta.type = tumor[1].type
+
+                [ meta, normal[2], normal[3], tumor[2], tumor[3],tumor[4] ]
+            }
+
+
+
 CNVkitPaired(
-    tumor_bam_channel.Tumor,
-    tumor_bam_channel.Normal.map { tuple -> tuple.take(tuple.size() - 1) },
-    cnv_ref_access,
-    genome,
-    genome_fai,
-    genome_dict
+    bam_variant_calling_pair
+    .combine(cnv_ref_access)
+    .combine(genome)
+    .combine(genome_fai)
+    .combine(genome_dict)
 )
+
 
 ch_versions = Exome_common_WF.out.ch_versions.mix(CNVkitPaired.out.versions)
 
 
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
-Manta_Strelka(
-    tumor_bam_channel.Tumor,
-    tumor_bam_channel.Normal
-)
-
+Manta_Strelka(bam_variant_calling_pair)
+/*
 ch_versions = ch_versions.mix(Manta_Strelka.out.ch_versions)
+
 
 SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
                .combine(dbNSFP2_4)
@@ -359,5 +385,5 @@ CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
         )
 
-
+*/
 }

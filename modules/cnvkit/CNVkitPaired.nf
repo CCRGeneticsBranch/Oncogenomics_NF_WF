@@ -4,12 +4,16 @@ process CNVkitPaired {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/cnvkit", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
-    tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
-    tuple val(meta2),path(Nbam),path(Nindex)
-    path cnv_ref_access
-    path genome
-    path genome_fai
-    path genome_dict
+    tuple val(meta),
+    path(Nbam),
+    path(Nindex),
+    path(Tbam),
+    path(Tindex),
+    path(Tbed),
+    path(cnv_ref_access),
+    path(genome),
+    path(genome_fai),
+    path(genome_dict)
 
     output:
     tuple val(meta),path("${meta.lib}.cns"), emit: cnvkit_cns
