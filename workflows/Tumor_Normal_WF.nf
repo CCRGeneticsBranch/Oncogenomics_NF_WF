@@ -240,8 +240,6 @@ format_input_ch = somatic_snpeff_input_ch
         .join(HC_snpeff_snv_vcftxt_pair,by:[0])
         .join(MakeHotSpotDB_TN.out,by:[0])
 
-//format_input_ch.view()
-
 
 FormatInput_TN(format_input_ch)
 
@@ -251,6 +249,36 @@ Annotation(FormatInput_TN.out)
 addannotation_input_ch = HC_snpeff_snv_vcftxt_pair.join(Annotation.out.rare_annotation,by:[0])
 
 AddAnnotation_TN(addannotation_input_ch)
+
+addnnotation_somatic_variants_input_ch = somatic_snpeff_input_ch.join(Annotation.out.rare_annotation,by:[0])
+
+AddAnnotation_somatic_variants(addnnotation_somatic_variants_input_ch)
+
+addannotationfull_somatic_variants_input_ch = somatic_snpeff_input_ch.join(Annotation.out.final_annotation,by:[0])
+
+AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
+
+UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
+//Test mutational signature only with full sample
+//MutationalSignature(UnionSomaticCalls.out)
+
+
+
+somatic_variants = Mutect_WF.out.mutect_raw_vcf
+   .join(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
+   .join(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
+
+//Test cosmic signature only with full sample
+/*
+Cosmic3Signature(
+    somatic_variants
+    .combine(cosmic_indel_rda)
+    .combine(cosmic_genome_rda)
+    .combine(cosmic_dbs_rda)
+)
+*/
+Combine_variants(somatic_variants)
+
 /*
 haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
                     .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
