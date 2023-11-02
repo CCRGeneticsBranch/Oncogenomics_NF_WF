@@ -15,19 +15,18 @@ workflow Mutect_WF {
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
     mutect_ch               = Channel.from("MuTect")
 take:
-    tumor_bam
-    normal_bam
+
+    bam_variant_calling_pair
 
 main:
 
     Mutect(
-        tumor_bam,
-        normal_bam.map { tuple -> tuple.take(tuple.size() - 1) },
-        genome,
-        genome_fai,
-        genome_dict,
-        dbsnp_138_b37_vcf,
-        cosmic_v67_hg19_vcf
+        bam_variant_calling_pair
+        .combine(genome)
+        .combine(genome_fai)
+        .combine(genome_dict)
+        .combine(dbsnp_138_b37_vcf)
+        .combine(cosmic_v67_hg19_vcf)
     )
 
 

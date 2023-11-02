@@ -5,13 +5,17 @@ process Mutect {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
-     tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
-     tuple val(meta2),path(Nbam),path(Nindex)
-     path genome
-     path genome_fai
-     path genome_dict
-     path dbsnp_138_b37_vcf
-     path cosmic_v67_hg19_vcf
+     tuple val(meta),
+     path(Nbam),
+     path(Nindex),
+     path(Tbam),
+     path(Tindex),
+     path(Tbed),
+     path(genome),
+     path(genome_fai),
+     path(genome_dict),
+     path(dbsnp_138_b37_vcf),
+     path(cosmic_v67_hg19_vcf)
 
 
      output:
