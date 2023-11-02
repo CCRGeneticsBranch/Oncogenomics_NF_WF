@@ -1,6 +1,6 @@
 process FormatInput {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
 
@@ -26,6 +26,44 @@ process FormatInput {
      set -exo pipefail
      cat  ${hotspot} |sort > ${meta.id}.hotspot
      cut -f 1-5 ${snpeff_vcfs.join(' ')} ${meta.id}.hotspot |sort |uniq > AnnotationInput
+     MakeAnnotationInputs.pl AnnotationInput
+
+     """
+}
+
+
+process FormatInput_TN {
+
+     tag "$meta.id"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),
+     path(mutect_snpeff),
+     path(strelka_indel_snpeff),
+     path(strelka_snvs_snpeff),
+     path(hc_normal_snpeff),
+     path(hc_tumor_snpeff),
+     path(hotspotpileup)
+
+
+     output:
+     tuple val(meta),
+        path("AnnotationInput.anno"),
+        path("AnnotationInput.sift"),
+        path("AnnotationInput")
+     stub:
+     """
+     touch "AnnotationInput.anno"
+     touch "AnnotationInput.sift"
+     touch "AnnotationInput"
+     """
+
+     script:
+     """
+     set -exo pipefail
+     cut -f 1-5 ${mutect_snpeff} ${strelka_indel_snpeff} ${strelka_snvs_snpeff} ${hc_normal_snpeff} ${hc_tumor_snpeff} ${hotspotpileup} |sort |uniq > AnnotationInput
      MakeAnnotationInputs.pl AnnotationInput
 
      """
@@ -66,7 +104,7 @@ process Twolib_FormatInput {
 
 process Annovar {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
 
@@ -125,7 +163,7 @@ process Annovar {
 
 process Custom_annotation {
 
-  tag "$meta.lib"
+  tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
 
@@ -185,7 +223,7 @@ process Custom_annotation {
 
 process Combine_annotation {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
 
@@ -274,6 +312,34 @@ process AddAnnotation {
      output:
      tuple val(meta),path("${meta.lib}.HC_${meta.type}.annotated.txt") , emit: hc_anno_txt
 
+     stub:
+     """
+       touch "${meta.lib}.HC_${meta.type}.annotated.txt"
+     """
+     script:
+
+     """
+
+     addAnnotations2vcf.pl  ${rare_annotation} ${snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt
+
+     """
+
+}
+
+
+process AddAnnotation_TN {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(rare_annotation),path(T_snpeff_txt),path(N_snpeff_txt)
+
+
+     output:
+     tuple val(meta),path("${meta.lib}.HC_${meta.type}.annotated.txt") , emit: Tumor_hc_anno_txt
+     tuple val(meta),path("${meta.normal_id}.HC_${meta.type}.annotated.txt") , emit: Normal_hc_anno_txt
      stub:
      """
        touch "${meta.lib}.HC_${meta.type}.annotated.txt"
