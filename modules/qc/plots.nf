@@ -201,6 +201,32 @@ process MakeHotSpotDB {
      """
 }
 
+process MakeHotSpotDB_TN {
+
+     tag "$meta.id"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+
+    tuple val(meta), path(pileup1), path(pileup2)
+
+     output:
+     tuple val(meta),
+        path("${meta.id}.hotspot")
+
+     stub:
+     """
+     touch "${meta.id}.hotspot"
+     """
+
+     script:
+
+     """
+     cat ${pileup1} ${pileup2} |sort > ${meta.id}.hotspot
+     """
+}
+
 
 process Bam2tdf {
 
