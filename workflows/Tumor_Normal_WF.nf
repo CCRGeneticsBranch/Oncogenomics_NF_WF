@@ -7,9 +7,9 @@ include {SnpEff} from '../modules/misc/snpEff'
 include {Vcf2txt} from '../modules/misc/snpEff'
 include {FormatInput_TN} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
-include {AddAnnotation} from '../modules/annotation/annot'
-include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
-include {AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
+include {AddAnnotation_TN
+        AddAnnotation_somatic_variants
+        AddAnnotationFull_somatic_variants} from '../modules/annotation/annot'
 include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
 include {MutationalSignature} from '../modules/misc/MutationalSignature.nf'
 include {Cosmic3Signature} from '../modules/misc/MutationalSignature.nf'
@@ -245,12 +245,12 @@ format_input_ch = somatic_snpeff_input_ch
 
 FormatInput_TN(format_input_ch)
 
-
 Annotation(FormatInput_TN.out)
 
-//Annotation.out.rare_annotation.view()
 
+addannotation_input_ch = HC_snpeff_snv_vcftxt_pair.join(Annotation.out.rare_annotation,by:[0])
 
+AddAnnotation_TN(addannotation_input_ch)
 /*
 haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
                     .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
@@ -273,7 +273,7 @@ add_annotation_input_ch = annotation_rare_to_cross.cross(haplotype_snpeff_txt_ch
 
 add_annotation_input_ch.view()
 
-/*
+
 AddAnnotation_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation).map { tuple ->[tuple[0], tuple[1], tuple[3]]}
 AddAnnotation(AddAnnotation_input_ch)
 

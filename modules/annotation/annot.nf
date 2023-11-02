@@ -334,21 +334,23 @@ process AddAnnotation_TN {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(rare_annotation),path(T_snpeff_txt),path(N_snpeff_txt)
+     tuple val(meta),path(N_snpeff_txt),path(T_snpeff_txt),path(rare_annotation)
 
 
      output:
      tuple val(meta),path("${meta.lib}.HC_${meta.type}.annotated.txt") , emit: Tumor_hc_anno_txt
-     tuple val(meta),path("${meta.normal_id}.HC_${meta.type}.annotated.txt") , emit: Normal_hc_anno_txt
+     tuple val(meta),path("${meta.normal_id}.HC_${meta.normal_type}.annotated.txt") , emit: Normal_hc_anno_txt
      stub:
      """
        touch "${meta.lib}.HC_${meta.type}.annotated.txt"
+       touch "${meta.normal_id}.HC_${meta.normal_type}.annotated.txt"
      """
      script:
 
      """
 
-     addAnnotations2vcf.pl  ${rare_annotation} ${snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt
+     addAnnotations2vcf.pl  ${rare_annotation} ${T_snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt
+     addAnnotations2vcf.pl  ${rare_annotation} ${N_snpeff_txt}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
 
      """
 
