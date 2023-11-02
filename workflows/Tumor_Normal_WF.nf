@@ -1,11 +1,11 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
-include {MakeHotSpotDB} from '../modules/qc/plots'
+include {MakeHotSpotDB_TN} from '../modules/qc/plots'
 include {Manta_Strelka} from '../subworkflows/Manta_Strelka.nf'
 include {Mutect_WF} from '../subworkflows/Mutect.nf'
 include {Exome_QC} from '../modules/qc/qc.nf'
 include {SnpEff} from '../modules/misc/snpEff'
 include {Vcf2txt} from '../modules/misc/snpEff'
-include {FormatInput} from '../modules/annotation/annot'
+include {FormatInput_TN} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {AddAnnotation_somatic_variants} from '../modules/annotation/annot'
@@ -90,33 +90,40 @@ samples_exome = Channel.fromPath("Tumor_Normal.csv")
 Exome_common_WF(samples_exome)
 
 
+pileup_Status = Exome_common_WF.out.pileup.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
 
-//Create a combined channel of libraries pileup  to generate hotspotdb at Patient-case level
-Exome_common_WF.out.pileup.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_pileup_ch }
+//All Germline samples pileup in  [meta.id, meta, file] format
+pileup_samples_normal_to_cross = pileup_Status.normal.map{ meta, pileup -> [ meta.id, meta, pileup ] }
+
+//All Tumor samples pileup  in [meta.id, meta, file] format
+pileup_samples_tumor_to_cross = pileup_Status.tumor.map{ meta, pileup -> [ meta.id, meta, pileup ] }
 
 
-pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) }
-pileup_meta_ch = combined_pileup_ch.map { tuple -> tuple[0] }
+//Use cross to combine normal with tumor samples
+pileup_pair = pileup_samples_normal_to_cross.cross(pileup_samples_tumor_to_cross)
+            .map { normal, tumor ->
+                def meta = [:]
 
-MakeHotSpotDB(pileup_input_ch,
-                   pileup_meta_ch
-)
+                meta.id         = tumor[1].id
+                meta.normal_id  = normal[1].lib
+                meta.normal_type = normal[1].type
+                meta.casename        = normal[1].casename
+                meta.lib   = tumor[1].lib
+                meta.type = tumor[1].type
 
+                [ meta, normal[2], tumor[2] ]
+            }
 
+MakeHotSpotDB_TN(pileup_pair)
 
-//tag the bam channel for Tumor
-bam_target_ch = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0])
+/*
+
+//tag the bam channel for Tumor and normal
+bam_target_ch = Exome_common_WF.out.exome_final_bam.join(Exome_common_WF.out.target_capture_ch,by:[0])
+
 
 bam_variant_calling_status = bam_target_ch.branch{
     normal: it[0].type == "normal_DNA"
@@ -163,7 +170,7 @@ ch_versions = Exome_common_WF.out.ch_versions.mix(CNVkitPaired.out.versions)
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
 Manta_Strelka(bam_variant_calling_pair)
-/*
+
 ch_versions = ch_versions.mix(Manta_Strelka.out.ch_versions)
 
 
@@ -176,13 +183,12 @@ SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
 
 Vcf2txt(SnpEff.out.raw_snpeff.combine(strelka_indelch))
 
-Mutect_WF(
-    tumor_bam_channel.Tumor,
-    tumor_bam_channel.Normal
-)
+Mutect_WF(bam_variant_calling_pair)
 
 ch_versions = ch_versions.mix(Mutect_WF.out.versions)
 
+
+/*
 Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
     meta2 = [
         id: meta.id,
@@ -196,17 +202,108 @@ Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
   }
    .set { combined_HC_vcf_ch }
 
-Format_input_ch =  combined_HC_vcf_ch.map { tuple -> tuple.drop(1) }
-        .combine(Mutect_WF.out.mutect_snpeff_snv_vcf2txt.map { tuple -> tuple.drop(1) })
-        .combine(Vcf2txt.out.map { tuple -> tuple.drop(1) })
-        .combine(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt.map { tuple -> tuple.drop(1) })
+//combined_HC_vcf_ch.view()
+*/
 
-FormatInput(
-        Format_input_ch,
-        MakeHotSpotDB.out
-)
+HC_snpeff_snv_vcftxt_status = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
 
-Annotation(FormatInput.out)
+//All Germline samples pileup in  [meta.id, meta, file] format
+HC_snpeff_snv_vcftxt_samples_normal_to_cross = HC_snpeff_snv_vcftxt_status.normal.map{ meta, snpeff_snv_vcftxt  -> [ meta.id, meta, snpeff_snv_vcftxt ] }
+
+//All Tumor samples pileup  in [meta.id, meta, file] format
+HC_snpeff_snv_vcftxt_samples_tumor_to_cross = HC_snpeff_snv_vcftxt_status.tumor.map{ meta, snpeff_snv_vcftxt -> [ meta.id, meta, snpeff_snv_vcftxt ] }
+
+
+//Use cross to combine normal with tumor samples
+HC_snpeff_snv_vcftxt_pair = HC_snpeff_snv_vcftxt_samples_normal_to_cross.cross(HC_snpeff_snv_vcftxt_samples_tumor_to_cross)
+            .map { normal, tumor ->
+                def meta = [:]
+
+                meta.id         = tumor[1].id
+                meta.normal_id  = normal[1].lib
+                meta.normal_type = normal[1].type
+                meta.casename        = normal[1].casename
+                meta.lib   = tumor[1].lib
+                meta.type = tumor[1].type
+
+                [ meta, normal[2], tumor[2] ]
+            }
+
+
+
+
+
+// Combine outputs from Mutect and strelka
+somatic_snpeff_input_ch = Mutect_WF.out.mutect_snpeff_snv_vcf2txt
+        .join(Vcf2txt.out,by:[0])
+        .join(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt,by:[0])
+
+
+format_input_ch = somatic_snpeff_input_ch
+        .join(HC_snpeff_snv_vcftxt_pair,by:[0])
+        .join(MakeHotSpotDB_TN.out,by:[0])
+
+format_input_ch.view()
+
+/*
+// Create channel with Patient id as a meta value, to use it as a key to cross channels
+somatic_snpeff_input_ch_to_cross = somatic_snpeff_input_ch.map{ meta, mutect, s_indels, s_snvs -> [ meta.id, meta, mutect, s_indels, s_snvs ] }
+
+// Create combined channel of haplotype caller_snpeff.txt files and hotspotdb files. Map channel with Patient id as a meta value, to use it as a key to cross channels
+haplotype_hotspot_ch_to_cross = combined_HC_vcf_ch.combine(MakeHotSpotDB_TN.out,by:[0])
+                    .map{ meta, N_snpeff, T_snpeff, hotspot -> [ meta.id, meta, N_snpeff, T_snpeff, hotspot ] }
+
+// Create combined channel with custom meta elements.
+format_input_ch = somatic_snpeff_input_ch_to_cross.cross(haplotype_hotspot_ch_to_cross)
+            .map { somatic, hc ->
+                def meta = [:]
+
+                meta.id         = somatic[1].id
+                meta.normal_id  = somatic[1].normal_id
+                meta.normal_type = somatic[1].normal_type
+                meta.casename        = somatic[1].casename
+                meta.lib   = somatic[1].lib
+                meta.type = somatic[1].type
+
+                [ meta, somatic[2], somatic[3], somatic[4], hc[2], hc[3], hc[4] ]
+            }
+
+
+
+FormatInput_TN(format_input_ch)
+
+
+Annotation(FormatInput_TN.out)
+
+//Annotation.out.rare_annotation.view()
+
+
+
+haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
+                    .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
+
+annotation_rare_to_cross = Annotation.out.rare_annotation.map{ meta, anno_rare -> [meta.id, meta, anno_rare] }
+
+add_annotation_input_ch = annotation_rare_to_cross.cross(haplotype_snpeff_txt_ch_to_cross)
+            .map { annot, hc_snpeff ->
+                def meta = [:]
+
+                meta.id         = annot[1].id
+                meta.normal_id  = annot[1].normal_id
+                meta.normal_type = annot[1].normal_type
+                meta.casename        = annot[1].casename
+                meta.lib   = annot[1].lib
+                meta.type = annot[1].type
+
+                [ meta, annot[2], hc_snpeff[2], hc_snpeff[3] ]
+            }
+
+add_annotation_input_ch.view()
+
+/*
 AddAnnotation_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation).map { tuple ->[tuple[0], tuple[1], tuple[3]]}
 AddAnnotation(AddAnnotation_input_ch)
 
