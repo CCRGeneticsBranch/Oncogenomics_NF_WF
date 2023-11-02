@@ -119,7 +119,6 @@ pileup_pair = pileup_samples_normal_to_cross.cross(pileup_samples_tumor_to_cross
 
 MakeHotSpotDB_TN(pileup_pair)
 
-/*
 
 //tag the bam channel for Tumor and normal
 bam_target_ch = Exome_common_WF.out.exome_final_bam.join(Exome_common_WF.out.target_capture_ch,by:[0])
@@ -129,7 +128,6 @@ bam_variant_calling_status = bam_target_ch.branch{
     normal: it[0].type == "normal_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
-
 
 
 // All Germline samples
@@ -204,7 +202,7 @@ Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
 
 //combined_HC_vcf_ch.view()
 */
-
+/*
 HC_snpeff_snv_vcftxt_status = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.branch{
     normal: it[0].type == "normal_DNA"
     tumor:  it[0].type == "tumor_DNA"
