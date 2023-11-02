@@ -7,7 +7,6 @@ process Combine_variants  {
   input:
 
   tuple val(meta),path(mutect_raw_vcf),path(strelka_indel_raw_vcf),path(strelka_snvs_raw_vcf)
-  tuple val(meta2),path(merged_normal_hla)
 
   output:
   tuple val(meta),path("${meta.lib}.final.vcf.tmp") , emit: combined_vcf_tmp
@@ -21,7 +20,7 @@ process Combine_variants  {
   script:
   def prefix = task.ext.prefix ?: "${meta.lib}"
   """
-  consensusSomaticVCF.pl -vcf ${strelka_indel_raw_vcf},${strelka_snvs_raw_vcf},${mutect_raw_vcf} -order ${meta2.lib},${prefix} -filter REJECT |vcf-subset -u -c ${prefix} > ${prefix}.final.vcf.tmp
+  consensusSomaticVCF.pl -vcf ${strelka_indel_raw_vcf},${strelka_snvs_raw_vcf},${mutect_raw_vcf} -order ${meta.normal_id},${prefix} -filter REJECT |vcf-subset -u -c ${prefix} > ${prefix}.final.vcf.tmp
 
   """
 
