@@ -202,7 +202,6 @@ Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
 
 //combined_HC_vcf_ch.view()
 */
-/*
 HC_snpeff_snv_vcftxt_status = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.branch{
     normal: it[0].type == "normal_DNA"
     tumor:  it[0].type == "tumor_DNA"
@@ -231,9 +230,6 @@ HC_snpeff_snv_vcftxt_pair = HC_snpeff_snv_vcftxt_samples_normal_to_cross.cross(H
             }
 
 
-
-
-
 // Combine outputs from Mutect and strelka
 somatic_snpeff_input_ch = Mutect_WF.out.mutect_snpeff_snv_vcf2txt
         .join(Vcf2txt.out,by:[0])
@@ -244,31 +240,7 @@ format_input_ch = somatic_snpeff_input_ch
         .join(HC_snpeff_snv_vcftxt_pair,by:[0])
         .join(MakeHotSpotDB_TN.out,by:[0])
 
-format_input_ch.view()
-
-/*
-// Create channel with Patient id as a meta value, to use it as a key to cross channels
-somatic_snpeff_input_ch_to_cross = somatic_snpeff_input_ch.map{ meta, mutect, s_indels, s_snvs -> [ meta.id, meta, mutect, s_indels, s_snvs ] }
-
-// Create combined channel of haplotype caller_snpeff.txt files and hotspotdb files. Map channel with Patient id as a meta value, to use it as a key to cross channels
-haplotype_hotspot_ch_to_cross = combined_HC_vcf_ch.combine(MakeHotSpotDB_TN.out,by:[0])
-                    .map{ meta, N_snpeff, T_snpeff, hotspot -> [ meta.id, meta, N_snpeff, T_snpeff, hotspot ] }
-
-// Create combined channel with custom meta elements.
-format_input_ch = somatic_snpeff_input_ch_to_cross.cross(haplotype_hotspot_ch_to_cross)
-            .map { somatic, hc ->
-                def meta = [:]
-
-                meta.id         = somatic[1].id
-                meta.normal_id  = somatic[1].normal_id
-                meta.normal_type = somatic[1].normal_type
-                meta.casename        = somatic[1].casename
-                meta.lib   = somatic[1].lib
-                meta.type = somatic[1].type
-
-                [ meta, somatic[2], somatic[3], somatic[4], hc[2], hc[3], hc[4] ]
-            }
-
+//format_input_ch.view()
 
 
 FormatInput_TN(format_input_ch)
@@ -279,7 +251,7 @@ Annotation(FormatInput_TN.out)
 //Annotation.out.rare_annotation.view()
 
 
-
+/*
 haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
                     .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
 
