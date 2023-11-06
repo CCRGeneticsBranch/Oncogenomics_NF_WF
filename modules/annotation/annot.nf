@@ -363,8 +363,11 @@ process AddAnnotation_somatic_variants {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(mutect_txt), path(strelka_indels_txt), path(strelka_snvs_txt)
-     tuple val(meta2),path(rare_annotation)
+     tuple val(meta),
+     path(mutect_txt),
+     path(strelka_indels_txt),
+     path(strelka_snvs_txt),
+     path(rare_annotation)
 
      output:
      tuple val(meta),
@@ -399,8 +402,11 @@ process AddAnnotationFull_somatic_variants {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(mutect_txt), path(strelka_indels_txt), path(strelka_snvs_txt)
-     tuple val(meta2),path(final_annotation)
+     tuple val(meta),
+     path(mutect_txt),
+     path(strelka_indels_txt),
+     path(strelka_snvs_txt),
+     path(final_annotation)
 
      output:
      tuple val(meta),
