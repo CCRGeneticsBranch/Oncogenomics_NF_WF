@@ -279,6 +279,53 @@ Cosmic3Signature(
 */
 Combine_variants(somatic_variants)
 
+VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
+
+ch_versions = ch_versions.mix(VEP.out.versions)
+
+Split_vcf(VEP.out.vep_out)
+
+
+split_vcf_files = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, it] } }
+
+
+mergehla_status = Exome_common_WF.out.mergehla_exome.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+//All Germline samples HLA in  [meta.id, meta, file] format
+mergehla_samples_normal_to_cross = mergehla_status.normal.map{ meta, mergedcalls  -> [ meta.id, meta, mergedcalls ] }
+
+vep_out_to_cross = VEP.out.vep_out.map{ meta, vcf -> [ meta.id, meta, vcf ] }
+
+hla_with_updated_meta_ch = vep_out_to_cross.cross(mergehla_samples_normal_to_cross)
+            .map { vcf, hla ->
+                def meta = [:]
+
+                meta.id         = vcf[1].id
+                meta.normal_id  = vcf[1].normal_id
+                meta.normal_type = vcf[1].normal_type
+                meta.casename        = vcf[1].casename
+                meta.lib   = vcf[1].lib
+                meta.type = vcf[1].type
+
+                [ meta, hla[2] ]
+            }
+
+
+pvacseq_input = split_vcf_files.combine(hla_with_updated_meta_ch,by:[0])
+
+Pvacseq(pvacseq_input)
+
+combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, *files ] }
+
+//combined_pvacseq.view()
+
+Merge_Pvacseq_vcf(combined_pvacseq)
+
+//mergehla_samples_normal_to_cross.view()
+//Exome_common_WF.out.mergehla_exome.view()
 /*
 haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
                     .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
