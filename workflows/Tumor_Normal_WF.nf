@@ -318,9 +318,8 @@ pvacseq_input = split_vcf_files.combine(hla_with_updated_meta_ch,by:[0])
 
 Pvacseq(pvacseq_input)
 
-combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, *files ] }
+combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, [*files] ] }
 
-//combined_pvacseq.view()
 
 Merge_Pvacseq_vcf(combined_pvacseq)
 
