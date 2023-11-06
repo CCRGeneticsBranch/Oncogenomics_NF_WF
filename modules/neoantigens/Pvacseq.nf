@@ -63,8 +63,7 @@ process Merge_Pvacseq_vcf {
   publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}"
 
   input:
-  path(vcf_files)
-  val(meta)
+  tuple val(meta), path(vcf_files)
 
   output:
   tuple val(meta),path("${meta.lib}.final.txt")
