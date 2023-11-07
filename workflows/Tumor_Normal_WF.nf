@@ -19,8 +19,8 @@ include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
 include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
 include {Combine_variants} from '../modules/annotation/VEP.nf'
 include {VEP} from '../modules/annotation/VEP.nf'
-include {DBinput_multiples as DBinput_somatic} from '../modules/misc/DBinput'
-include {DBinput_multiples as DBinput_germline} from '../modules/misc/DBinput'
+include {DBinput_multiples } from '../modules/misc/DBinput'
+//include {DBinput_multiples as DBinput_germline} from '../modules/misc/DBinput'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
@@ -113,6 +113,8 @@ pileup_pair = pileup_samples_normal_to_cross.cross(pileup_samples_tumor_to_cross
                 meta.casename        = normal[1].casename
                 meta.lib   = tumor[1].lib
                 meta.type = tumor[1].type
+                meta.T_sc  = tumor[1].sc
+                meta.N_sc  = normal[1].sc
 
                 [ meta, normal[2], tumor[2] ]
             }
@@ -147,6 +149,8 @@ bam_variant_calling_pair = bam_variant_calling_normal_to_cross.cross(bam_variant
                 meta.casename        = normal[1].casename
                 meta.lib   = tumor[1].lib
                 meta.type = tumor[1].type
+                meta.T_sc  = tumor[1].sc
+                meta.N_sc  = normal[1].sc
 
                 [ meta, normal[2], normal[3], tumor[2], tumor[3],tumor[4] ]
             }
@@ -225,6 +229,8 @@ HC_snpeff_snv_vcftxt_pair = HC_snpeff_snv_vcftxt_samples_normal_to_cross.cross(H
                 meta.casename        = normal[1].casename
                 meta.lib   = tumor[1].lib
                 meta.type = tumor[1].type
+                meta.T_sc  = tumor[1].sc
+                meta.N_sc  = normal[1].sc
 
                 [ meta, normal[2], tumor[2] ]
             }
@@ -309,6 +315,8 @@ hla_with_updated_meta_ch = vep_out_to_cross.cross(mergehla_samples_normal_to_cro
                 meta.casename        = vcf[1].casename
                 meta.lib   = vcf[1].lib
                 meta.type = vcf[1].type
+                meta.T_sc  = vcf[1].T_sc
+                meta.N_sc  = vcf[1].N_sc
 
                 [ meta, hla[2] ]
             }
@@ -323,9 +331,53 @@ combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files 
 
 Merge_Pvacseq_vcf(combined_pvacseq)
 
+addannotation_TN_combined_ch = AddAnnotation_TN.out.Tumor_hc_anno_txt.join(AddAnnotation_TN.out.Normal_hc_anno_txt,by:[0])
+
+somatic_group               = Channel.from("somatic")
+germline_group               = Channel.from("germline")
+
+dbinput_somatic = AddAnnotation_somatic_variants.out
+            .join(somatic_snpeff_input_ch,by:[0])
+            .join(HC_snpeff_snv_vcftxt_pair,by:[0])
+            .join(addannotation_TN_combined_ch,by:[0])
+
+//dbinput_somatic.view()
+DBinput_multiples(dbinput_somatic.combine(somatic_group).combine(germline_group))
+
+/*
+DBinput_somatic(
+   dbinput_somatic_annot,
+   dbinput_somatic_snpeff,
+   dbinput_HC_snpeff,
+   dbinput_meta_tumor,
+   dbinput_meta_normal,
+   somatic_group
+)
+*/
+
+//dbinput_somatic.view()
+
+
+/*
+dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
+dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
+dbinput_HC_snpeff = combined_HC_vcf_ch.map{ tuple -> tuple.drop(1) }
+dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "normal_DNA"}.map { tuple -> tuple[0] })
+dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple[0] })
+somatic_group               = Channel.from("somatic")
+
+DBinput_somatic(
+   dbinput_somatic_annot,
+   dbinput_somatic_snpeff,
+   dbinput_HC_snpeff,
+   dbinput_meta_tumor,
+   dbinput_meta_normal,
+   somatic_group
+)
+
 //mergehla_samples_normal_to_cross.view()
 //Exome_common_WF.out.mergehla_exome.view()
-/*
+
 haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
                     .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
 
