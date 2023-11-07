@@ -5,12 +5,10 @@ process Sequenza_utils {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/sequenza", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(Tbam),path(Tindex),path(Tbed)
-     tuple val(meta2),path(Nbam),path(Nindex)
-     path genome
-     path genome_fai
-     path genome_dict
-     path gc50base
+     tuple val(meta),path(Nbam),path(Nindex),
+     path(Tbam),path(Tindex),path(bed),
+     path(genome),path(genome_fai),
+     path(genome_dict),path(gc50base)
 
      output:
      tuple val(meta),path("${meta.lib}.seqz_small.gz") , emit: sequenza_bin

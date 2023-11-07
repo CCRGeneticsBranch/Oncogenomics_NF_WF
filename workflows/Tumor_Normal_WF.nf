@@ -344,36 +344,15 @@ dbinput_somatic = AddAnnotation_somatic_variants.out
 //dbinput_somatic.view()
 DBinput_multiples(dbinput_somatic.combine(somatic_group).combine(germline_group))
 
+tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
+//tumor_target_capture.view()
+
+Sequenza_annotation(
+    bam_variant_calling_pair,
+    tumor_target_capture)
 /*
-DBinput_somatic(
-   dbinput_somatic_annot,
-   dbinput_somatic_snpeff,
-   dbinput_HC_snpeff,
-   dbinput_meta_tumor,
-   dbinput_meta_normal,
-   somatic_group
-)
-*/
+ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
 
-//dbinput_somatic.view()
-
-
-/*
-dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
-dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
-dbinput_HC_snpeff = combined_HC_vcf_ch.map{ tuple -> tuple.drop(1) }
-dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "normal_DNA"}.map { tuple -> tuple[0] })
-dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple[0] })
-somatic_group               = Channel.from("somatic")
-
-DBinput_somatic(
-   dbinput_somatic_annot,
-   dbinput_somatic_snpeff,
-   dbinput_HC_snpeff,
-   dbinput_meta_tumor,
-   dbinput_meta_normal,
-   somatic_group
-)
 
 //mergehla_samples_normal_to_cross.view()
 //Exome_common_WF.out.mergehla_exome.view()

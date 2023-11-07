@@ -12,20 +12,18 @@ workflow Sequenza_annotation {
     combined_gene_list      = Channel.of(file(params.combined_gene_list, checkIfExists:true))
 
 take:
-    tumor_bam
-    normal_bam
-    target_capture
+    bam_variant_calling_pair
+    tumor_target_capture
 
 main:
     Sequenza_utils(
-        tumor_bam,
-        normal_bam.map { tuple -> tuple.take(tuple.size() - 1) },
-        genome,
-        genome_fai,
-        genome_dict,
-        gc50base
+        bam_variant_calling_pair
+            .combine(genome)
+            .combine(genome_fai)
+            .combine(genome_dict)
+            .combine(gc50base)
     )
-
+/*
     Sequenza(
         Sequenza_utils.out.sequenza_bin,
         sequenza_Rscript
@@ -41,5 +39,5 @@ emit:
     sequenza = Sequenza_annot.out
     alternate = Sequenza.out.alternate
     versions = Sequenza_utils.out.versions
-
+*/
 }
