@@ -23,21 +23,21 @@ main:
             .combine(genome_dict)
             .combine(gc50base)
     )
-/*
+
     Sequenza(
-        Sequenza_utils.out.sequenza_bin,
-        sequenza_Rscript
+        Sequenza_utils.out.sequenza_bin
     )
 
 
     Sequenza_annot(
-    Sequenza.out.segments.combine(target_capture,by:[0]),
-    combined_gene_list
+    Sequenza.out.segments
+    .join(tumor_target_capture,by:[0])
+    .combine(combined_gene_list)
     )
 
 emit:
     sequenza = Sequenza_annot.out
     alternate = Sequenza.out.alternate
     versions = Sequenza_utils.out.versions
-*/
+
 }

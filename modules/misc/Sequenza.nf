@@ -41,7 +41,6 @@ process Sequenza {
 
      input:
      tuple val(meta),path(seqz_small)
-     path sequenza_Rscript
 
      output:
      tuple val(meta), path("${meta.lib}/${meta.lib}_segments.txt"), emit: segments
@@ -59,7 +58,7 @@ process Sequenza {
     script:
 
     """
-     ${sequenza_Rscript} --sample ${meta.lib}
+    run_sequenza_pipeline.R  --sample ${meta.lib}
 
     """
 }
@@ -71,8 +70,7 @@ process Sequenza_annot {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/sequenza", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(segments),path(capture_bed)
-     path combined_gene_list
+     tuple val(meta),path(segments),path(capture_bed),path(combined_gene_list)
 
      output:
      tuple val(meta),
