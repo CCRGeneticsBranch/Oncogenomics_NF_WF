@@ -341,176 +341,49 @@ dbinput_somatic = AddAnnotation_somatic_variants.out
             .join(HC_snpeff_snv_vcftxt_pair,by:[0])
             .join(addannotation_TN_combined_ch,by:[0])
 
-//dbinput_somatic.view()
+
 DBinput_multiples(dbinput_somatic.combine(somatic_group).combine(germline_group))
 
 tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
-//tumor_target_capture.view()
+
 
 Sequenza_annotation(
     bam_variant_calling_pair,
     tumor_target_capture)
-/*
+
+
 ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
 
 
-//mergehla_samples_normal_to_cross.view()
-//Exome_common_WF.out.mergehla_exome.view()
-
-haplotype_snpeff_txt_ch_to_cross = combined_HC_vcf_ch
-                    .map{ meta, N_snpeff, T_snpeff -> [ meta.id, meta, N_snpeff, T_snpeff ] }
-
-annotation_rare_to_cross = Annotation.out.rare_annotation.map{ meta, anno_rare -> [meta.id, meta, anno_rare] }
-
-add_annotation_input_ch = annotation_rare_to_cross.cross(haplotype_snpeff_txt_ch_to_cross)
-            .map { annot, hc_snpeff ->
-                def meta = [:]
-
-                meta.id         = annot[1].id
-                meta.normal_id  = annot[1].normal_id
-                meta.normal_type = annot[1].normal_type
-                meta.casename        = annot[1].casename
-                meta.lib   = annot[1].lib
-                meta.type = annot[1].type
-
-                [ meta, annot[2], hc_snpeff[2], hc_snpeff[3] ]
-            }
-
-add_annotation_input_ch.view()
-
-
-AddAnnotation_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation).map { tuple ->[tuple[0], tuple[1], tuple[3]]}
-AddAnnotation(AddAnnotation_input_ch)
-
-somatic_variants_txt =Mutect_WF.out.mutect_snpeff_snv_vcf2txt
-                            .combine(Vcf2txt.out,by:[0])
-                            .combine(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt,by:[0])
-
-AddAnnotation_somatic_variants(
-    somatic_variants_txt,
-    Annotation.out.rare_annotation
-)
-
-AddAnnotationFull_somatic_variants(
-    somatic_variants_txt,
-    Annotation.out.final_annotation
-)
-
-UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
-//Test mutational signature only with full sample
-MutationalSignature(UnionSomaticCalls.out)
-
-
-somatic_variants = Mutect_WF.out.mutect_raw_vcf
-   .combine(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
-   .combine(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
-
-Cosmic3Signature(
-    somatic_variants,
-    cosmic_indel_rda,
-    cosmic_genome_rda,
-    cosmic_dbs_rda
-)
-
-Combine_variants(
-    somatic_variants,
-    Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "normal_DNA"}
-)
-
-VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
-
-ch_versions = ch_versions.mix(VEP.out.versions)
-
-Split_vcf(VEP.out.vep_out)
-
-normal_hla_calls = Exome_common_WF.out.mergehla_exome.branch {Normal: it[0].type == "normal_DNA"}.map{ tuple -> tuple.drop(1) }
-
-pvacseq_input = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, it] } }.combine(normal_hla_calls)
-
-Pvacseq(pvacseq_input)
-
-combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, *files ] }
-pvacseq_files_ch = combined_pvacseq.map { tuple -> tuple.drop(1) }
-pvacseq_meta_ch = combined_pvacseq.map { tuple -> tuple[0] }
-
-Merge_Pvacseq_vcf(pvacseq_files_ch,pvacseq_meta_ch)
-
-dbinput_somatic_annot = AddAnnotation_somatic_variants.out.map{ tuple -> tuple.drop(1) }
-dbinput_somatic_snpeff = somatic_variants_txt.map{ tuple -> tuple.drop(1) }
-dbinput_HC_snpeff = combined_HC_vcf_ch.map{ tuple -> tuple.drop(1) }
-dbinput_meta_normal = (AddAnnotation.out.branch {Normal: it[0].type == "normal_DNA"}.map { tuple -> tuple[0] })
-dbinput_meta_tumor = (AddAnnotation.out.branch {Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple[0] })
-somatic_group               = Channel.from("somatic")
-
-DBinput_somatic(
-   dbinput_somatic_annot,
-   dbinput_somatic_snpeff,
-   dbinput_HC_snpeff,
-   dbinput_meta_tumor,
-   dbinput_meta_normal,
-   somatic_group
-)
-
-AddAnnotation.out.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { dbinput_HC_annot_ch }
-
-dbinput_HC_annot_ch = dbinput_HC_annot_ch.map{ tuple -> tuple.drop(1) }
-germline_group               = Channel.from("germline")
-
-DBinput_germline(
-   dbinput_HC_annot_ch,
-   dbinput_somatic_snpeff,
-   dbinput_HC_snpeff,
-   dbinput_meta_tumor,
-   dbinput_meta_normal,
-   germline_group
-)
-
-
-tumor_target_capture = Exome_common_WF.out.target_capture_ch.branch { Tumor: it[0].type == "tumor_DNA"}
-
-Sequenza_annotation(
-    tumor_bam_channel.Tumor,
-    tumor_bam_channel.Normal,
-    tumor_target_capture
-)
-
-ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
-
-tcellextrect_input = Exome_common_WF.out.exome_final_bam.combine(Exome_common_WF.out.target_capture_ch,by:[0]).combine(Sequenza_annotation.out.alternate).combine(genome_version_tcellextrect)
+tcellextrect_input = Exome_common_WF.out.exome_final_bam
+                    .join(Exome_common_WF.out.target_capture_ch,by:[0])
+                    .combine(Sequenza_annotation.out.alternate)
+                    .combine(genome_version_tcellextrect)
 
 TcellExtrect(tcellextrect_input)
+
+
 
 highconfidence_somatic_threshold = tumor_target_capture
    .map {tuple ->
         def meta = tuple[0]
-        def bam = tuple[1]
+        def bed = tuple[1]
         def Normal = ''
         def Tumor = ''
         def VAF =  ''
-        if (meta.sc == 'clin.ex.v1' || meta.sc == 'nextera.ex.v1'|| meta.sc == 'vcrome2.1_pkv2' || meta.sc == 'seqcapez.hu.ex.v3' || meta.sc == 'seqcapez.hu.ex.utr.v1' || meta.sc == 'agilent.v7'|| meta.sc == 'panel_paed_v5_w5.1') {
+        if (meta.T_sc == 'clin.ex.v1' || meta.T_sc == 'nextera.ex.v1'|| meta.T_sc == 'vcrome2.1_pkv2' || meta.T_sc == 'seqcapez.hu.ex.v3' || meta.T_sc == 'seqcapez.hu.ex.utr.v1' || meta.T_sc == 'agilent.v7'|| meta.T_sc == 'panel_paed_v5_w5.1') {
             Normal = params.highconfidence_somatic_threshold['threshold_1']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_1']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_1']['VAF']
-        } else if (meta.sc == 'clin.snv.v1'|| meta.sc == 'clin.snv.v2') {
+        } else if (meta.T_sc == 'clin.snv.v1'|| meta.T_sc == 'clin.snv.v2') {
             Normal = params.highconfidence_somatic_threshold['threshold_2']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_2']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_2']['VAF']
-        } else if (meta.sc == 'seqcapez.rms.v1') {
+        } else if (meta.T_sc == 'seqcapez.rms.v1') {
             Normal = params.highconfidence_somatic_threshold['threshold_3']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_3']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_3']['VAF']
-        } else if (meta.sc == 'wholegenome'){
+        } else if (meta.T_sc == 'wholegenome'){
             Normal = params.highconfidence_somatic_threshold['threshold_4']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_4']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_4']['VAF']
@@ -518,19 +391,38 @@ highconfidence_somatic_threshold = tumor_target_capture
         return [meta,Normal,Tumor,VAF]
    }
 
-MutationBurden(
-    AddAnnotationFull_somatic_variants.out,
-    params.clin_ex_v1_MB,
-    highconfidence_somatic_threshold,
-    mutect_ch,
-    strelka_indelch,
-    strelka_snvsch
-)
+targetbp_MB_ch = tumor_target_capture
+    .map { tuple ->
+        def meta = tuple[0]
+        def bed = tuple[1]
+        def targetbp_mb = ''
 
+        if (meta.T_sc == 'clin.ex.v1') {
+            targetbp_mb = params.clin_ex_v1_MB
+        } else if (meta.T_sc == 'seqcapez.hu.ex.v3') {
+            targetbp_mb = params.seqcapez.hu.ex.v3_MB
+        } else if (meta.T_sc == 'agilent.v7') {
+            targetbp_mb = params.agilent.v7_MB
+        }
 
-def qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
+        return [meta,targetbp_mb]
+    }
+
+mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
+                    .join(targetbp_MB_ch,by:[0])
+                    .join(highconfidence_somatic_threshold,by:[0])
+                    .combine(mutect_ch)
+                    .combine(strelka_indelch)
+                    .combine(strelka_snvsch)
+
+MutationBurden(mutationburden_input_ch)
+
+qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 
 QC_summary_Patientlevel(qc_summary_ch)
+
+
+/*
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.verifybamid)

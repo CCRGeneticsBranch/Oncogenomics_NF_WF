@@ -5,11 +5,13 @@ process MutationBurden {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(meta),path(Mutect_annotationfull),path(strelka_indels_annotationfull),path(strelka_snvs_annotationfull)
-    path(tumor_target_capture)
-    tuple val(meta),val(normal),val(tumor),val(vaf)
-    val(mutect_ch)
-    val(strelka_indelch)
+    tuple val(meta),path(Mutect_annotationfull),
+    path(strelka_indels_annotationfull),
+    path(strelka_snvs_annotationfull),
+    path(tumor_target_capture),
+    val(normal),val(tumor),val(vaf),
+    val(mutect_ch),
+    val(strelka_indelch),
     val(strelka_snvsch)
 
     output:
