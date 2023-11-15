@@ -128,7 +128,7 @@ process Fastq_screen {
 }
 
 
-process Multiqc {
+process Multiqc_old {
     tag "$meta.id"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
@@ -153,15 +153,13 @@ process Multiqc {
 
 }
 
-process Multiqc_TN {
+process Multiqc {
     tag "$meta.id"
 
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}",pattern: "*html"
 
     input:
-    path(normal_files)
-    path(tumor_files)
-    val(meta)
+    tuple val(meta),path(qc_files)
 
 
     output:
@@ -171,8 +169,8 @@ process Multiqc_TN {
     script:
     """
 
-    echo  "${normal_files.join('\n')}" > multiqc_input_files
-    echo  "${tumor_files.join('\n')}"  >>multiqc_input_files
+    echo  "${qc_files.join('\n')}" > multiqc_input_files
+
     multiqc --file-list multiqc_input_files -f
 
 cat <<-END_VERSIONS > versions.yml
