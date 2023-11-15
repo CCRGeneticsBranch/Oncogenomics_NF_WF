@@ -28,7 +28,7 @@ include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
-include {Multiqc_TN} from '../modules/qc/qc'
+include {Multiqc} from '../modules/qc/qc'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 
@@ -422,7 +422,7 @@ qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 QC_summary_Patientlevel(qc_summary_ch)
 
 
-/*
+
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.verifybamid)
@@ -434,16 +434,28 @@ multiqc_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.exome_qc)
             .join(Exome_common_WF.out.markdup_txt)
 
-normal_ch = multiqc_input.branch {Normal: it[0].type == "normal_DNA"}.map { tuple -> tuple.drop(1) }
-tumor_ch = multiqc_input.branch { Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple.drop(1) }
-tumor_meta = multiqc_input.branch { Tumor: it[0].type == "tumor_DNA"}.map { tuple -> tuple[0] }
 
-Multiqc_TN(normal_ch,
-           tumor_ch,
-           tumor_meta)
+multiqc_status = multiqc_input.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+
+multiqc_channel = multiqc_status.tumor.merge(multiqc_status.normal) { item1, item2 ->
+    // Custom logic to merge items based on common id
+    if (item1[0].id == item2[0].id && item1[0].casename == item2[0].casename) {
+        return [[id: item1[0].id, casename: item1[0].casename]] + [item1[1..-1] + item2[1..-1]]
+    } else {
+        return null // or handle differently if ids don't match
+    }
+}
+//multiqc_channel.view()
+Multiqc(multiqc_channel)
+
+
 
 ch_versions = ch_versions.mix(Multiqc_TN.out.versions)
-
+/*
 CUSTOM_DUMPSOFTWAREVERSIONS (
         tumor_meta,
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
