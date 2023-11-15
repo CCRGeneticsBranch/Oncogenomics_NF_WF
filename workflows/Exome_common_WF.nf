@@ -118,4 +118,5 @@ Fastqc_out = BWA_picard.out.Fastqc_out
 krona = Krona.out
 kraken = Kraken.out.kraken_out
 ch_versions = ch_versions
+design_ch = design_ch
 }
