@@ -174,7 +174,7 @@ process HotspotPileup {
      """
 }
 
-process MakeHotSpotDB {
+process MakeHotSpotDB_old {
 
      tag "$meta.lib"
 
@@ -201,7 +201,7 @@ process MakeHotSpotDB {
      """
 }
 
-process MakeHotSpotDB_TN {
+process MakeHotSpotDB {
 
      tag "$meta.id"
 
@@ -209,7 +209,7 @@ process MakeHotSpotDB_TN {
 
      input:
 
-    tuple val(meta), path(pileup1), path(pileup2)
+    tuple val(meta), path(pile_files)
 
      output:
      tuple val(meta),
@@ -223,7 +223,7 @@ process MakeHotSpotDB_TN {
      script:
 
      """
-     cat ${pileup1} ${pileup2} |sort > ${meta.id}.hotspot
+     cat ${pile_files.join(' ')} |sort > ${meta.id}.hotspot
      """
 }
 
