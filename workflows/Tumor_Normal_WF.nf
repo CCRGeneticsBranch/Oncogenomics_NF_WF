@@ -1,5 +1,5 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
-include {MakeHotSpotDB_TN} from '../modules/qc/plots'
+include {MakeHotSpotDB} from '../modules/qc/plots'
 include {Manta_Strelka} from '../subworkflows/Manta_Strelka.nf'
 include {Mutect_WF} from '../subworkflows/Mutect.nf'
 include {Exome_QC} from '../modules/qc/qc.nf'
@@ -116,10 +116,11 @@ pileup_pair = pileup_samples_normal_to_cross.cross(pileup_samples_tumor_to_cross
                 meta.T_sc  = tumor[1].sc
                 meta.N_sc  = normal[1].sc
 
-                [ meta, normal[2], tumor[2] ]
+                [ meta, [normal[2], tumor[2]] ]
             }
 
-MakeHotSpotDB_TN(pileup_pair)
+
+MakeHotSpotDB(pileup_pair)
 
 
 //tag the bam channel for Tumor and normal
@@ -190,22 +191,6 @@ Mutect_WF(bam_variant_calling_pair)
 ch_versions = ch_versions.mix(Mutect_WF.out.versions)
 
 
-/*
-Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_HC_vcf_ch }
-
-//combined_HC_vcf_ch.view()
-*/
 HC_snpeff_snv_vcftxt_status = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.branch{
     normal: it[0].type == "normal_DNA"
     tumor:  it[0].type == "tumor_DNA"
@@ -244,7 +229,7 @@ somatic_snpeff_input_ch = Mutect_WF.out.mutect_snpeff_snv_vcf2txt
 
 format_input_ch = somatic_snpeff_input_ch
         .join(HC_snpeff_snv_vcftxt_pair,by:[0])
-        .join(MakeHotSpotDB_TN.out,by:[0])
+        .join(MakeHotSpotDB.out,by:[0])
 
 
 FormatInput_TN(format_input_ch)
@@ -266,7 +251,7 @@ AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-//MutationalSignature(UnionSomaticCalls.out)
+MutationalSignature(UnionSomaticCalls.out)
 
 
 
@@ -274,15 +259,14 @@ somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .join(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
    .join(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
 
-//Test cosmic signature only with full sample
-/*
+
 Cosmic3Signature(
     somatic_variants
     .combine(cosmic_indel_rda)
     .combine(cosmic_genome_rda)
     .combine(cosmic_dbs_rda)
 )
-*/
+
 Combine_variants(somatic_variants)
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
@@ -446,7 +430,7 @@ multiqc_channel = multiqc_status.tumor.merge(multiqc_status.normal) { item1, ite
     if (item1[0].id == item2[0].id && item1[0].casename == item2[0].casename) {
         return [[id: item1[0].id, casename: item1[0].casename]] + [item1[1..-1] + item2[1..-1]]
     } else {
-        return null // or handle differently if ids don't match
+        return null
     }
 }
 //multiqc_channel.view()
@@ -454,7 +438,7 @@ Multiqc(multiqc_channel)
 
 
 
-ch_versions = ch_versions.mix(Multiqc_TN.out.versions)
+ch_versions = ch_versions.mix(Multiqc.out.versions)
 /*
 CUSTOM_DUMPSOFTWAREVERSIONS (
         tumor_meta,
