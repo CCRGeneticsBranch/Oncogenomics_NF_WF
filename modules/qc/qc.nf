@@ -250,12 +250,11 @@ process CircosPlot_lib {
 
 process CircosPlot {
 
-    tag "$meta.lib"
+    tag "$meta.id"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
-    path(loh_files)
-    val(meta)
+    tuple val(meta),path(loh_files)
 
     output:
     tuple val(meta),

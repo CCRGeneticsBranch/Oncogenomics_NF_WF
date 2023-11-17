@@ -38,21 +38,10 @@ Exome_common_WF(samples_exome)
 MakeHotSpotDB_input = Exome_common_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] }
 
 MakeHotSpotDB(MakeHotSpotDB_input)
+Circosplot_input = Exome_common_WF.out.loh.map{ meta, loh -> [meta, [loh]] }
+CircosPlot(Circosplot_input)
 /*
-pileup_input_ch = Exome_common_WF.out.pileup.map { tuple -> tuple[1] }
-pileup_meta_ch =Exome_common_WF.out.pileup.map { tuple -> tuple[0] }
 
-MakeHotSpotDB(pileup_input_ch,
-                       pileup_meta_ch
-)
-
-merged_loh_ch = Exome_common_WF.out.loh.map { tuple -> tuple[1] }
-meta_merged_loh = Exome_common_WF.out.loh.map { tuple -> tuple[0] }
-
-CircosPlot(
-    merged_loh_ch,
-    meta_merged_loh
-)
 
 formatinput_snpeff_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { tuple -> tuple.drop(1) }
 
