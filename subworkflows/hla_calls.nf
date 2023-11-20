@@ -8,10 +8,12 @@ include {MergeHLA} from '../modules/neoantigens/mergeHLA'
 workflow HLA_calls {
     take: trimmed_fq
     main:
-        
+
         HLAminer(trimmed_fq)
         Seq2HLA(trimmed_fq)
-        MergeHLA(Seq2HLA.out.combine(HLAminer.out, by:0))
+        ch_versions = Seq2HLA.out.versions.mix(HLAminer.out.versions)
+        MergeHLA(Seq2HLA.out.seq2hla_output.combine(HLAminer.out.hlaminer_output, by:0))
     emit:
-        MergeHLA.out
+        mergehla = MergeHLA.out
+        version = ch_versions
 }
