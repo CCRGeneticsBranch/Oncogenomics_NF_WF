@@ -54,23 +54,21 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
+actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
+Actionable_fusion(actionable_fusion_input)
 
+
+Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
+                        .join(Common_RNAseq_WF.out.fusion_calls, by:[0])
+                        .combine(pfamdb)
+                        .combine(genome)
+                        .combine(genome_version_fusion_annotation)
+                        .combine(genome_version)
+
+
+Fusion_Annotation(Fusion_Annotation_input)
 /*
 
-//Create actionable fusions
-Actionable_fusion(
-Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[1] },
-Common_RNAseq_WF.out.fusion_calls.map { tuple -> tuple[0] }
-)
-Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms.join(Common_RNAseq_WF.out.fusion_calls, by:[0])
-
-Fusion_Annotation(
-    Fusion_Annotation_input,
-    pfamdb,
-    genome,
-    genome_version_fusion_annotation,
-    genome_version
-)
 
 Merge_fusion_annotation(
     Fusion_Annotation.out.map { tuple -> tuple[1] },
