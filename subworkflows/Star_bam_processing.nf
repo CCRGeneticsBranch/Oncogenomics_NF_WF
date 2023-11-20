@@ -26,17 +26,25 @@ workflow Star_bam_processing {
          Picard_AddReadgroups.out
              .combine(genome)
      )
+
      Picard_MarkDuplicates(Picard_AddReadgroups.out)
+
+     picard_markdup = Picard_MarkDuplicates.out.dedup_bam.join(Picard_MarkDuplicates.out.dedup_bam_bai)
+
+     ch_versions = Picard_CollectRNAseqmetrics.out.versions.mix(Picard_MarkDuplicates.out.versions)
+
      RNAlib_qc_input = Picard_CollectRNAseqmetrics.out.rnaseq_metrics
                             .combine(Picard_CollectAlignmentSummaryMetrics.out, by:[0])
                             .combine(Fastqc_out, by:[0])
      RNAlibrary_customQC(RNAlib_qc_input)
 
+
+
     emit:
 
      picard_ARG = Picard_AddReadgroups.out
-     picard_MD =  Picard_MarkDuplicates.out
+     picard_MD =  picard_markdup
      rnalib_custom_qc = RNAlibrary_customQC.out
      picard_rnaseqmetrics = Picard_CollectRNAseqmetrics.out.rnaseq_metrics
-     picard_version = Picard_CollectRNAseqmetrics.out.versions
+     picard_version = ch_versions
 }
