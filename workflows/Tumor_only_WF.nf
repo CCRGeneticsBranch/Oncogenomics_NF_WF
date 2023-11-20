@@ -40,6 +40,7 @@ MakeHotSpotDB_input = Exome_common_WF.out.pileup.map{ meta, pileup -> [meta, [pi
 MakeHotSpotDB(MakeHotSpotDB_input)
 Circosplot_input = Exome_common_WF.out.loh.map{ meta, loh -> [meta, [loh]] }
 CircosPlot(Circosplot_input)
+Exome_common_WF.out.HC_snpeff_snv_vcf2txt.view()
 /*
 
 
