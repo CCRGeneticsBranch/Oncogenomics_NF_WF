@@ -37,7 +37,7 @@ genome_version = Channel.from(params.genome_version)
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNAseq.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "RNAseq" }
+.filter { row -> row.type == "tumor_RNA" || row.type == "cell_line_RNA"}
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -55,7 +55,7 @@ samples_rnaseq = Channel.fromPath("RNAseq.csv")
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
 
-
+/*
 
 //Create actionable fusions
 Actionable_fusion(
@@ -161,5 +161,5 @@ CUSTOM_DUMPSOFTWAREVERSIONS (
         Common_RNAseq_WF.out.ch_versions.unique().collectFile(name: 'collated_versions.yml')
         )
 
-
+*/
 }
