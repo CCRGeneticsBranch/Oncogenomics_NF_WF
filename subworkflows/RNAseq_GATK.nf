@@ -35,7 +35,7 @@ workflow RNAseq_GATK {
              .combine(Mills_and_1000g)
      )
      GATK_BR_PR(
-         GATK_RTC_IR.out
+         GATK_RTC_IR.out.Ir_bam.combine(GATK_RTC_IR.out.Ir_bai,by:[0])
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
@@ -43,7 +43,7 @@ workflow RNAseq_GATK {
              .combine(Mills_and_1000g)
      )
       RNAseq_HaplotypeCaller(
-        GATK_BR_PR.out
+        GATK_BR_PR.out.final_bam.combine(GATK_BR_PR.out.final_bai,by:[0])
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
@@ -56,9 +56,9 @@ workflow RNAseq_GATK {
              .combine(Biowulf_snpEff_config)
              .combine(HC_ch)
      )
-       Vcf2txt(SnpEff.out.combine(HC_ch))
+       Vcf2txt(SnpEff.out.raw_snpeff.combine(HC_ch))
     emit:
-     GATK_RNAseq_bam =  GATK_BR_PR.out
+     GATK_RNAseq_bam =  GATK_BR_PR.out.final_bam.join(GATK_BR_PR.out.final_bai)
      SnpEff_vcf      = Vcf2txt.out
      GATK_version   = RNAseq_HaplotypeCaller.out.versions
 }
