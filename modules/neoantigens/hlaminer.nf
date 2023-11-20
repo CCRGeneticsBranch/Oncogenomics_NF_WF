@@ -7,7 +7,8 @@ process HLAminer {
     tuple val(meta), path(trim)
 
     output:
-    tuple val(meta), path("${meta.lib}_HLAminer_HPTASR.csv")
+    tuple val(meta), path("${meta.lib}_HLAminer_HPTASR.csv"), emit: hlaminer_output
+    path "versions.yml"             , emit: versions
 
 
     stub:
@@ -26,6 +27,11 @@ process HLAminer {
 
     HPTASRrnaseq_classI.sh .
     mv HLAminer_HPTASR.csv ${prefix}_HLAminer_HPTASR.csv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        HLAminer: \$(HPTASRwgs_classI.sh |awk -F '[][]' '/^Running:/{print \$2}')
+    END_VERSIONS
     """
 }
 

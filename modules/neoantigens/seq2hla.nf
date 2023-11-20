@@ -7,7 +7,8 @@ process Seq2HLA {
     tuple val(meta), path(trim)
 
     output:
-    tuple val(meta), path("${meta.lib}-ClassI.HLAgenotype4digits")
+    tuple val(meta), path("${meta.lib}-ClassI.HLAgenotype4digits"), emit: seq2hla_output
+    path "versions.yml"             , emit: versions
 
     stub:
     """
@@ -24,6 +25,11 @@ process Seq2HLA {
         -2 ${trim[1]} \
         -p ${task.cpus} \
         -r "${prefix}"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Seq2HLA: \$(seq2HLA --version |sed 's/.*seq2HLA.py //')
+    END_VERSIONS
     """
 }
 
