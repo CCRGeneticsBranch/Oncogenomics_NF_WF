@@ -46,11 +46,13 @@ ch_versions = ch_versions.mix(Kraken.out.versions)
 
 Krona(Kraken.out.kraken_out)
 
-fastqc_input = Cutadapt.out.trim_reads.join(samples_rnaseq_ch, by:[0])
+
+fastqc_input = Cutadapt.out.trim_reads
 
   Fastqc(fastqc_input)
 
 ch_versions = ch_versions.mix(Fastqc.out.versions)
+
 
   fqs_human =   Channel.of(file(params.fqs_human, checkIfExists:true))
   Fastq_screen_input = Cutadapt.out.trim_reads.combine(fastq_screen_config).combine(fqs_human)
@@ -74,7 +76,7 @@ ch_versions = ch_versions.mix(Fastqc.out.versions)
  ch_versions = ch_versions.mix(Fusion_calling.out.Arriba_version).mix(Fusion_calling.out.Fusioncatcher_version).mix(Fusion_calling.out.Starfusion_version)
 
   PicardARG_input = Star_RSEM.out.genome_bam.combine(Star_RSEM.out.genome_bai,by:[0])
-
+/*
 
   Star_bam_processing(
       PicardARG_input,
@@ -160,6 +162,6 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   picard_rnaseqmetrics = Star_bam_processing.out.picard_rnaseqmetrics
   loh = QC_from_Star_bam.out.loh
   ch_versions = ch_versions
-
+*/
 
 }

@@ -73,8 +73,8 @@ process Fastqc {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy',pattern: "fastqc"
 
     input:
-    path(samples)
-    val(meta)
+    tuple val(meta), path(samples)
+
 
     output:
     tuple val(meta), path("fastqc_${meta.lib}") , emit: fastqc_results
