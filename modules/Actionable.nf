@@ -42,9 +42,9 @@ process Actionable_fusion {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/Actionable", mode: "${params.publishDirMode}"
 
      input:
-     path(libs)
-     val(meta)
-    
+     tuple val(meta),path(libs)
+
+
      output:
      tuple val(meta),
         path("${meta.id}.fusion.actionable.txt")
