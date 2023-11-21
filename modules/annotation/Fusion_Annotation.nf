@@ -4,10 +4,10 @@ process Fusion_Annotation {
     //publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(meta),path(isoform_file),path(actionable_fusion)
-    path(pfamdb)
-    path(genome)
-    val(genome_version_fusion_annotation)
+    tuple val(meta),path(isoform_file),path(actionable_fusion),
+    path(pfamdb),
+    path(genome),
+    val(genome_version_fusion_annotation),
     val(genome_version)
 
     output:
@@ -27,15 +27,13 @@ process Merge_fusion_annotation {
  publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
 
 input:
- path(libs)
- val(meta)
- val(genome_version)
+ tuple val(meta),path(files),val(genome_version)
 
 output:
- tuple val(meta), 
+ tuple val(meta),
  path("${meta.id}.fusion.txt"),
  path("${meta.id}.html")
-      
+
 stub:
  """
  touch "${meta.id}.fusion.txt",
@@ -45,7 +43,7 @@ stub:
  script:
 
  """
- cat ${libs[0]} |head -n 1 > ${meta.id}.fusion.txt
+ cat ${files[0]} |head -n 1 > ${meta.id}.fusion.txt
 
  for file in \${libs[@]}; do
     tail -n +2 \$file >> ${meta.id}.fusion.txt
