@@ -9,7 +9,8 @@ include {Multiqc} from '../modules/qc/qc'
 include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {DBinput} from '../modules/misc/DBinput'
-include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
+include {Combine_customRNAQC
+        RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CircosPlot} from '../modules/qc/qc'
 include {Actionable_variants} from '../modules/Actionable.nf'
 include {Actionable_fusion} from '../modules/Actionable.nf'
@@ -67,27 +68,15 @@ Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
 
 
 Fusion_Annotation(Fusion_Annotation_input)
+merge_fusion_anno_input = Fusion_Annotation.out.map{ meta, fusion -> [meta, [fusion]] }
+
+Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+
+Combine_customRNAQC(Common_RNAseq_WF.out.rnalib_custum_qc.map{ meta, qc -> [meta, [qc]] })
+
+RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc -> [meta, [qc]] })
+
 /*
-
-
-Merge_fusion_annotation(
-    Fusion_Annotation.out.map { tuple -> tuple[1] },
-    Fusion_Annotation.out.map { tuple -> tuple[0] },
-    genome_version
-)
-
-
-//Converting meta channel to list channel
-rnalib_qc_list_ch = Common_RNAseq_WF.out.rnalib_custum_qc.map { tuple -> tuple[1] }
-rnaseqmetrics_list_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[1] }
-rnaseqmetrics_meta_ch = Common_RNAseq_WF.out.picard_rnaseqmetrics.map { tuple -> tuple[0] }
-
-//Run custom RNA QC
-RNAqc_TrancriptCoverage(
-           rnalib_qc_list_ch,
-           rnaseqmetrics_list_ch,
-           rnaseqmetrics_meta_ch
-)
 
 //gather channels for makehotspotdb
 pileup_input_ch = Common_RNAseq_WF.out.pileup.map { tuple -> tuple[1] }

@@ -137,35 +137,44 @@ process RNAlibrary_customQC {
         """
 }
 
-process RNAqc_TrancriptCoverage {
+process Combine_customRNAQC {
         tag "$meta.lib"
 
         publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
         input:
-
+        tuple val(meta),
         path(RNA_customqc_libs)
-        path(RNA_rnaseqmetrics_libs)
-        val(meta)
-        //tuple val(meta),
-        //path(RNA_customQC_out),
-        //path(picard_rnametrics_txt),
-        //path(picard_rnametrics_pdf)
-
 
         output:
         tuple val(meta),
         path("${meta.id}.RnaSeqQC.txt")
-        path("${meta.id}.transcriptCoverage.png")
-
 
         script:
 
         """
         export LC_ALL=C
         cat ${RNA_customqc_libs.join(' ')}  |sort|uniq|awk 'NF' > ${meta.id}.RnaSeqQC.txt
-        transcript_coverage.R -f "${RNA_rnaseqmetrics_libs.join(' ')}" -s "${meta.id}" -o ${meta.id}.transcriptCoverage.png
+        """
+}
+process RNAqc_TrancriptCoverage {
+        tag "$meta.lib"
 
+        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+        input:
+        tuple val(meta),
+        path(RNA_rnaseqmetrics_libs)
+
+        output:
+        tuple val(meta),
+        path("${meta.id}.transcriptCoverage.png")
+
+        script:
+
+        """
+        export LC_ALL=C
+        transcript_coverage.R -f "${RNA_rnaseqmetrics_libs.join(' ')}" -s "${meta.id}" -o ${meta.id}.transcriptCoverage.png
 
         """
 }
