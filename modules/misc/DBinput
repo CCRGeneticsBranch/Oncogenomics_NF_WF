@@ -5,10 +5,7 @@ process DBinput {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
 
      input:
-     path(dbinput_annot_libs)
-     path(dbinput_snpeff_libs)
-     val(meta)
-
+     tuple val(meta),path(dbinput_annot_libs),path(dbinput_snpeff_libs)
 
      output:
      tuple val(meta),
