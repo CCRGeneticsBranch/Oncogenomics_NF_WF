@@ -21,7 +21,7 @@ workflow Annotation {
     hg19_BLsites             = Channel.of(file(params.hg19_BLsites, checkIfExists:true))
     hg19_WLsites             = Channel.of(file(params.hg19_WLsites, checkIfExists:true))
 
-    take: 
+    take:
         FormatInput_out
     main:
 
@@ -42,16 +42,21 @@ workflow Annotation {
              .combine(targetted_cancer_care)
              .combine(civic)
     )
-    Combine_annotation(Annovar.out.combine(Custom_annotation.out, by:[0])
+    Annovar_out_ch = Annovar.out.cosmic
+                        .join(Annovar.out.clinseq, by:[0])
+                        .join(Annovar.out.cadd, by:[0])
+                        .join(Annovar.out.pcg, by:[0])
+                        .join(Annovar.out.gene, by:[0])
+    Combine_annotation(Annovar_out_ch.join(Custom_annotation.out, by:[0])
              .combine(ACMG)
              .combine(hg19_BLsites)
              .combine(hg19_WLsites)
     )
-  
+
     emit:
     rare_annotation	= Combine_annotation.out.rare_annotation
     final_annotation	= Combine_annotation.out.final_annotation
+    version = Annovar.out.versions
 
 
-}       
- 
+}
