@@ -163,7 +163,7 @@ process Multiqc {
 
 
     output:
-    path("multiqc_report.html") , emit: multiqc_report
+    tuple val(meta), path("multiqc_report.html") , emit: multiqc_report
     path "versions.yml"             , emit: versions
 
     script:
