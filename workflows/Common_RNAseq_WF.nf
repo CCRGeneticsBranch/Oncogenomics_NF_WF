@@ -76,7 +76,7 @@ ch_versions = ch_versions.mix(Fastqc.out.versions)
  ch_versions = ch_versions.mix(Fusion_calling.out.Arriba_version).mix(Fusion_calling.out.Fusioncatcher_version).mix(Fusion_calling.out.Starfusion_version)
 
   PicardARG_input = Star_RSEM.out.genome_bam.combine(Star_RSEM.out.genome_bai,by:[0])
-/*
+
 
   Star_bam_processing(
       PicardARG_input,
@@ -85,10 +85,14 @@ ch_versions = ch_versions.mix(Fastqc.out.versions)
   )
 
  ch_versions = ch_versions.mix(Star_bam_processing.out.picard_version)
+
+
 HLA_calls(Cutadapt.out.trim_reads)
 
+ch_version = ch_versions.mix(HLA_calls.out.version)
 
 //Star_bam_processing.out.rnalib_custom_qc.view()
+/*
 Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
     new_meta = [
         id: meta.id,
@@ -106,6 +110,7 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
 
 //combinedChannel.view()
 
+*/
 
   QC_from_Star_bam(
       Star_bam_processing.out.picard_ARG,
@@ -162,6 +167,6 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   picard_rnaseqmetrics = Star_bam_processing.out.picard_rnaseqmetrics
   loh = QC_from_Star_bam.out.loh
   ch_versions = ch_versions
-*/
+
 
 }
