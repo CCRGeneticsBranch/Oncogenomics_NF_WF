@@ -5,9 +5,7 @@ process FormatInput {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/annotation", mode: "${params.publishDirMode}"
 
      input:
-     //tuple val(meta),path(vcf2txt),path(hotspotpileup)
-     path(snpeff_vcfs)
-     tuple val(meta),path(hotspot)
+     tuple val(meta),path(vcf2txt),path(hotspot)
 
      output:
      tuple val(meta),
@@ -24,8 +22,7 @@ process FormatInput {
      script:
      """
      set -exo pipefail
-     cat  ${hotspot} |sort > ${meta.id}.hotspot
-     cut -f 1-5 ${snpeff_vcfs.join(' ')} ${meta.id}.hotspot |sort |uniq > AnnotationInput
+     cut -f 1-5 ${vcf2txt.join(' ')} ${meta.id}.hotspot |sort |uniq > AnnotationInput
      MakeAnnotationInputs.pl AnnotationInput
 
      """
@@ -117,12 +114,12 @@ process Annovar {
         path(clinseq),
         path(pcg)
      output:
-      tuple val(meta),
-        path("AnnotationInput.cosmic"),
-        path("AnnotationInput.clinseq"),
-        path("AnnotationInput.cadd"),
-        path("AnnotationInput.pcg"),
-        path("AnnotationInput.gene")
+      tuple val(meta),path("AnnotationInput.cosmic"), emit: cosmic
+      tuple val(meta),path("AnnotationInput.clinseq"), emit: clinseq
+      tuple val(meta),path("AnnotationInput.cadd"), emit: cadd
+      tuple val(meta),path("AnnotationInput.pcg"), emit: pcg
+      tuple val(meta),path("AnnotationInput.gene"), emit: gene
+      path "versions.yml"             , emit: versions
 
      stub:
      """
@@ -157,6 +154,11 @@ process Annovar {
      mv AnnotationInput.anno.gene.hg19_multianno.txt AnnotationInput.gene
 
      sed -i '1s/[.]/_/g' AnnotationInput.gene
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Annovar: \$(table_annovar.pl -h |grep 'Version:' |awk '{print \$3}')
+    END_VERSIONS
 
      """
 }
