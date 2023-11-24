@@ -76,77 +76,52 @@ Combine_customRNAQC(Common_RNAseq_WF.out.rnalib_custum_qc.map{ meta, qc -> [meta
 
 RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc -> [meta, [qc]] })
 
-/*
-
-//gather channels for makehotspotdb
-pileup_input_ch = Common_RNAseq_WF.out.pileup.map { tuple -> tuple[1] }
-pileup_meta_ch =Common_RNAseq_WF.out.pileup.map { tuple -> tuple[0] }
-
-//Run Makehotspotdb
-MakeHotSpotDB(pileup_input_ch,
-             pileup_meta_ch
-)
-
-//Run FormatInput
-formatinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map { tuple -> tuple.drop(1) }
-FormatInput(
-    formatinput_snpeff_ch,
-    MakeHotSpotDB.out
-)
-
-//gather channels for circosplot
-merged_loh_ch = Common_RNAseq_WF.out.loh.map { tuple -> tuple[1] }
-meta_merged_loh = Common_RNAseq_WF.out.loh.map { tuple -> tuple[0] }
+MakeHotSpotDB(Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] })
 
 //Run circos plot at case level
-CircosPlot(
-    merged_loh_ch,
-    meta_merged_loh
-)
+CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
+formatinput_input_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
+FormatInput(formatinput_input_ch)
+
 
 //Run Annotation subworkflow
 Annotation(FormatInput.out)
 
-merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation,by:[0])
+ch_versions = Common_RNAseq_WF.out.ch_versions.mix(Annotation.out.version)
+
+merged_ch = Common_RNAseq_WF.out.snpeff_vcf.join(Annotation.out.rare_annotation,by:[0])
 AddAnnotation(merged_ch)
 
-dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ tuple -> tuple.drop(1) }
-dbinput_annot_ch = AddAnnotation.out.map{ tuple -> tuple.drop(1) }
-dbinput_meta_ch = AddAnnotation.out.map { tuple -> tuple[0] }
+dbinput_anno_ch = AddAnnotation.out.map{ meta, txt -> [meta, [txt]] }
+dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, txt -> [meta, [txt]] }
+dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
+DBinput(dbinput_ch)
 
-//Run DBinput
-DBinput(
-    dbinput_annot_ch,
-    dbinput_snpeff_ch,
-    dbinput_meta_ch
-)
 
-Actionable_variants(DBinput.out
-       .combine(Annotation.out.rare_annotation,by:[0])
-       .combine(combined_gene_list)
-       .combine(somatic_actionable_sites)
-       .combine(group)
-)
-
-//Common_RNAseq_WF.out.rsem_counts.view()
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                       .join(Common_RNAseq_WF.out.circos_plot, by: [0])
-Multiqc(multiqc_input.map { tuple -> tuple.drop(1) },
-        multiqc_input.map { tuple -> tuple[0] })
-
-final_inputs = Common_RNAseq_WF.out.fusion_calls.join(Annotation.out.final_annotation,by:[0]).join(Multiqc.out,by:[0])
-Allstepscomplete(final_inputs)
-
-Common_RNAseq_WF.out.ch_versions.unique().collectFile(name: 'collated_versions.yml').view()
 
 
-CUSTOM_DUMPSOFTWAREVERSIONS (
-        Common_RNAseq_WF.out.ch_versions.unique().collectFile(name: 'collated_versions.yml')
-        )
+multiqc_input_ch = multiqc_input.map{ files ->
+    if (files instanceof List) {
+        return [files[0], files[1..-1]]
+    } else {
+        return files
+    }
+}
+Multiqc(multiqc_input_ch)
 
-*/
+ch_versions = ch_versions.mix(Multiqc.out.versions)
+
+Multiqc.out.multiqc_report
+combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+custom_versions_input = Multiqc.out.multiqc_report.combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+
+CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+
+
 }
