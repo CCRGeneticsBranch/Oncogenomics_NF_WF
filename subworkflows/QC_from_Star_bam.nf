@@ -37,5 +37,6 @@ workflow QC_from_Star_bam {
          rnaseqc = RNAseQC.out
          loh = Genotyping.out.loh
          circos = CircosPlot_lib.out
+         gt = Genotyping.out.gt
 
 }
