@@ -9,20 +9,46 @@ process DBinput {
 
      output:
      tuple val(meta),
-        path("${meta.id}.${meta.type}")
+        path("${meta.id}.*")
 
      stub:
      """
-     touch "${meta.id}.${meta.type}"
+     touch "${meta.id}.*"
      """
 
      script:
 
      """
-    makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.${meta.type}.tmp
+     if [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" ]]; then
+          tag="rnaseq"
+          makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
+          addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
+          rm -rf ${meta.id}.\$tag.tmp
 
-    addFS.pl ${meta.id}.${meta.type}.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.${meta.type}
-    rm -rf ${meta.id}.${meta.type}.tmp
+     elif [[ "${meta.type}" == "normal_DNA" ]]; then
+          tag="germline"
+          makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
+          addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
+          rm -rf ${meta.id}.\$tag.tmp
+
+     elif [[ "${meta.type}" == "tumor_DNA" && -z "${meta.normal_type}" ]]; then
+          tag="variants"
+          makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
+          addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
+          rm -rf ${meta.id}.\$tag.tmp
+
+     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && -z "${meta.rna_type}" ]]; then
+          tag1="somatic"
+          tag2="germline"
+     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "tumor_RNA" ]]; then
+          tag1="somatic"
+          tag2="germline"
+          tag3="rnaseq"
+     fi
+#    makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.${meta.type}.tmp
+
+#    addFS.pl ${meta.id}.${meta.type}.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.${meta.type}
+#    rm -rf ${meta.id}.${meta.type}.tmp
      """
 }
 
