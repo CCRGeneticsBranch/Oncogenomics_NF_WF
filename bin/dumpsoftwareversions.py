@@ -58,6 +58,9 @@ with open(sys.argv[1]) as f:
 
 # aggregate versions by the module name (derived from fully-qualified process name)
 versions_by_module = {}
+versions_by_module["Pipeline"] = {
+    "version": sys.argv[5],
+}
 for process, process_versions in versions_by_process.items():
     module = process.split(":")[-1]
     try:
@@ -69,7 +72,7 @@ for process, process_versions in versions_by_process.items():
     except KeyError:
         versions_by_module[module] = process_versions
 
-versions_by_module["Workflow"] = {
+versions_by_module["Nextflow"] = {
     "Nextflow": sys.argv[2],
 }
 
@@ -79,6 +82,3 @@ output_file = f"{Patient}.config.{timestamp}.txt"
 
 with open(output_file, "w") as f:
     yaml.dump(versions_by_module, f, default_flow_style=False)
-
-with open("versions.yml", "w") as f:
-    yaml.dump(versions_this_module, f, default_flow_style=False)
