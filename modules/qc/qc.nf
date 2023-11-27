@@ -222,6 +222,50 @@ process Genotyping {
     """
 }
 
+process Genotyping_Sample {
+
+    tag "$meta.id"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),path(gt_files)
+
+    output:
+    tuple val(meta),
+        path("${meta.id}.genotyping.txt")
+
+    stub:
+    """
+    touch "${meta.id}.genotyping.txt"
+    """
+
+    script:
+
+     """
+     mkdir -p GT RATIO
+     cp ${gt_files.join(' ')} ./GT/
+     echo Sample > RATIO/FirstColumn
+     for file in GT/*
+     do
+                sample=`basename \$file .gt`
+                echo \$sample
+                echo \$sample >>RATIO/FirstColumn
+                echo \$sample >>RATIO/\$sample.ratio
+                for file2 in GT/*
+                do
+                        scoreGenotyes.pl \$file \$file2 >>RATIO/\$sample.ratio
+                done
+        done
+     paste RATIO/FirstColumn RATIO/*.ratio >${meta.id}.genotyping.txt
+     rm -rf GT RATIO
+     sed -i 's/Sample_//g' ${meta.id}.genotyping.txt
+     sed -i 's/.bwa//g' ${meta.id}.genotyping.txt
+     sed -i 's/.star//g' ${meta.id}.genotyping.txt
+     """
+
+
+}
+
 
 process CircosPlot_lib {
 
