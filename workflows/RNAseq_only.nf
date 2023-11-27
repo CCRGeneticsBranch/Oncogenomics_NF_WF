@@ -11,7 +11,8 @@ include {AddAnnotation} from '../modules/annotation/annot'
 include {DBinput} from '../modules/misc/DBinput'
 include {Combine_customRNAQC
         RNAqc_TrancriptCoverage} from '../modules/qc/picard'
-include {CircosPlot} from '../modules/qc/qc'
+include {CircosPlot
+        Genotyping_Sample} from '../modules/qc/qc'
 include {Actionable_variants} from '../modules/Actionable.nf'
 include {Actionable_fusion} from '../modules/Actionable.nf'
 include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
@@ -33,6 +34,7 @@ pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
 genome  = Channel.of(file(params.genome, checkIfExists:true))
 genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_annotation)
 genome_version = Channel.from(params.genome_version)
+Pipeline_version = Channel.from(params.Pipeline_version)
 
 
 //create a sample channel using meta hashmap
@@ -80,6 +82,9 @@ MakeHotSpotDB(Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] 
 
 //Run circos plot at case level
 CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
+
+Genotyping_Sample(Common_RNAseq_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
+
 formatinput_input_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
 
@@ -119,7 +124,9 @@ ch_versions = ch_versions.mix(Multiqc.out.versions)
 
 Multiqc.out.multiqc_report
 combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
-custom_versions_input = Multiqc.out.multiqc_report.combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+custom_versions_input = Multiqc.out.multiqc_report
+        .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+        .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 

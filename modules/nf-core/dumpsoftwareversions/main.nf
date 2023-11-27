@@ -3,7 +3,7 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}",pattern: "*config*.txt"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}",mode: "${params.publishDirMode}",pattern: "successful.txt"
     input:
-    tuple val(meta), path(versions)
+    tuple val(meta), path(versions),val(pipeline_version)
 
     output:
     path "*config*.txt"    , emit: config
@@ -16,7 +16,7 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
     def args = task.ext.args ?: ''
     """
 
-    dumpsoftwareversions.py ${versions} ${nextflow.version} Software_versions ${meta.id}
+    dumpsoftwareversions.py ${versions} ${nextflow.version} Software_versions ${meta.id} ${pipeline_version}
     sed -i "s/'//g" ${meta.id}.config*txt
     touch successful.txt
     """
