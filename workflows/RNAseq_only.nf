@@ -122,7 +122,7 @@ Multiqc(multiqc_input_ch)
 
 ch_versions = ch_versions.mix(Multiqc.out.versions)
 
-Multiqc.out.multiqc_report
+
 combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
 custom_versions_input = Multiqc.out.multiqc_report
         .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
