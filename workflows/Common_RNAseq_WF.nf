@@ -168,5 +168,6 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   loh = QC_from_Star_bam.out.loh
   ch_versions = ch_versions
   gt = QC_from_Star_bam.out.gt
+  strandedness = Star_RSEM.out.strandedness
 
 }
