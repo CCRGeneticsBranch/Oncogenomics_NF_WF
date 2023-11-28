@@ -103,11 +103,11 @@ dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
 DBinput(dbinput_ch)
 
 
-
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
-                      .join(Common_RNAseq_WF.out.rsem_genes, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
+                      .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
+                      .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                       .join(Common_RNAseq_WF.out.circos_plot, by: [0])
                       .join(Common_RNAseq_WF.out.strandedness, by: [0])
 

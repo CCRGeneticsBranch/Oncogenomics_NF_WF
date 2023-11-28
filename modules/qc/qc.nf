@@ -333,7 +333,7 @@ process RNAseQC {
 
     output:
     tuple val(meta),
-        path("rnaseqc/report.html")
+        path("rnaseqc")
 
     stub:
      """
