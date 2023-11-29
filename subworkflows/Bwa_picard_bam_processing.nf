@@ -13,9 +13,9 @@ main:
 
      //Initiate empty channel for versions
      ch_versions = Channel.empty()
+     fastqc_input = samples_exome.map{ meta, r1, r2 -> [meta, [r1,r2]] }
 
-     Fastqc(samples_exome.map { tuple -> tuple.drop(1) },
-            samples_exome.map { tuple -> tuple[0] })
+     Fastqc(fastqc_input)
 
      ch_versions = ch_versions.mix(Fastqc.out.versions)
 
