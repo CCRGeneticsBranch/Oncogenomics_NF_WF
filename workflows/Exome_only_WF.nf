@@ -22,7 +22,7 @@ workflow Exome_only_WF {
 
 samples_exome = Channel.fromPath("Exome.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type = "cell_line_DNA" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type == "cell_line_DNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
