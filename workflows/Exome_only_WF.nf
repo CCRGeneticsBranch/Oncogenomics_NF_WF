@@ -4,15 +4,20 @@ include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CNVkitPooled} from '../modules/cnvkit/CNVkitPooled'
-include {CircosPlot} from '../modules/qc/qc'
+include {CircosPlot
+        Genotyping_Sample
+        Multiqc} from '../modules/qc/qc'
 include {DBinput} from '../modules/misc/DBinput'
 include {Actionable_variants} from '../modules/Actionable'
+include {TcellExtrect} from '../modules/misc/TcellExtrect'
+include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 workflow Exome_only_WF {
 
-group               = Channel.from("variants")
    somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
    combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
+   genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
+   Pipeline_version = Channel.from(params.Pipeline_version)
 
 
 samples_exome = Channel.fromPath("Exome.csv")
@@ -42,10 +47,14 @@ MakeHotSpotDB(MakeHotSpotDB_input)
 Circosplot_input = Exome_common_WF.out.loh.map{ meta, loh -> [meta, [loh]] }
 CircosPlot(Circosplot_input)
 
+Genotyping_Sample(Exome_common_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
+
 formatinput_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
 
 Annotation(FormatInput.out)
+
+ch_versions = Exome_common_WF.out.ch_versions.mix(Annotation.out.version)
 
 merged_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.join(Annotation.out.rare_annotation,by:[0])
 AddAnnotation(merged_ch)
@@ -84,19 +93,43 @@ cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
     tuple.size() == 4
 }
 
-cnvkit_input_bam.view()
+//cnvkit_input_bam.view()
+cnvkit_input_bam|CNVkitPooled
 
-/*
-
-
-cnvkit_clin_ex_v1 = Channel.of(file(params.cnvkit_clin_ex_v1, checkIfExists:true))
-
-CNVkitPooled(
-    Exome_common_WF.out.exome_final_bam.combine(cnvkit_clin_ex_v1)
+TcellExtrect(
+    Exome_common_WF.out.exome_final_bam
+    .join(Exome_common_WF.out.target_capture_ch,by:[0])
+    .combine(genome_version_tcellextrect)
 )
 
+multiqc_input = Exome_common_WF.out.Fastqc_out
+    .join(Exome_common_WF.out.pileup, by: [0])
+    .join(Exome_common_WF.out.coverageplot,by: [0])
+    .join(Exome_common_WF.out.kraken,by: [0])
+    .join(Exome_common_WF.out.verifybamid,by: [0])
+    .join(Exome_common_WF.out.hsmetrics,by: [0])
+    .join(TcellExtrect.out,by: [0])
+    .join(Exome_common_WF.out.fastq_screen,by: [0])
+    .join(Exome_common_WF.out.flagstat,by: [0])
+    .join(Exome_common_WFout.markdup_txt,by: [0])
+    .join(Exome_common_WF.out.krona,by: [0])
 
+multiqc_input_ch = multiqc_input.map{ files ->
+    if (files instanceof List) {
+        return [files[0], files[1..-1]]
+    } else {
+        return files
+    }
+}
 
-*/
+Multiqc(multiqc_input_ch)
+
+ch_versions = ch_versions.mix(Multiqc.out.versions)
+combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+custom_versions_input = Multiqc.out.multiqc_report
+        .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+        .combine(Pipeline_version)
+
+CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 
 }
