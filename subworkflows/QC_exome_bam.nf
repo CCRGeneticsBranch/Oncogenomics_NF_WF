@@ -120,6 +120,7 @@ workflow QC_exome_bam {
          hotspot_pileup = HotspotPileup.out
          coverageplot = CoveragePlot.out
          loh = Genotyping.out.loh
+         gt = Genotyping.out.gt
          Exome_qc = Exome_QC.out
          hsmetrics = HSMetrics.out.hsmetrics_out
          flagstat = Flagstat.out.flagstat
