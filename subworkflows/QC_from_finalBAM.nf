@@ -57,5 +57,6 @@ workflow QC_from_finalBAM {
          coverageplot = CoveragePlot.out
          flagstat_version = Flagstat.out.versions
          bamutil_version = Bamutil.out.versions
+         flagstat = Flagstat.out.flagstat
 
 }
