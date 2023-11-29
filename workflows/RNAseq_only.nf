@@ -110,6 +110,13 @@ multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                       .join(Common_RNAseq_WF.out.circos_plot, by: [0])
                       .join(Common_RNAseq_WF.out.strandedness, by: [0])
+                      .join(Common_RNAseq_WF.out.rnalib_custum_qc, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_rnaseqmetrics, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_rnaseqmetrics_pdf, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_alignmetrics, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_MD, by: [0])
+                      .join(Common_RNAseq_WF.out.flagstat, by: [0])
+                      .join(Common_RNAseq_WF.out.fastq_screen, by: [0])
 
 
 multiqc_input_ch = multiqc_input.map{ files ->
