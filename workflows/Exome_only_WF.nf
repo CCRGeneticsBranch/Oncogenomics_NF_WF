@@ -22,7 +22,7 @@ workflow Exome_only_WF {
 
 samples_exome = Channel.fromPath("Exome.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type = "cell_line_DNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -111,7 +111,7 @@ multiqc_input = Exome_common_WF.out.Fastqc_out
     .join(TcellExtrect.out,by: [0])
     .join(Exome_common_WF.out.fastq_screen,by: [0])
     .join(Exome_common_WF.out.flagstat,by: [0])
-    .join(Exome_common_WFout.markdup_txt,by: [0])
+    .join(Exome_common_WF.out.markdup_txt,by: [0])
     .join(Exome_common_WF.out.krona,by: [0])
 
 multiqc_input_ch = multiqc_input.map{ files ->
