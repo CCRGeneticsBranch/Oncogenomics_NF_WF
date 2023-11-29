@@ -46,5 +46,7 @@ workflow Star_bam_processing {
      picard_MD =  picard_markdup
      rnalib_custom_qc = RNAlibrary_customQC.out
      picard_rnaseqmetrics = Picard_CollectRNAseqmetrics.out.rnaseq_metrics
+     picard_rnaseqmetrics_pdf = Picard_CollectRNAseqmetrics.out.rnaseq_metrics_pdf
+     picard_alignmetrics = Picard_CollectAlignmentSummaryMetrics.out
      picard_version = ch_versions
 }
