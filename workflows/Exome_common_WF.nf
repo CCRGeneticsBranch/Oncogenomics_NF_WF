@@ -3,12 +3,15 @@ include {BWA_picard} from '../subworkflows/Bwa_picard_bam_processing'
 include {Exome_GATK} from '../subworkflows/Exome_GATK'
 include {QC_exome_bam} from '../subworkflows/QC_exome_bam'
 include {HLA_calls_exome} from '../subworkflows/HLA_calls_exome'
-include {Kraken} from '../modules/qc/qc'
-include {Krona} from '../modules/qc/qc'
+include {Kraken
+        Krona
+        Fastq_screen} from '../modules/qc/qc'
+
 
 workflow Exome_common_WF {
 
 kraken_bacteria = Channel.of(file(params.kraken_bacteria, checkIfExists:true))
+fastq_screen_config         = Channel.of(file(params.fastq_screen_config, checkIfExists:true))
 
 take:
      samples_exome_ch
@@ -16,9 +19,13 @@ take:
 main:
 
 
-
-
 BWA_picard(samples_exome_ch)
+
+Fastq_screen_input = samples_exome_ch.map{ meta, r1, r2 -> [meta, [r1,r2]] }
+                        .combine(fastq_screen_config)
+                        .combine(Channel.fromPath(params.fastq_screen_db,type: 'dir', checkIfExists: true))
+
+Fastq_screen(Fastq_screen_input)
 
 Kraken(samples_exome_ch
     .combine(kraken_bacteria)
@@ -104,6 +111,7 @@ pileup = QC_exome_bam.out.hotspot_pileup
 snpeff_vcf =Exome_GATK.out.SnpEff_vcf
 exome_final_bam = Exome_GATK.out.GATK_Exome_bam
 loh = QC_exome_bam.out.loh
+gt = QC_exome_bam.out.gt
 target_capture_ch = capture_ch
 HC_snpeff_snv_vcf2txt = Exome_GATK.out.HC_snpeff_snv_vcf2txt
 hlaminer_exome  = HLA_calls_exome.out.hlaminer_exome
@@ -119,4 +127,5 @@ krona = Krona.out
 kraken = Kraken.out.kraken_out
 ch_versions = ch_versions
 design_ch = design_ch
+fastq_screen = Fastq_screen.out
 }
