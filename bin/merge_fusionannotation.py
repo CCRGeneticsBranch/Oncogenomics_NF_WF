@@ -4,6 +4,7 @@ import pandas as pd
 import glob
 import sys
 import os
+import csv
 
 output = sys.argv[1]
 output_file = f"{output}.fusion.txt"
@@ -18,10 +19,17 @@ header = list(first_file.columns)
 # Concatenate all files, skipping the header in all but the first file
 result = pd.concat(
     [
-        pd.read_csv(file, delimiter="\t", header=None, names=header, skiprows=1)
+        pd.read_csv(
+            file,
+            delimiter="\t",
+            header=None,
+            names=header,
+            skiprows=1,
+            quoting=csv.QUOTE_NONE,
+        )
         for file in file_list
     ]
 )
 
 # Write the result to a new file
-result.to_csv(output_file, index=False, sep="\t")
+result.to_csv(output_file, index=False, sep="\t", quoting=csv.QUOTE_NONE)
