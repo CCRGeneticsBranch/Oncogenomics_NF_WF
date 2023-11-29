@@ -1,7 +1,7 @@
 process Fusion_Annotation {
 
     tag "$meta.lib"
-    //publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
 
     input:
     tuple val(meta),path(isoform_file),path(actionable_fusion),
@@ -43,11 +43,7 @@ stub:
  script:
 
  """
- cat ${files[0]} |head -n 1 > ${meta.id}.fusion.txt
-
- for file in \${libs[@]}; do
-    tail -n +2 \$file >> ${meta.id}.fusion.txt
- done
+ merge_fusionannotation.py ${meta.id}
 
  python /apps/makeOutputHTML.py -i ${meta.id}.fusion.txt -o ${meta.id}.html -t /apps/data/template.html -c /apps/data/hg${genome_version}_cytoBand.txt
  """
