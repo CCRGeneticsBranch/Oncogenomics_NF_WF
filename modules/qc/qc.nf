@@ -102,7 +102,7 @@ process Fastq_screen {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/fastq_screen/", mode: 'copy'
 
     input:
-    tuple val(meta),path(trim),path(fastq_screen_config),path(fqs_human)
+    tuple val(meta),path(trim),path(fastq_screen_config),path(fqs_db)
 
     stub:
     """
@@ -111,9 +111,7 @@ process Fastq_screen {
     """
 
     output:
-    tuple val(meta),
-    path("${meta.lib}_R1_screen.html"),
-    path("${meta.lib}_R2_screen.html")
+    tuple val(meta),path("fastq_screen")
 
 
     script:
@@ -121,9 +119,9 @@ process Fastq_screen {
     def prefix   = task.ext.prefix ?: "${meta.lib}"
 
     """
-    #--subset 1000000  add this parameter after testing.
     if [ ! -d fastq_screen ];then mkdir -p fastq_screen;fi
-    fastq_screen --conf ${fastq_screen_config}  --aligner bowtie2 --force ${trim[0]} ${trim[1]}  --outdir fastq_screen
+    ls ${fqs_db}
+    fastq_screen --conf ${fastq_screen_config} --subset 1000000 --aligner bowtie2 --force ${trim[0]} ${trim[1]}  --outdir fastq_screen
     """
 }
 
