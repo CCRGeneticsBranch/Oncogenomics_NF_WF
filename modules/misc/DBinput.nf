@@ -30,7 +30,7 @@ process DBinput {
           addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
           rm -rf ${meta.id}.\$tag.tmp
 
-     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "null" ]]; then
+     elif [[ "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" && "${meta.normal_type}" == "null" ]]; then
           tag="variants"
           makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
           addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
