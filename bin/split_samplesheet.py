@@ -83,6 +83,7 @@ if matching_rows:
 
 # Create separate file writers for RNAseq, Normal, and Tumor types
 rna_file = None
+exome_file = None
 normal_file = None
 tumor_file = None
 rna_writer = None
@@ -96,7 +97,7 @@ rna_lib_rows = []
 if any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
     for row in samplesheet_data
-    if row["type"] == "RNAseq"
+    if row["type"] == "tumor_RNA"
 ):
     output_file = os.path.join(outdir, "RNAseq.csv")
     rna_file = open(output_file, "w", newline="")
@@ -104,26 +105,46 @@ if any(
     rna_writer.writeheader()
 
 # Check if there are unique values for Normal type
-if any(
+# if any(
+#     sample_casename_counts[(row["sample"], row["casename"])] == 1
+#     for row in samplesheet_data
+#     if row["type"] == "normal_DNA"
+# ):
+#     output_file = os.path.join(outdir, "Normal.csv")
+#     normal_file = open(output_file, "w", newline="")
+#     normal_writer = csv.DictWriter(normal_file, fieldnames=columns)
+#     normal_writer.writeheader()
+
+# # Check if there are unique values for Tumor type
+# if any(
+#     sample_casename_counts[(row["sample"], row["casename"])] == 1
+#     for row in samplesheet_data
+#     if row["type"] == "tumor_DNA"
+# ):
+#     output_file = os.path.join(outdir, "Tumor.csv")
+#     tumor_file = open(output_file, "w", newline="")
+#     tumor_writer = csv.DictWriter(tumor_file, fieldnames=columns)
+#     tumor_writer.writeheader()
+
+has_unique_normal = any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
     for row in samplesheet_data
     if row["type"] == "normal_DNA"
-):
-    output_file = os.path.join(outdir, "Normal.csv")
-    normal_file = open(output_file, "w", newline="")
-    normal_writer = csv.DictWriter(normal_file, fieldnames=columns)
-    normal_writer.writeheader()
+)
 
 # Check if there are unique values for Tumor type
-if any(
+has_unique_tumor = any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
     for row in samplesheet_data
     if row["type"] == "tumor_DNA"
-):
-    output_file = os.path.join(outdir, "Tumor.csv")
-    tumor_file = open(output_file, "w", newline="")
-    tumor_writer = csv.DictWriter(tumor_file, fieldnames=columns)
-    tumor_writer.writeheader()
+)
+
+if has_unique_normal or has_unique_tumor:
+    output_file = os.path.join(outdir, "Exome.csv")
+    exome_file = open(output_file, "w", newline="")
+    exome_writer = csv.DictWriter(exome_file, fieldnames=columns)
+    exome_writer.writeheader()
+    # exome_writer.writerows(row for row in samplesheet_data if row["type"] in ["normal_DNA", "tumor_DNA"])
 
     # Iterate over the sample sheet data again to write to respective files
 for row in samplesheet_data:
@@ -141,7 +162,7 @@ for row in samplesheet_data:
     ):
         tumor_lib_rows.append(row)
 
-    if sample_casename_counts[(sample, casename)] > 1 and row_type == "RNAseq":
+    if sample_casename_counts[(sample, casename)] > 1 and row_type == "tumor_RNA":
         match_found = False
 
         # Iterate over the rows again to find matches
@@ -180,20 +201,24 @@ for row in samplesheet_data:
 
     # Check if the sample and casename combination is unique
     if sample_casename_counts[(sample, casename)] == 1:
-        if row_type == "RNAseq" and rna_writer:
+        if row_type == "tumor_RNA" and rna_writer:
             rna_writer.writerow(row)
-        elif row_type == "normal_DNA" and normal_writer:
-            normal_writer.writerow(row)
-        elif row_type == "tumor_DNA" and tumor_writer:
-            tumor_writer.writerow(row)
+        # elif row_type == "normal_DNA" and normal_writer:
+        #     normal_writer.writerow(row)
+        # elif row_type == "tumor_DNA" and tumor_writer:
+        #     tumor_writer.writerow(row)
+        elif row_type in ["normal_DNA", "tumor_DNA"] and exome_writer:
+            exome_writer.writerow(row)
 
 # Close the file writers
 if rna_file:
     rna_file.close()
-if normal_file:
-    normal_file.close()
-if tumor_file:
-    tumor_file.close()
+# if normal_file:
+#     normal_file.close()
+# if tumor_file:
+#     tumor_file.close()
+if exome_file:
+    exome_file.close()
 
 if not matching_rows:
     print("No matches found.")
