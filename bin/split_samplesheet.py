@@ -40,10 +40,15 @@ with open(samplesheet, "r") as file:
 
 # Create a list to store the matching rows
 matching_rows = []
-
+tumor_rnaseq_rows = []
+tumor_rnaseq_normal_rows = []
+tumor_normal_rows = []
 
 # Create a dictionary to track the occurrences of each sample and casename combination
 sample_casename_counts = defaultdict(int)
+
+# Create a set to track processed samples to avoid duplicate entries
+processed_samples = set()
 
 for row in samplesheet_data:
     sample = row["sample"]
@@ -59,27 +64,83 @@ for row in samplesheet_data:
         matched_normal = row["Matched_normal"]
         matched_casename = row["casename"]
 
-        # Check if at least one of the values is not empty
-        if matched_rna or matched_normal:
-            # Add the current row to the matching rows list
-            matching_rows.append(row)
-
-            # Iterate over the rows again to find matches
+        # Check additional conditions
+        if matched_rna and not matched_normal:
+            tumor_rnaseq_rows.append(row)
+            # Find other rows with the same library as matched RNA
             for other_row in samplesheet_data:
-                # Check if the library value in the other row matches either Matched_RNA or Matched_normal
+                if (
+                    other_row["library"] == matched_rna
+                    and other_row["casename"] == matched_casename
+                ):
+                    tumor_rnaseq_rows.append(other_row)
+                    processed_samples.add(other_row["sample"])
+
+        elif matched_rna and matched_normal:
+            tumor_rnaseq_normal_rows.append(row)
+            # Find other rows with the same library as matched normal and matched RNA
+            for other_row in samplesheet_data:
                 if (matched_rna and other_row["library"] == matched_rna) or (
                     matched_normal and other_row["library"] == matched_normal
                 ):
                     if other_row["casename"] == matched_casename:
-                        matching_rows.append(other_row)
+                        tumor_rnaseq_normal_rows.append(other_row)
+                        processed_samples.add(other_row["sample"])
 
-if matching_rows:
-    # Write the matching rows to the Tumor_normal.csv file
-    output_file = os.path.join(outdir, "Tumor_Normal.csv")
-    with open(output_file, "w", newline="") as file:
+        elif matched_normal and not matched_rna:
+            tumor_normal_rows.append(row)
+            # Find other rows with the same library as matched normal
+            for other_row in samplesheet_data:
+                if (
+                    other_row["library"] == matched_normal
+                    and other_row["casename"] == matched_casename
+                ):
+                    tumor_normal_rows.append(other_row)
+                    processed_samples.add(other_row["sample"])
+
+# Write the matching rows to the respective output files
+if tumor_rnaseq_rows:
+    output_file_rnaseq = os.path.join(outdir, "Tumor_RNAseq.csv")
+    with open(output_file_rnaseq, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=columns)
         writer.writeheader()
-        writer.writerows(matching_rows)
+        writer.writerows(tumor_rnaseq_rows)
+
+if tumor_rnaseq_normal_rows:
+    output_file_rnaseq_normal = os.path.join(outdir, "Tumor_RNAseq_Normal.csv")
+    with open(output_file_rnaseq_normal, "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(tumor_rnaseq_normal_rows)
+
+if tumor_normal_rows:
+    output_file_normal = os.path.join(outdir, "Tumor_Normal.csv")
+    with open(output_file_normal, "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(tumor_normal_rows)
+
+#         # Check if at least one of the values is not empty
+#         if matched_rna or matched_normal:
+#             # Add the current row to the matching rows list
+#             matching_rows.append(row)
+
+#             # Iterate over the rows again to find matches
+#             for other_row in samplesheet_data:
+#                 # Check if the library value in the other row matches either Matched_RNA or Matched_normal
+#                 if (matched_rna and other_row["library"] == matched_rna) or (
+#                     matched_normal and other_row["library"] == matched_normal
+#                 ):
+#                     if other_row["casename"] == matched_casename:
+#                         matching_rows.append(other_row)
+
+# if matching_rows:
+#     # Write the matching rows to the Tumor_normal.csv file
+#     output_file = os.path.join(outdir, "Tumor_Normal.csv")
+#     with open(output_file, "w", newline="") as file:
+#         writer = csv.DictWriter(file, fieldnames=columns)
+#         writer.writeheader()
+#         writer.writerows(matching_rows)
 
 # Create separate file writers for RNAseq, Normal, and Tumor types
 rna_file = None
