@@ -45,17 +45,15 @@ process Vcf2txt {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),
-        path(vcf),
-        val(tool_ch)
+     tuple val(meta),path(vcf),val(tool_ch)
 
      output:
      tuple val(meta),
-        path("${meta.lib}.*${meta.type}.snpEff.txt")
+        path("${meta.lib}.${tool_ch}_${meta.type}.snpEff.txt")
 
      stub:
      """
-     touch "${meta.lib}.*${meta.type}.snpEff.txt"
+     touch "${meta.lib}.${tool_ch}_${meta.type}.snpEff.txt"
      """
 
      script:
@@ -63,6 +61,6 @@ process Vcf2txt {
      """
 
      vcf2txt.pl ${vcf} ./ > ${prefix}.${tool_ch}_${meta.type}.snpEff.txt
-
+      echo ${meta}
      """
 }
