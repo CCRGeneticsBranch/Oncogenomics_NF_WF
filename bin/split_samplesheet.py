@@ -197,7 +197,7 @@ has_unique_normal = any(
 has_unique_tumor = any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
     for row in samplesheet_data
-    if row["type"] == "tumor_DNA"
+    if row["type"] in ["tumor_DNA", "cell_line_DNA"]
 )
 
 if has_unique_normal or has_unique_tumor:
@@ -268,7 +268,7 @@ for row in samplesheet_data:
         #     normal_writer.writerow(row)
         # elif row_type == "tumor_DNA" and tumor_writer:
         #     tumor_writer.writerow(row)
-        elif row_type in ["normal_DNA", "tumor_DNA"] and exome_writer:
+        elif row_type in ["normal_DNA", "tumor_DNA", "cell_line_DNA"] and exome_writer:
             exome_writer.writerow(row)
 
 # Close the file writers
