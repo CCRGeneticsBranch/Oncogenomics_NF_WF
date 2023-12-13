@@ -175,5 +175,6 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   strandedness = Star_RSEM.out.strandedness
   flagstat = QC_from_finalBAM.out.flagstat
   fastq_screen = Fastq_screen.out
+  Bam = RNAseq_GATK.out.Bam
 
 }
