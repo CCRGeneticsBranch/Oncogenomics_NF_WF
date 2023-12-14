@@ -61,4 +61,5 @@ workflow RNAseq_GATK {
      GATK_RNAseq_bam =  GATK_BR_PR.out.final_bam.join(GATK_BR_PR.out.final_bai)
      SnpEff_vcf      = Vcf2txt.out
      GATK_version   = RNAseq_HaplotypeCaller.out.versions
+     Bam = GATK_BR_PR.out.final_bam
 }
