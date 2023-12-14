@@ -336,12 +336,15 @@ process AddAnnotation_TN {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(N_snpeff_txt),path(T_snpeff_txt),path(rare_annotation)
+//     tuple val(meta),path(N_snpeff_txt),path(T_snpeff_txt),path(rare_annotation)
+     tuple val(meta),path(snpeff),path(rare_annotation)
 
 
      output:
      tuple val(meta),path("${meta.lib}.HC_${meta.type}.annotated.txt") , emit: Tumor_hc_anno_txt
-     tuple val(meta),path("${meta.normal_id}.HC_${meta.normal_type}.annotated.txt") , emit: Normal_hc_anno_txt
+     tuple val(meta),path("${meta.normal_id}.HC_${meta.normal_type}.annotated.txt") , emit: Normal_hc_anno_txt, optional: true
+     tuple val(meta),path("${meta.rna_lib}.HC_${meta.rna_type}.annotated.txt") , emit: RNA_hc_anno_txt ,optional: true
+
      stub:
      """
        touch "${meta.lib}.HC_${meta.type}.annotated.txt"
@@ -350,9 +353,15 @@ process AddAnnotation_TN {
      script:
 
      """
+     if [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "null" ]]; then
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
+     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "tumor_RNA" ]]; then
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[2]}  > ${meta.rna_lib}.HC_${meta.rna_type}.annotated.txt
 
-     addAnnotations2vcf.pl  ${rare_annotation} ${T_snpeff_txt}  > ${meta.lib}.HC_${meta.type}.annotated.txt
-     addAnnotations2vcf.pl  ${rare_annotation} ${N_snpeff_txt}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
+     fi
 
      """
 
@@ -430,6 +439,44 @@ process AddAnnotationFull_somatic_variants {
      addAnnotations2vcf.pl  ${final_annotation} ${mutect_txt}  > ${prefix}.MuTect.annotatedFull.txt
      addAnnotations2vcf.pl  ${final_annotation} ${strelka_indels_txt}  > ${prefix}.strelka.indels.annotatedFull.txt
      addAnnotations2vcf.pl  ${final_annotation} ${strelka_snvs_txt}  > ${prefix}.strelka.snvs.annotatedFull.txt
+
+     """
+
+}
+
+process Expressed {
+
+     tag "$meta.lib"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),
+     path(mutect_anno),
+     path(strelka_indels_anno),
+     path(strelka_snvs_anno),
+     path(rnaseq_bam_snpeff)
+
+     output:
+     tuple val(meta),
+     path("${meta.lib}.MuTect.annotated.expressed.txt"),
+     path("${meta.lib}.strelka.indels.annotated.expressed.txt"),
+     path("${meta.lib}.strelka.snvs.annotated.expressed.txt")
+
+
+     stub:
+     """
+       touch "${meta.lib}.MuTect.annotated.expressed.txt"
+       touch "${meta.lib}.strelka.indels.annotated.expressed.txt"
+       touch "${meta.lib}.strelka.snvs.annotated.expressed.txt"
+
+     """
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+     mpileup.pl ${mutect_anno} ${rnaseq_bam_snpeff.join(' ')} > ${prefix}.MuTect.annotated.expressed.txt
+     mpileup.pl ${strelka_indels_anno} ${rnaseq_bam_snpeff.join(' ')} > ${prefix}.strelka.indels.annotated.expressed.txt
+     mpileup.pl ${strelka_snvs_anno} ${rnaseq_bam_snpeff.join(' ')} > ${prefix}.strelka.snvs.annotated.expressed.txt
 
      """
 
