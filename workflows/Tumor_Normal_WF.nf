@@ -29,7 +29,8 @@ include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
-include {Multiqc} from '../modules/qc/qc'
+include {Genotyping_Sample
+        Multiqc} from '../modules/qc/qc'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 
@@ -256,7 +257,7 @@ AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-MutationalSignature(UnionSomaticCalls.out)
+//MutationalSignature(UnionSomaticCalls.out)
 
 
 
@@ -415,12 +416,24 @@ exome_qc_normal_status_to_cross = exome_qc_status.normal.map{ meta, normal -> [ 
 exome_qc_tumor_status_to_cross = exome_qc_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
 
 qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_status_to_cross)
-qc_summary_ch.view()
-/*
-qc_summary_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 
 QC_summary_Patientlevel(qc_summary_ch)
 
+exome_genotyping_status = Exome_common_WF.out.gt.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_genotyping_status_normal_to_cross = exome_genotyping_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_genotyping_status_tumor_to_cross = exome_genotyping_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+Patient_genotyping_ch = combineSamples(exome_genotyping_status_normal_to_cross,exome_genotyping_status_tumor_to_cross)
+Genotyping_Sample(Patient_genotyping_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
+
+
+
+/*
 
 
 
