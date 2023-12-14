@@ -3,7 +3,8 @@ include {MakeHotSpotDB} from  '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
-include {CNVkitPooled} from '../modules/cnvkit/CNVkitPooled'
+include {CNVkitPooled
+        CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {CircosPlot
         Genotyping_Sample
         Multiqc} from '../modules/qc/qc'
@@ -65,7 +66,7 @@ dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
 DBinput(dbinput_ch)
 
 cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
-        tumor: it[0].type == "tumor_DNA" }
+        tumor: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"  }
         .map { tuple ->
         def meta = tuple[0]
         def bam = tuple[1]
@@ -84,6 +85,8 @@ cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
             cnv_ref = params.cnvkit_seqcapez_rms_v1
         } else if (meta.sc == 'seqcapez.hu.ex.v3') {
             cnv_ref = params.cnvkit_seqcapez_hu_ex_v3
+        } else if (meta.sc == 'agilent.v7') {
+            cnv_ref = params.cnvkit_agilent.v7
         } else {
             return [meta, bam, bai]
         }
@@ -95,6 +98,8 @@ cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
 
 //cnvkit_input_bam.view()
 cnvkit_input_bam|CNVkitPooled
+
+CNVkitPooled.out.cnvkit_pdf|CNVkit_png
 
 TcellExtrect(
     Exome_common_WF.out.exome_final_bam
