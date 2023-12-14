@@ -30,7 +30,8 @@ include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Genotyping_Sample
-        Multiqc} from '../modules/qc/qc'
+        Multiqc
+        CircosPlot} from '../modules/qc/qc'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 
@@ -431,7 +432,17 @@ exome_genotyping_status_tumor_to_cross = exome_genotyping_status.tumor.map{ meta
 Patient_genotyping_ch = combineSamples(exome_genotyping_status_normal_to_cross,exome_genotyping_status_tumor_to_cross)
 Genotyping_Sample(Patient_genotyping_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
 
+exome_loh_status = Exome_common_WF.out.loh.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
 
+exome_loh_status_normal_to_cross = exome_loh_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_loh_status_tumor_to_cross = exome_loh_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+Patient_loh_ch = combineSamples(exome_loh_status_normal_to_cross,exome_loh_status_tumor_to_cross)
+CircosPlot(Patient_loh_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
 
 /*
 
