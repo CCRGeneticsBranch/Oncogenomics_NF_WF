@@ -40,12 +40,14 @@ workflow QC_from_finalBAM {
              .combine(genome_dict)
              .combine(hg19_hotspot_pos)
      )
+     /*
      Bam2tdf(
 	GATK_RNASeq_BR_PR_bam
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
      )
+     */
      Coverage(
         GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0])
      )
