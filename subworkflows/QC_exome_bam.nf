@@ -45,14 +45,15 @@ workflow QC_exome_bam {
          ch_versions = Genotyping.out.versions.mix(Read_depth.out.versions)
 
          FailedExons_Genes(Read_depth.out.read_depth_output)
+         /*
          Bam2tdf(
           GATK_exome_bam
              .combine(genome)
              .combine(genome_fai)
              .combine(genome_dict)
          )
-
-         ch_versions = ch_versions.mix(Bam2tdf.out.versions)
+        */
+         //ch_versions = ch_versions.mix(Bam2tdf.out.versions)
 
          Flagstat(GATK_exome_bam)
 
