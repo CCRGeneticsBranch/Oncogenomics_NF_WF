@@ -73,6 +73,7 @@ workflow Tumor_Normal_WF {
     cosmic_dbs_rda         = Channel.of(file(params.cosmic_dbs_rda, checkIfExists:true))
     cnv_ref_access         = Channel.of(file(params.cnv_ref_access, checkIfExists:true))
     genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
+    Pipeline_version = Channel.from(params.Pipeline_version)
 
 // Parse the samplesheet to generate fastq tuples
 samples_exome = Channel.fromPath("Tumor_Normal.csv")
@@ -258,7 +259,7 @@ AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-//MutationalSignature(UnionSomaticCalls.out)
+MutationalSignature(UnionSomaticCalls.out)
 
 
 
@@ -266,14 +267,14 @@ somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .join(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
    .join(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
 
-/*
+
 Cosmic3Signature(
     somatic_variants
     .combine(cosmic_indel_rda)
     .combine(cosmic_genome_rda)
     .combine(cosmic_dbs_rda)
 )
-*/
+
 Combine_variants(somatic_variants)
 
 VEP(Combine_variants.out.combined_vcf_tmp.combine(vep_cache))
@@ -337,14 +338,14 @@ DBinput_multiples(dbinput_somatic.combine(somatic_group).combine(germline_group)
 
 tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
 
-/*
+
 Sequenza_annotation(
     bam_variant_calling_pair,
     tumor_target_capture)
 
 
 ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
-*/
+
 
 tcellextrect_input = Exome_common_WF.out.exome_final_bam
                     .join(Exome_common_WF.out.target_capture_ch,by:[0])
@@ -361,7 +362,7 @@ highconfidence_somatic_threshold = tumor_target_capture
         def Normal = ''
         def Tumor = ''
         def VAF =  ''
-        if (meta.T_sc == 'clin.ex.v1' || meta.T_sc == 'nextera.ex.v1'|| meta.T_sc == 'vcrome2.1_pkv2' || meta.T_sc == 'seqcapez.hu.ex.v3' || meta.T_sc == 'seqcapez.hu.ex.utr.v1' || meta.T_sc == 'agilent.v7'|| meta.T_sc == 'panel_paed_v5_w5.1') {
+        if (meta.T_sc == 'clin.ex.v1' || meta.T_sc == 'nextera.ex.v1'|| meta.T_sc == 'vcrome2.1_pkv2' || meta.T_sc == 'seqcapez.hu.ex.v3' || meta.T_sc == 'seqcapez.hu.ex.utr.v1' || meta.T_sc == 'agilent.v7'|| meta.T_sc == 'panel_paed_v5_w5.1'|| meta.T_sc == 'idt_v2_plus') {
             Normal = params.highconfidence_somatic_threshold['threshold_1']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_1']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_1']['VAF']
@@ -380,7 +381,7 @@ highconfidence_somatic_threshold = tumor_target_capture
         }
         return [meta,Normal,Tumor,VAF]
    }
-
+/*
 targetbp_MB_ch = tumor_target_capture
     .map { tuple ->
         def meta = tuple[0]
@@ -406,7 +407,7 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
                     .combine(strelka_snvsch)
 
 MutationBurden(mutationburden_input_ch)
-
+*/
 exome_qc_status = Exome_common_WF.out.exome_qc.branch{
     normal: it[0].type == "normal_DNA"
     tumor:  it[0].type == "tumor_DNA"
@@ -444,8 +445,6 @@ exome_loh_status_tumor_to_cross = exome_loh_status.tumor.map{ meta, tumor -> [ m
 Patient_loh_ch = combineSamples(exome_loh_status_normal_to_cross,exome_loh_status_tumor_to_cross)
 CircosPlot(Patient_loh_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
 
-/*
-
 
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
@@ -473,17 +472,19 @@ multiqc_channel = multiqc_status.tumor.merge(multiqc_status.normal) { item1, ite
         return null
     }
 }
+
+/*
 //multiqc_channel.view()
 Multiqc(multiqc_channel)
 
 
 
 ch_versions = ch_versions.mix(Multiqc.out.versions)
-/*
-CUSTOM_DUMPSOFTWAREVERSIONS (
-        tumor_meta,
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-        )
+combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+custom_versions_input = Multiqc.out.multiqc_report
+        .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+        .combine(Pipeline_version)
 
+//CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 */
 }
