@@ -14,6 +14,7 @@ include {TargetIntervals} from  '../modules/qc/plots'
 include {HSMetrics} from  '../modules/qc/plots'
 include {Conpair_pile} from  '../modules/qc/qc'
 include {Exome_QC} from '../modules/qc/qc.nf'
+include {Hotspot_Coverage} from '../modules/qc/plots'
 
 workflow QC_exome_bam {
 
@@ -26,6 +27,8 @@ workflow QC_exome_bam {
     Sites1000g4genotyping   = Channel.of(file(params.Sites1000g4genotyping, checkIfExists:true))
     recode_vcf              = Channel.of(file(params.recode_vcf, checkIfExists:true))
     conpair_refbed          = Channel.of(file(params.conpair_refbed, checkIfExists:true))
+    access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))
+
     take:
          GATK_exome_bam
          bwa_picard_bam
@@ -115,6 +118,11 @@ workflow QC_exome_bam {
 
         Exome_QC(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(HSMetrics.out.hsmetrics_out, by:[0])
+        )
+        Hotspot_Coverage(
+        GATK_exome_bam
+             .combine(chrom_sizes)
+             .combine(access_hotspot)
         )
 
    emit:
