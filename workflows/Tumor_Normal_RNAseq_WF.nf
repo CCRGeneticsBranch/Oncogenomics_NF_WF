@@ -3,6 +3,8 @@ include {Exome_common_WF} from './Exome_common_WF.nf'
 include {Manta_Strelka} from '../subworkflows/Manta_Strelka.nf'
 include {Mutect_WF} from '../subworkflows/Mutect.nf'
 include {Exome_QC
+        CircosPlot
+        Genotyping_Sample
         QC_summary_Patientlevel
         Multiqc} from '../modules/qc/qc.nf'
 include {SnpEff
@@ -27,11 +29,47 @@ include {DBinput} from '../modules/misc/DBinput'
 //include {DBinput_multiples as DBinput_germline} from '../modules/misc/DBinput'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
-include {TcellExtrect} from '../modules/misc/TcellExtrect'
+include {TcellExtrect_TN} from '../modules/misc/TcellExtrect'
 include {Split_vcf
         Pvacseq
         Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
+include {Actionable_fusion} from '../modules/Actionable.nf'
+include {Fusion_Annotation
+        Merge_fusion_annotation} from '../modules/annotation/Fusion_Annotation'
+include {Combine_customRNAQC
+        RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+
+
+def combineSamples = { normalSamples, tumorSamples ->
+    normalSamples.cross(tumorSamples).map { normal, tumor ->
+                def meta = tumor[1]
+                [
+                    meta + [
+                        N_sc: normal[1].sc,
+                        normal_id: normal[1].lib,
+                        normal_type: normal[1].type
+        ],
+        normal[2], tumor[2] ]
+            }
+
+}
+
+def combine_exome_rnaseq_libraries = { exomelib, RNAlib ->
+    exomelib.cross(RNAlib).map { exome, rnaseq ->
+                def meta = exome[1]
+                [
+                    meta + [
+                        rna_lib: rnaseq[1].lib,
+                        rna_type: rnaseq[1].type,
+                        RNA_sc: rnaseq[1].sc
+                    ],
+
+                    [exome[2], exome[3], rnaseq[2]]
+                ]
+            }
+}
+
 
 workflow Tumor_Normal_RNAseq_WF {
 
@@ -53,6 +91,11 @@ workflow Tumor_Normal_RNAseq_WF {
     cosmic_dbs_rda         = Channel.of(file(params.cosmic_dbs_rda, checkIfExists:true))
     cnv_ref_access         = Channel.of(file(params.cnv_ref_access, checkIfExists:true))
     genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
+    pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
+    genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_annotation)
+    genome_version = Channel.from(params.genome_version)
+    Pipeline_version = Channel.from(params.Pipeline_version)
+
 
 // Parse the samplesheet to generate fastq tuples
 samples = Channel.fromPath("Tumor_RNAseq_Normal.csv")
@@ -79,6 +122,7 @@ samples_branch = samples.branch{
 samples_branch.rnaseq|Common_RNAseq_WF
 samples_branch.exome|Exome_common_WF
 
+ch_versions = Exome_common_WF.out.ch_versions.mix(Common_RNAseq_WF.out.ch_versions)
 
 //tag the bam channel for Tumor and normal
 bam_target_ch = Exome_common_WF.out.exome_final_bam.join(Exome_common_WF.out.target_capture_ch,by:[0])
@@ -119,7 +163,7 @@ CNVkitPaired(
     .combine(genome_dict)
 )
 
-ch_versions = Exome_common_WF.out.ch_versions.mix(CNVkitPaired.out.versions)
+ch_versions = ch_versions.mix(CNVkitPaired.out.versions)
 
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
@@ -288,7 +332,6 @@ addannotationfull_somatic_variants_input_ch = somatic_snpeff_input_ch_to_cross.c
 
 AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
-/*
 //Expressed_somatic_out = Expressed.out.map{ meta, mutect, indels, snv -> [meta,[mutect, indels, snv]]}
 
 HC_annotated = AddAnnotation_TN.out.Normal_hc_anno_txt
@@ -303,14 +346,14 @@ dbinput_ch = HC_annotated_Expressed.join(snpeff_snv_vcftxt,by:[0])
 DBinput(dbinput_ch)
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-//MutationalSignature(UnionSomaticCalls.out)
+MutationalSignature(UnionSomaticCalls.out)
 
 
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
    .join(Manta_Strelka.out.strelka_indel_raw_vcf,by:[0])
    .join(Manta_Strelka.out.strelka_snvs_raw_vcf,by:[0])
-/*
+
 Cosmic3Signature(
     somatic_variants
     .combine(cosmic_indel_rda)
@@ -354,7 +397,7 @@ combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files 
 Merge_Pvacseq_vcf(combined_pvacseq)
 
 tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
-/*
+
 Sequenza_annotation(
     bam_variant_calling_pair,
     tumor_target_capture)
@@ -362,14 +405,12 @@ Sequenza_annotation(
 
 ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
 
-tcellextrect_input = Exome_common_WF.out.exome_final_bam
-                    .join(Exome_common_WF.out.target_capture_ch,by:[0])
-                    .combine(genome_version_tcellextrect)
+tcellextrect_input = bam_variant_calling_pair
+                        .join(Sequenza_annotation.out.alternate,by:[0])
+                        .combine(genome_version_tcellextrect)
 
-TcellExtrect(tcellextrect_input)
-*/
+TcellExtrect_TN(tcellextrect_input)
 
-/*
 highconfidence_somatic_threshold = pileup_pair
    .map {tuple ->
         def meta = tuple[0]
@@ -421,6 +462,137 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
 
 MutationBurden(mutationburden_input_ch)
 
-*/
+exome_qc_status = Exome_common_WF.out.exome_qc.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_qc_normal_status_to_cross = exome_qc_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_qc_tumor_status_to_cross = exome_qc_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_status_to_cross)
+
+QC_summary_Patientlevel(qc_summary_ch)
+
+
+//RNA lib processing steps
+actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
+Actionable_fusion(actionable_fusion_input)
+
+Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
+                        .join(Common_RNAseq_WF.out.fusion_calls, by:[0])
+                        .combine(pfamdb)
+                        .combine(genome)
+                        .combine(genome_version_fusion_annotation)
+                        .combine(genome_version)
+Fusion_Annotation(Fusion_Annotation_input)
+
+merge_fusion_anno_input = Fusion_Annotation.out.map{ meta, fusion -> [meta, [fusion]] }
+
+Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+
+Combine_customRNAQC(Common_RNAseq_WF.out.rnalib_custum_qc.map{ meta, qc -> [meta, [qc]] })
+
+RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc -> [meta, [qc]] })
+
+//Patient level Circos plot
+
+exome_genotyping_status = Exome_common_WF.out.gt.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_genotyping_status_normal_to_cross = exome_genotyping_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_genotyping_status_tumor_to_cross = exome_genotyping_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+Patient_genotyping_exome = combineSamples(exome_genotyping_status_normal_to_cross,exome_genotyping_status_tumor_to_cross)
+                            .map{ meta, normal, tumor -> [meta.id, meta, normal, tumor ]}
+
+
+genotyping_samples_rnaseq_to_cross = Common_RNAseq_WF.out.gt.map{ meta, gt -> [ meta.id, meta, gt ] }
+
+genotyping_TNR =  combine_exome_rnaseq_libraries(Patient_genotyping_exome,genotyping_samples_rnaseq_to_cross)
+
+Genotyping_Sample(genotyping_TNR)
+
+exome_loh_status = Exome_common_WF.out.loh.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_loh_status_normal_to_cross = exome_loh_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_loh_status_tumor_to_cross = exome_loh_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+Patient_loh_exome = combineSamples(exome_loh_status_normal_to_cross,exome_loh_status_tumor_to_cross)
+                    .map{ meta, normal, tumor -> [meta.id, meta, normal, tumor ]}
+
+genotyping_samples_rnaseq_to_cross = Common_RNAseq_WF.out.loh.map{ meta, loh -> [ meta.id, meta, loh ] }
+
+circos_TNR = combine_exome_rnaseq_libraries(Patient_loh_exome,genotyping_samples_rnaseq_to_cross)
+CircosPlot(circos_TNR)
+
+multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
+                      .join(Common_RNAseq_WF.out.coverageplot, by: [0])
+                      .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
+                      .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
+                      .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
+                      .join(Common_RNAseq_WF.out.circos_plot, by: [0])
+                      .join(Common_RNAseq_WF.out.strandedness, by: [0])
+                      .join(Common_RNAseq_WF.out.rnalib_custum_qc, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_rnaseqmetrics, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_rnaseqmetrics_pdf, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_alignmetrics, by: [0])
+                      .join(Common_RNAseq_WF.out.picard_MD, by: [0])
+                      .join(Common_RNAseq_WF.out.flagstat, by: [0])
+                      .join(Common_RNAseq_WF.out.fastq_screen, by: [0])
+
+
+multiqc_exome_input = Exome_common_WF.out.Fastqc_out
+            .join(Exome_common_WF.out.verifybamid)
+            .join(Exome_common_WF.out.flagstat)
+            .join(Exome_common_WF.out.exome_final_bam)
+            .join(Exome_common_WF.out.hsmetrics)
+            .join(Exome_common_WF.out.krona)
+            .join(Exome_common_WF.out.kraken)
+            .join(Exome_common_WF.out.exome_qc)
+            .join(Exome_common_WF.out.markdup_txt)
+
+multiqc_exome_status = multiqc_exome_input.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+
+exome_multiqc = multiqc_exome_status.normal.merge(multiqc_exome_status.tumor) { item1, item2 ->
+    if (item1[0].id == item2[0].id && item1[0].casename == item2[0].casename) {
+        return [[id: item1[0].id, casename: item1[0].casename]] + item1[1..-1] + item2[1..-1]
+    } else {
+        return null
+    }
+}
+
+multiqc_TNR_input = exome_multiqc.merge(multiqc_rnaseq_input) { item1, item2 ->
+    if (item1[0].id == item2[0].id && item1[0].casename == item2[0].casename) {
+        return [[id: item1[0].id, casename: item1[0].casename]] + [item1[1..-1] + item2[1..-1]]
+    } else {
+        return null
+    }
+}
+
+Multiqc(multiqc_TNR_input)
+
+ch_versions = ch_versions.mix(Multiqc.out.versions)
+
+combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+
+custom_versions_input = Multiqc.out.multiqc_report
+        .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+        .combine(Pipeline_version)
+
+CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+
 
 }
