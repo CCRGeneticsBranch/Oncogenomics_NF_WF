@@ -7,6 +7,7 @@ include {Exome_QC
         Genotyping_Sample
         QC_summary_Patientlevel
         Conpair_concordance
+        Conpair_contamination
         Multiqc} from '../modules/qc/qc.nf'
 include {SnpEff
         Vcf2txt} from '../modules/misc/snpEff'
@@ -490,7 +491,11 @@ exome_conpair_pileup =  combineSamples(exome_conpair_status_normal_to_cross,exom
 
 Conpair_concordance(exome_conpair_pileup
                     .combine(conpair_marker)
-)
+                    )
+Conpair_contamination(exome_conpair_pileup
+                    .combine(conpair_marker)
+                    )
+
 
 //RNA lib processing steps
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }

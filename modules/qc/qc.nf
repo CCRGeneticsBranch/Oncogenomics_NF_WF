@@ -458,3 +458,31 @@ process Conpair_concordance {
     """
 
 }
+
+process Conpair_contamination {
+
+    tag "$meta.id"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
+
+    input:
+    tuple val(meta),
+        path(tumor),
+        path(normal),
+        path(conpair)
+
+    output:
+    tuple val(meta),path("${meta.lib}.conta.txt")
+
+    stub:
+    """
+      touch "${meta.lib}.conta.txt
+    """
+
+    script:
+    """
+    estimate_tumor_normal_contamination.py -T ${tumor} -N ${normal} -O ${meta.lib}.conta.txt -Q 30 -M ${conpair}
+    sed -i 's/Tumor sample contamination level: /${meta.lib}\t/g' ${meta.lib}.conta.txt
+    sed -i 's/Normal sample contamination level: /${meta.normal_id}\t/g' ${meta.lib}.conta.txt
+    """
+
+}
