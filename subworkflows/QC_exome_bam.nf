@@ -135,5 +135,6 @@ workflow QC_exome_bam {
          flagstat = Flagstat.out.flagstat
          verifybamid = VerifyBamID.out.verifybamid_out
          ch_versions = ch_versions
+         conpair_pileup = Conpair_pile.out
 
 }

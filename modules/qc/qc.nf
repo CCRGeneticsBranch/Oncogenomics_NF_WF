@@ -430,9 +430,31 @@ process QC_summary_Patientlevel {
 
     """
 
+}
 
 
+process Conpair_concordance {
 
+    tag "$meta.id"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc", mode: "${params.publishDirMode}"
 
+    input:
+    tuple val(meta),
+        path(tumor),
+        path(normal),
+        path(conpair)
+
+    output:
+    tuple val(meta),path("${meta.lib}.concod.txt")
+
+    stub:
+    """
+      touch "${meta.lib}.concod.txt
+    """
+
+    script:
+    """
+    verify_concordance.py -T ${tumor} -N ${normal} -O ${meta.lib}.concod.txt  -C 20 -Q 30 -B 20 -M ${conpair}
+    """
 
 }

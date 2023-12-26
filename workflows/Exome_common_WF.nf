@@ -130,4 +130,5 @@ kraken = Kraken.out.kraken_out
 ch_versions = ch_versions
 design_ch = design_ch
 fastq_screen = Fastq_screen.out
+conpair_pileup = QC_exome_bam.out.conpair_pileup
 }

@@ -6,6 +6,7 @@ include {Exome_QC
         CircosPlot
         Genotyping_Sample
         QC_summary_Patientlevel
+        Conpair_concordance
         Multiqc} from '../modules/qc/qc.nf'
 include {SnpEff
         Vcf2txt} from '../modules/misc/snpEff'
@@ -92,6 +93,7 @@ workflow Tumor_Normal_RNAseq_WF {
     cnv_ref_access         = Channel.of(file(params.cnv_ref_access, checkIfExists:true))
     genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
     pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
+    conpair_marker          = Channel.of(file(params.conpair_marker, checkIfExists:true))
     genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_annotation)
     genome_version = Channel.from(params.genome_version)
     Pipeline_version = Channel.from(params.Pipeline_version)
@@ -475,6 +477,20 @@ qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_st
 
 QC_summary_Patientlevel(qc_summary_ch)
 
+exome_conpair_status = Exome_common_WF.out.conpair_pileup.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_conpair_status_normal_to_cross = exome_conpair_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_conpair_status_tumor_to_cross = exome_conpair_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+exome_conpair_pileup =  combineSamples(exome_conpair_status_normal_to_cross,exome_conpair_status_tumor_to_cross)
+
+Conpair_concordance(exome_conpair_pileup
+                    .combine(conpair_marker)
+)
 
 //RNA lib processing steps
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
