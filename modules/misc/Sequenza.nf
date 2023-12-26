@@ -46,7 +46,7 @@ process Sequenza {
      tuple val(meta), path("${meta.lib}/${meta.lib}_segments.txt"), emit: segments
      tuple val(meta), path("${meta.lib}/${meta.lib}*pdf"), emit: pdf
      tuple val(meta), path("${meta.lib}/${meta.lib}_mutations.txt"), emit: mutations
-     path("${meta.lib}/${meta.lib}_alternative_solutions.txt"), emit: alternate
+     tuple val(meta), path("${meta.lib}/${meta.lib}_alternative_solutions.txt"), emit: alternate
      tuple val(meta), path("${meta.lib}/${meta.lib}_confints_CP.txt"), emit: confints
 
     stub:
