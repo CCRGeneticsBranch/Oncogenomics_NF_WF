@@ -176,5 +176,5 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   flagstat = QC_from_finalBAM.out.flagstat
   fastq_screen = Fastq_screen.out
   Bam = RNAseq_GATK.out.Bam
-
+  hotspot_depth = QC_from_finalBAM.out.hotspot_depth
 }

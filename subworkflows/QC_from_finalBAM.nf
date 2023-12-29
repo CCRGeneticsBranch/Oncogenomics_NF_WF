@@ -52,7 +52,6 @@ workflow QC_from_finalBAM {
         GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0])
      )
      CoveragePlot(Coverage.out.coverage_out)
-     Hotspot_Boxplot(Hotspot_Coverage.out)
 
     emit:
          hotspot_pileup = HotspotPileup.out
@@ -60,5 +59,5 @@ workflow QC_from_finalBAM {
          flagstat_version = Flagstat.out.versions
          bamutil_version = Bamutil.out.versions
          flagstat = Flagstat.out.flagstat
-
+         hotspot_depth = Hotspot_Coverage.out
 }

@@ -11,7 +11,8 @@ include {Exome_QC
         Multiqc} from '../modules/qc/qc.nf'
 include {SnpEff
         Vcf2txt} from '../modules/misc/snpEff'
-include {MakeHotSpotDB} from '../modules/qc/plots'
+include {MakeHotSpotDB
+        Hotspot_Boxplot} from '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation_TN
@@ -554,6 +555,24 @@ genotyping_samples_rnaseq_to_cross = Common_RNAseq_WF.out.loh.map{ meta, loh -> 
 
 circos_TNR = combine_exome_rnaseq_libraries(Patient_loh_exome,genotyping_samples_rnaseq_to_cross)
 CircosPlot(circos_TNR)
+
+exome_hotspot_depth_status = Exome_common_WF.out.hotspot_depth.branch{
+    normal: it[0].type == "normal_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_hotspot_depth_status_normal_to_cross = exome_hotspot_depth_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_hotspot_depth_status_tumor_to_cross = exome_hotspot_depth_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+Patient_hotspot_depth_exome = combineSamples(exome_hotspot_depth_status_normal_to_cross,exome_hotspot_depth_status_tumor_to_cross)
+                    .map{ meta, normal, tumor -> [meta.id, meta, normal, tumor ]}
+
+rnaseq_hotspot_depth = Common_RNAseq_WF.out.hotspot_depth.map{ meta, rnaseq -> [ meta.id, meta, rnaseq ] }
+
+hotspot_depth_TNR = combine_exome_rnaseq_libraries(Patient_hotspot_depth_exome,rnaseq_hotspot_depth)
+
+Hotspot_Boxplot(hotspot_depth_TNR)
 
 multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.coverageplot, by: [0])
