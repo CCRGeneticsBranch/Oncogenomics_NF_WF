@@ -206,7 +206,7 @@ process Genotyping {
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-    bcftools mpileup -R ${Sites1000g4genotyping} -C50 -Oz -d 1000 -f ${genome} ${bam} | bcftools call --ploidy GRCh37 -mv -Ov -o ${prefix}.samtools.vcf
+    bcftools mpileup -R ${Sites1000g4genotyping} -C50 -Ou -d 8000 -f ${genome} ${bam} | bcftools call --ploidy GRCh37 -m -Ov -o ${prefix}.samtools.vcf
 
     vcf2genotype.pl ${prefix}.samtools.vcf > ${prefix}.gt
 
