@@ -14,7 +14,6 @@ workflow Fusion_calling {
 
     take:
           trimmed_fq
-          starfusioninput
     main:
     Arriba(
 	trimmed_fq
@@ -26,7 +25,8 @@ workflow Fusion_calling {
         trimmed_fq
             .combine(fusioncatcher_db)
     )
-    Starfusion(starfusioninput)
+    Starfusion(trimmed_fq
+            .combine(starfusion_db))
 
     Mfinput = Arriba.out.arriba_fusion.join(Fusioncatcher.out.fc_output, by: [0]).join(Starfusion.out.star_fusion,by: [0])
     Mergefusion(Mfinput)

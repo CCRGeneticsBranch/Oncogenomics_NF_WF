@@ -5,7 +5,7 @@ use List::Util qw(first);
 ###########################################################
 #
 #   Author: Rajesh Patidar rajbtpatidar@gmail.com
-#   Parse defuse, tophat-fusion, fusion cather result to make 
+#   Parse defuse, tophat-fusion, fusion cather result to make
 #    actionable fusions based on some rules.
 #
 ###########################################################
@@ -50,10 +50,10 @@ while(<SF>){
 	chomp;
 	my @local =split("\t", $_);
 	if($_ =~ /#FusionName/){print SF_OUT "$_\n"; next}
-	my @l_gene =split(/\^/, $local[4]);
-	my @R_gene =split(/\^/, $local[6]);
-	my @left  = split(":", $local[5]);
-	my @right = split(":", $local[7]);
+	my @l_gene =split(/\^/, $local[6]);
+	my @R_gene =split(/\^/, $local[8]);
+	my @left  = split(":", $local[7]);
+	my @right = split(":", $local[9]);
 	print "$l_gene[0]\t$R_gene[0]\t$left[0]\t$left[1]\t$right[0]\t$right[1]\t$library\tSTAR-fusion\t$local[1]\n";
 	print SF_OUT "$_\n";
 }
@@ -79,4 +79,3 @@ while(<AR>){
 }
 close AR;
 close AR_OUT;
-

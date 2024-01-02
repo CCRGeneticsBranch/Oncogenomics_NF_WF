@@ -66,13 +66,10 @@ ch_versions = ch_versions.mix(Fastqc.out.versions)
 
  ch_versions = ch_versions.mix(Star_RSEM.out.star_version).mix(Star_RSEM.out.rsem_version)
 
-  Starfusion_input = Star_RSEM.out.chimeric_junction.combine(starfusion_db)
+  //Starfusion_input = Star_RSEM.out.chimeric_junction.combine(starfusion_db)
 
 
-  Fusion_calling (
-         Cutadapt.out.trim_reads,
-         Starfusion_input
-     )
+  Fusion_calling (Cutadapt.out.trim_reads)
 
  ch_versions = ch_versions.mix(Fusion_calling.out.Arriba_version).mix(Fusion_calling.out.Fusioncatcher_version).mix(Fusion_calling.out.Starfusion_version)
 
