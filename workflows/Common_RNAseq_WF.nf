@@ -25,7 +25,6 @@ include {QC_from_Star_bam} from '../subworkflows/QC_from_Star_bam'
 workflow Common_RNAseq_WF {
 
 kraken_bacteria = Channel.of(file(params.kraken_bacteria, checkIfExists:true))
-starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
 fastq_screen_config         = Channel.of(file(params.fastq_screen_config, checkIfExists:true))
 
 take:
