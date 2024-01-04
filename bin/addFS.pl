@@ -5,7 +5,7 @@ open(FH,"$ARGV[0]");
 my %HASH;
 shift @ARGV;
 foreach my $file(@ARGV){
-	if($file =~ /HC_DNASeq/){
+	if($file =~ /HC_tumor_DNA/ || $file =~ /HC_normal_DNA/){
 		open(FH1,$file);
 		while(<FH1>){
 			chomp;
@@ -22,7 +22,7 @@ foreach my $file(@ARGV){
 while(<FH>){
 	chomp;
 	my @a =split("\t", $_);
-	if($a[8] =~ /HC_DNASeq/){
+	if($a[8] =~ /HC_tumor_DNA/ || $a[8] =~ /HC_normal_DNA/){
 		my $key="$a[0]\t$a[1]\t$a[2]\t$a[3]\t$a[4]\t$a[5]";
 		$a[10] = $HASH{$key};
 	}

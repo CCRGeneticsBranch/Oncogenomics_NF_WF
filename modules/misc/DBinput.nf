@@ -20,17 +20,14 @@ process DBinput {
      """
      if [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" ]]; then
           tag="rnaseq"
-          makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
-          addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
-          rm -rf ${meta.id}.\$tag.tmp
+          makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag
 
      elif [[ "${meta.type}" == "normal_DNA" ]]; then
           tag="germline"
           makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
           addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
           rm -rf ${meta.id}.\$tag.tmp
-
-     elif [[ "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" && "${meta.normal_type}" == "null" ]]; then
+     elif [[ ( "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" ) && "${meta.normal_type}" == "null" ]]; then
           tag="variants"
           makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
           addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
@@ -43,6 +40,15 @@ process DBinput {
           tag1="somatic"
           tag2="germline"
           tag3="rnaseq"
+          #somatic
+          makeDBVariantFile.pl ${dbinput_annot_libs[3]} ${dbinput_annot_libs[5]} ${dbinput_annot_libs[4]} |sed 's/trim_//'|AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type} ${meta.rna_lib} ${meta.rna_type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.sc} ${meta.rna_lib} ${meta.RNA_sc}" > ${meta.id}.\$tag1
+          #germline
+          makeDBVariantFile.pl ${dbinput_annot_libs[0]} ${dbinput_annot_libs[1]} |sed 's/trim_//'|AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type} ${meta.rna_lib} ${meta.rna_type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.sc} ${meta.rna_lib} ${meta.RNA_sc}" > ${meta.id}.\$tag2.tmp
+          addFS.pl ${meta.id}.\$tag2.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag2
+          #rnaseq
+          makeDBVariantFile.pl ${dbinput_annot_libs[2]} |sed 's/trim_//'|AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type} ${meta.rna_lib} ${meta.rna_type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.sc} ${meta.rna_lib} ${meta.RNA_sc}" > ${meta.id}.\$tag3
+          ##rm *.tmp
+
      fi
 
      """
