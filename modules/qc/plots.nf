@@ -38,7 +38,7 @@ process Hotspot_Coverage {
 
 process Hotspot_Boxplot {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
@@ -58,7 +58,7 @@ process Hotspot_Boxplot {
      script:
      """
      set -exo pipefail
-     boxplot.R \$PWD/ ${meta.id}.hotspot_coverage.png ${meta.lib}
+     boxplot.R \$PWD/ ${meta.id}.hotspot_coverage.png ${meta.id}
 
      """
 }
