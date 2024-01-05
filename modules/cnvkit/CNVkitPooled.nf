@@ -8,18 +8,20 @@ process CNVkitPooled {
         path(bam),
         path(index),
         path(cnv_ref)
- 
+
   output:
     tuple val(meta),path("${meta.lib}.cns"), emit: cnvkit_cns
     tuple val(meta),path("${meta.lib}.cnr"), emit: cnvkit_cnr
     tuple val(meta),path("${meta.lib}.pdf"), emit: cnvkit_pdf
-       //path("${meta.lib}.png")
+    tuple val(meta),path("${meta.lib}_genelevel.txt"), emit: cnvkit_genelevel
+
   stub:
      """
      touch "${meta.lib}.cns"
      touch "${meta.lib}.cnr"
      touch "${meta.lib}.pdf"
-     
+     touch "${meta.lib}_genelevel.txt"
+
      """
   script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
@@ -28,7 +30,7 @@ process CNVkitPooled {
    mv ${prefix}.final.cns ${prefix}.cns
    mv ${prefix}.final.cnr ${prefix}.cnr
    cnvkit.py scatter -s ${prefix}.cn{s,r} -o ${prefix}.pdf
-   ##convert -density 150 ${prefix}.pdf ${prefix}.png   --- install imagemagick to the docker
+   cnvkit.py genemetrics ${prefix}.cnr -t 0 > ${prefix}_genelevel.txt
    """
 }
 
@@ -52,7 +54,7 @@ stub:
 script:
 def prefix = task.ext.prefix ?: "${meta.lib}"
 """
-pdftoppm -png ${pdf} -singlefile  ${prefix}  
+pdftoppm -png ${pdf} -singlefile  ${prefix}
 
 """
 
