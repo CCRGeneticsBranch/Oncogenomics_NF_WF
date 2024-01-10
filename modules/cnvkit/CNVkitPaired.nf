@@ -37,12 +37,13 @@ process CNVkitPaired {
     mv ${prefix}.final.cns ${prefix}.cns
     mv ${prefix}.final.cnr ${prefix}.cnr
     cnvkit.py scatter -s ${prefix}.cn{s,r} -o ${prefix}.pdf
-    cnvkit.py genemetrics ${prefix}.cnr -t 0 > ${prefix}_genelevel.txt
+    grep -v NOTFOUND NCI0439_T1D_E.cnr |grep -v Antitarget|perl -nae '\$F[3]=~s/_{2}.*//;print join("\t",@F)."\n"' > ${prefix}.cnr_filtered
+    cnvkit.py genemetrics ${prefix}.cnr_filtered -t 0 -o ${prefix}_genelevel.txt
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cnvkit: \$(cnvkit.py batch 2>&1  |grep -E '^CNVkit'|sed 's/CNVkit //')
-    END_VERSIONS
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    cnvkit: \$(cnvkit.py batch 2>&1  |grep -E '^CNVkit'|sed 's/CNVkit //')
+END_VERSIONS
 
 
     """
