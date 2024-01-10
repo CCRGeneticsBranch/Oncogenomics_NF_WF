@@ -35,7 +35,7 @@ process TcellExtrect_TN {
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/TCellExTRECT", mode: "${params.publishDirMode}", pattern: "${meta.lib}*"
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.normal_id}/TCellExTRECT", mode: "${params.publishDirMode}", pattern: "${meta.normal_id}*"
- 
+
 
      input:
      tuple val(meta),
