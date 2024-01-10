@@ -400,9 +400,7 @@ process Exome_QC {
     script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     QC_stats_Final.py  ${bam} ${Tbed} . ${meta.id} ${prefix} "${meta.diagnosis}" > ${prefix}.consolidated_QC.tmp
-     addAttributes.pl ${prefix} ${hsmetrics} ${prefix}.consolidated_QC.tmp ${prefix}.consolidated_QC
-     rm -rf ${prefix}.consolidated_QC.tmp
+     QC_stats_Final.py  ${bam} ${Tbed} . ${meta.id} ${prefix} "${meta.diagnosis}" ${hsmetrics} > ${prefix}.consolidated_QC
      """
 }
 
@@ -426,7 +424,9 @@ process QC_summary_Patientlevel {
 
     script:
     """
-    cat ${tumor} ${normal} |sort|uniq|awk 'NF' > ${meta.id}.consolidated_QC.txt
+    cat ${tumor} ${normal} |grep '^#' |sort |uniq > header
+    cat ${tumor} ${normal} |grep -v '^#' > sample_data
+    cat header sample_data > ${meta.id}.consolidated_QC.txt
 
     """
 
