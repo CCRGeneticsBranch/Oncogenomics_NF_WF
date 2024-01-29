@@ -11,8 +11,8 @@ workflow HLA_calls {
     take: trimmed_fq
     main:
 
-        HLAminer(trimmed_fq)
-        Seq2HLA(trimmed_fq)
+        //HLAminer(trimmed_fq)
+        //Seq2HLA(trimmed_fq)
 
         Optitype(trimmed_fq)
 
@@ -20,11 +20,10 @@ workflow HLA_calls {
 
         Merge_new_HLA(Optitype.out.Optitype_output.join(HLA_HD.out.hlahd_output, by:0))
 
+        ch_versions = Optitype.out.versions.mix(HLA_HD.out.versions)
 
-
-        ch_versions = Seq2HLA.out.versions.mix(HLAminer.out.versions)
-        MergeHLA(Seq2HLA.out.seq2hla_output.combine(HLAminer.out.hlaminer_output, by:0))
+        //MergeHLA(Seq2HLA.out.seq2hla_output.combine(HLAminer.out.hlaminer_output, by:0))
     emit:
-        mergehla = MergeHLA.out
+        mergehla = Merge_new_HLA.out
         version = ch_versions
 }

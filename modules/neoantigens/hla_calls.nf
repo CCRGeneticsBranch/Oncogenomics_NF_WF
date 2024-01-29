@@ -29,7 +29,7 @@ process Optitype {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        Optitype: \$(echo \$SINGULARITY_NAME | sed 's/optitype_release-//g'|sed 's/.sif//g')
+        Optitype: \$(echo \$SINGULARITY_NAME | sed 's/fred2-optitype-release-//g'|sed 's/.img//g')
     END_VERSIONS
     """
 }
@@ -86,17 +86,17 @@ process Merge_new_HLA {
         path(hlahd)
 
     output:
-	tuple val(meta),path("${meta.lib}.newCalls.txt")
+	tuple val(meta),path("${meta.lib}.Calls.txt")
 
     stub:
     """
-    touch "${meta.lib}.newCalls.txt"
+    touch "${meta.lib}.Calls.txt"
     """
 
 
     script:
     """
-    HLA_consensus.py ${optitype} ${hlahd} ${meta.lib}.newCalls.txt
+    HLA_consensus.py ${optitype} ${hlahd} ${meta.lib}.Calls.txt
 
     """
 }

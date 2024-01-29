@@ -10,9 +10,9 @@ workflow HLA_calls_exome {
     take: samples_exome
     main:
 
-        HLAminer_exome(samples_exome)
+        //HLAminer_exome(samples_exome)
 
-        Seq2HLA_exome(samples_exome)
+        //Seq2HLA_exome(samples_exome)
 
         Optitype(samples_exome.map{ meta, R1, R2 -> [meta,[R1,R2]] })
 
@@ -20,12 +20,12 @@ workflow HLA_calls_exome {
 
         Merge_new_HLA(Optitype.out.Optitype_output.join(HLA_HD.out.hlahd_output, by:0))
 
-        ch_versions = HLAminer_exome.out.versions.mix(Seq2HLA_exome.out.versions)
+        ch_versions = Optitype.out.versions.mix(HLA_HD.out.versions)
 
-        MergeHLA(Seq2HLA_exome.out.seq2hla_output.combine(HLAminer_exome.out.hlaminer_output, by:0))
+        //MergeHLA(Seq2HLA_exome.out.seq2hla_output.combine(HLAminer_exome.out.hlaminer_output, by:0))
     emit:
-        mergehla_exome = MergeHLA.out
-        hlaminer_exome  = HLAminer_exome.out.hlaminer_output
-        seq2hla_exome = Seq2HLA_exome.out.seq2hla_output
+        mergehla_exome = Merge_new_HLA.out
+        //hlaminer_exome  = HLAminer_exome.out.hlaminer_output
+        //seq2hla_exome = Seq2HLA_exome.out.seq2hla_output
         ch_versions = ch_versions
 }
