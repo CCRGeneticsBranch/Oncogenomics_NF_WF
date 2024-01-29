@@ -37,8 +37,8 @@ if($sname =~ /(.*)_vs_(.*)/){
 }
 ############################
 #
-# load file as module instead of hard coded path 
-# 
+# load file as module instead of hard coded path
+#
 #
 ############################
 my $convert2annovar=`which convert2annovar.pl`;
@@ -71,7 +71,7 @@ while (<VAR>) {
 				if ($NSAMPLES[0] =~ /$sname/){
 					$idx_normal = 1;
 				}
-				
+
 			}
 			else{
 				print STDERR "Does not look like a 2 sample MuTect File\n";
@@ -98,7 +98,7 @@ while (<VAR>) {
 	else{
 		last;
 	}
-	
+
 }
 close VAR;
 
@@ -182,76 +182,78 @@ elsif($CALLER eq "STRELKA_S"){
 		chomp;
 		my @field=split(/\t/,$_);
 		my ($chr, $start, $end, $ref, $alt, $qual, $filter, $info, $format, $Normal, $Tumor) = @field;
-		print "$chr\t$start\t$end\t$ref\t$alt\t$qual\t$filter\t$info\t$sname\t";
-		my (@format) = split(":", $format);
-		my ($idx_A, $idx_C , $idx_G, $idx_T);
-		if( !defined($idx_A) ) {
-			$idx_A = first { $format[$_] eq 'AU' } 0..$#format;
-		}
-		if( !defined($idx_C) ) {
-			$idx_C = first { $format[$_] eq 'CU' } 0..$#format;
-		}
+		if ($filter =~ /PASS/){
+			print "$chr\t$start\t$end\t$ref\t$alt\t$qual\t$filter\t$info\t$sname\t";
+			my (@format) = split(":", $format);
+			my ($idx_A, $idx_C , $idx_G, $idx_T);
+			if( !defined($idx_A) ) {
+				$idx_A = first { $format[$_] eq 'AU' } 0..$#format;
+			}
+			if( !defined($idx_C) ) {
+				$idx_C = first { $format[$_] eq 'CU' } 0..$#format;
+			}
 
-		if( !defined($idx_G) ) {
-			$idx_G = first { $format[$_] eq 'GU' } 0..$#format;
-		}
+			if( !defined($idx_G) ) {
+				$idx_G = first { $format[$_] eq 'GU' } 0..$#format;
+			}
 
-		if( !defined($idx_T) ) {
-			$idx_T = first { $format[$_] eq 'TU' } 0..$#format;
-		}
+			if( !defined($idx_T) ) {
+				$idx_T = first { $format[$_] eq 'TU' } 0..$#format;
+			}
 
-		my @normal =  split(":", $Normal);
-		my @tumor =  split(":", $Tumor);
-		my @refT; 
-		my @refN;
-		my @altT;
-		my @altN;
-		if ($ref =~ /A/){
-			@refT = split(",", $tumor[$idx_A]);
-			@refN = split(",", $normal[$idx_A]);
-		}
-		elsif($ref =~ /C/){
-			@refT = split(",", $tumor[$idx_C]);
-			@refN = split(",", $normal[$idx_C]);
-		}
-		elsif($ref =~ /G/){
-			@refT = split(",", $tumor[$idx_G]);
-			@refN = split(",", $normal[$idx_G]);
-		}
-		elsif($ref =~ /T/){
-			@refT = split(",", $tumor[$idx_T]);
-			@refN = split(",", $normal[$idx_T]);
-		}
+			my @normal =  split(":", $Normal);
+			my @tumor =  split(":", $Tumor);
+			my @refT;
+			my @refN;
+			my @altT;
+			my @altN;
+			if ($ref =~ /A/){
+				@refT = split(",", $tumor[$idx_A]);
+				@refN = split(",", $normal[$idx_A]);
+			}
+			elsif($ref =~ /C/){
+				@refT = split(",", $tumor[$idx_C]);
+				@refN = split(",", $normal[$idx_C]);
+			}
+			elsif($ref =~ /G/){
+				@refT = split(",", $tumor[$idx_G]);
+				@refN = split(",", $normal[$idx_G]);
+			}
+			elsif($ref =~ /T/){
+				@refT = split(",", $tumor[$idx_T]);
+				@refN = split(",", $normal[$idx_T]);
+			}
 
-		if ($alt =~ /A/){
-			@altT = split(",", $tumor[$idx_A]);
-			@altN = split(",", $normal[$idx_A]);
-		}
-		elsif($alt =~ /C/){
-			@altT = split(",", $tumor[$idx_C]);
-			@altN = split(",", $normal[$idx_C]);
-		}
-		elsif($alt =~ /G/){
-			@altT = split(",", $tumor[$idx_G]);
-			@altN = split(",", $normal[$idx_G]);
-		}
-		elsif($alt =~ /T/){
-			@altT = split(",", $tumor[$idx_T]);
-			@altN = split(",", $normal[$idx_T]);
-		}
-		my $totalN = $refN[0] + $altN[0];
+			if ($alt =~ /A/){
+				@altT = split(",", $tumor[$idx_A]);
+				@altN = split(",", $normal[$idx_A]);
+			}
+			elsif($alt =~ /C/){
+				@altT = split(",", $tumor[$idx_C]);
+				@altN = split(",", $normal[$idx_C]);
+			}
+			elsif($alt =~ /G/){
+				@altT = split(",", $tumor[$idx_G]);
+				@altN = split(",", $normal[$idx_G]);
+			}
+			elsif($alt =~ /T/){
+				@altT = split(",", $tumor[$idx_T]);
+				@altN = split(",", $normal[$idx_T]);
+			}
+			my $totalN = $refN[0] + $altN[0];
 
-		my $vafN = 0;
-		if( $totalN > 0 ) {
-			$vafN  = sprintf ("%.2f", ($altN[0] /$totalN));
-		}
-		my $totalT = $refT[0] + $altT[0];
+			my $vafN = 0;
+			if( $totalN > 0 ) {
+				$vafN  = sprintf ("%.2f", ($altN[0] /$totalN));
+			}
+			my $totalT = $refT[0] + $altT[0];
 
-		my $vafT = 0;
-		if( $totalT > 0 ) {
-			$vafT   = sprintf ("%.2f", ($altT[0] /$totalT));
+			my $vafT = 0;
+			if( $totalT > 0 ) {
+				$vafT   = sprintf ("%.2f", ($altT[0] /$totalT));
+			}
+			print "NA\t$totalN\t$refN[0]\t$altN[0]\t$vafN\tNA\t$totalT\t$refT[0]\t$altT[0]\t$vafT\n";
 		}
-		print "NA\t$totalN\t$refN[0]\t$altN[0]\t$vafN\tNA\t$totalT\t$refT[0]\t$altT[0]\t$vafT\n";
 	}
 	close FH;
 	`rm -rf $TEMP/$sname.s $TEMP/.err_$sname.s`;
@@ -319,14 +321,14 @@ elsif($CALLER eq 'Platypus'){
 			print "\t`$out[0]\t$out[1]\t$out[2]\t$out[3]\t$out[4]";
 		}
 		print "\n";
-		
-	}	
+
+	}
 	close FH;
 	`rm -rf $TEMP/$sname.p $TEMP/.err_$sname.p`;
 }
 elsif($CALLER eq 'GATK'){
 #	print "perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g\n\n";
-#	system("perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g") == 0 
+#	system("perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g") == 0
 #		or die "system perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g failed: $?";
 	`perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g`;
 	print "Chr\tStart\tEnd\tRef\tAlt\tQUAL\tFILTER\tINFO\tSampleName";
@@ -367,7 +369,7 @@ elsif($CALLER eq 'freeBayes'){
 		print "\n";
 	}
 	close FH;
-	`rm -rf $TEMP/$sname.fb $TEMP/.err_$sname.fb`;	
+	`rm -rf $TEMP/$sname.fb $TEMP/.err_$sname.fb`;
 
 }
 elsif($CALLER eq 'bam2mpg'){
@@ -406,8 +408,8 @@ else{
 
 ########################################
 #				       #
-#		Subroutines	       #	
-#				       #	
+#		Subroutines	       #
+#				       #
 ########################################
 sub VARSCAN_S{
 	#GT:GQ:DP:RD:AD:FREQ:DP4 0/1:.:30:14:16:53.33%:3,11,0,16
