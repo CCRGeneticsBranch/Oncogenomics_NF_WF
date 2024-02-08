@@ -50,12 +50,8 @@ capture_ch = BWA_picard.out.picard_MD
             target_file = params.clin_ex_v1
         } else if (meta.sc == 'seqcapez.hu.ex.v3') {
             target_file = params.seqcapez.hu.ex.v3
-        } else if (meta.sc == 'polya') {
-            target_file = params.polya_target
-        } else if (meta.sc == 'ribozero') {
-            target_file = params.ribozero_target
-        } else if (meta.sc == 'SmartRNA') {
-            target_file = params.smartrna_target
+        } else if (meta.sc == 'seqcapez.rms.v1') {
+            target_file = params.seqcapez.rms.v1_target
         } else if (meta.sc == 'agilent.v7') {
             target_file = params.agilent.v7_target
         } else if (meta.sc == 'idt_v2_plus') {
@@ -88,8 +84,8 @@ design_ch =  Exome_GATK.out.GATK_Exome_bam
             design_file = params.agilent.v7_design
         } else if (meta.sc == 'idt_v2_plus') {
             design_file = params.idt_v2_plus_design
-        } else if (meta.sc == 'ribozero') {
-            design_file = params.ribozero_target
+        } else if (meta.sc == 'seqcapez.rms.v1') {
+            design_file = params.seqcapez.rms.v1_design
         } else if (meta.sc == 'SmartRNA') {
             design_file = params.smartrna_target
         }
