@@ -30,7 +30,7 @@ process CNVkitPooled {
    mv ${prefix}.final.cns ${prefix}.cns
    mv ${prefix}.final.cnr ${prefix}.cnr
    cnvkit.py scatter -s ${prefix}.cn{s,r} -o ${prefix}.pdf
-   grep -v NOTFOUND NCI0439_T1D_E.cnr |grep -v Antitarget|perl -nae '\$F[3]=~s/_{2}.*//;print join("\t",@F)."\n"' > ${prefix}.cnr_filtered
+   grep -v NOTFOUND ${prefix}.cnr |grep -v Antitarget|awk 'BEGIN {FS="\t"; OFS="\t"} {gsub(/_{2}.*/, "", \$4); print}' > ${prefix}.cnr_filtered
    cnvkit.py genemetrics ${prefix}.cnr_filtered -t 0 > ${prefix}_genelevel.txt
    """
 }
