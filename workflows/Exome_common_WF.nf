@@ -4,6 +4,7 @@ include {Exome_GATK} from '../subworkflows/Exome_GATK'
 include {QC_exome_bam} from '../subworkflows/QC_exome_bam'
 include {HLA_calls_exome} from '../subworkflows/HLA_calls_exome'
 include {Kraken
+        Fastqc
         Krona
         Fastq_screen} from '../modules/qc/qc'
 
@@ -20,6 +21,10 @@ main:
 
 
 BWA_picard(samples_exome_ch)
+
+fastqc_input = samples_exome_ch.map{ meta, r1, r2 -> [meta, [r1,r2]] }
+
+Fastqc(fastqc_input)
 
 Fastq_screen_input = samples_exome_ch.map{ meta, r1, r2 -> [meta, [r1,r2]] }
                         .combine(fastq_screen_config)
