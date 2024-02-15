@@ -7,7 +7,8 @@ include {CNVkitPooled
         CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {CircosPlot
         Genotyping_Sample
-        Multiqc} from '../modules/qc/qc'
+        Multiqc
+        QC_summary_Patientlevel} from '../modules/qc/qc'
 include {DBinput} from '../modules/misc/DBinput'
 include {Actionable_variants} from '../modules/Actionable'
 include {TcellExtrect} from '../modules/misc/TcellExtrect'
@@ -106,6 +107,8 @@ TcellExtrect(
     .join(Exome_common_WF.out.target_capture_ch,by:[0])
     .combine(genome_version_tcellextrect)
 )
+
+QC_summary_Patientlevel(Exome_common_WF.out.exome_qc)
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
     .join(Exome_common_WF.out.pileup, by: [0])
