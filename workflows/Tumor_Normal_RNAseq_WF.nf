@@ -104,7 +104,7 @@ workflow Tumor_Normal_RNAseq_WF {
 // Parse the samplesheet to generate fastq tuples
 samples = Channel.fromPath("Tumor_RNAseq_Normal.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type == "tumor_RNA" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type == "tumor_RNA" ||row.type == "blood_DNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -119,7 +119,7 @@ samples = Channel.fromPath("Tumor_RNAseq_Normal.csv")
     return fastq_meta
 }
 samples_branch = samples.branch{
-        exome: it[0].type == "normal_DNA" || it[0].type == "tumor_DNA"
+        exome: it[0].type == "normal_DNA" || it[0].type == "tumor_DNA" || it[0].type == "blood_DNA"
         rnaseq:  it[0].type == "tumor_RNA"
 }
 
@@ -133,7 +133,7 @@ bam_target_ch = Exome_common_WF.out.exome_final_bam.join(Exome_common_WF.out.tar
 
 
 bam_variant_calling_status = bam_target_ch.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -193,9 +193,8 @@ somatic_snpeff_input_ch = Mutect_WF.out.mutect_snpeff_snv_vcf2txt
         .join(Vcf2txt.out,by:[0])
         .join(Manta_Strelka.out.strelka_snpeff_snv_vcf2txt,by:[0])
 
-
 HC_snpeff_snv_vcftxt_status = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -240,7 +239,7 @@ HC_snpeff_snv_vcftxt = snpeff_snv_vcftxt.map{ meta, files -> [meta, [files[0], f
 
 
 exome_pileup_Status = Exome_common_WF.out.pileup.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -378,12 +377,13 @@ split_vcf_files = Split_vcf.out.flatMap { meta, files -> files.collect { [meta, 
 
 
 mergehla_status = Exome_common_WF.out.mergehla_exome.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
 //All Germline samples HLA in  [meta.id, meta, file] format
 mergehla_samples_normal_to_cross = mergehla_status.normal.map{ meta, mergedcalls  -> [ meta.id, meta, mergedcalls ] }
+
 
 vep_out_to_cross = VEP.out.vep_out.map{ meta, vcf -> [ meta.id, meta, vcf ] }
 
@@ -467,7 +467,7 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
 MutationBurden(mutationburden_input_ch)
 
 exome_qc_status = Exome_common_WF.out.exome_qc.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -476,11 +476,12 @@ exome_qc_normal_status_to_cross = exome_qc_status.normal.map{ meta, normal -> [ 
 exome_qc_tumor_status_to_cross = exome_qc_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
 
 qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_status_to_cross)
+qc_summary_input_ch = qc_summary_ch.map{meta, normal, tumor -> [meta, [normal, tumor] ]}
+QC_summary_Patientlevel(qc_summary_input_ch)
 
-QC_summary_Patientlevel(qc_summary_ch)
 
 exome_conpair_status = Exome_common_WF.out.conpair_pileup.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -521,7 +522,7 @@ RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc 
 //Patient level Circos plot
 
 exome_genotyping_status = Exome_common_WF.out.gt.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -540,7 +541,7 @@ genotyping_TNR =  combine_exome_rnaseq_libraries(Patient_genotyping_exome,genoty
 Genotyping_Sample(genotyping_TNR)
 
 exome_loh_status = Exome_common_WF.out.loh.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -557,7 +558,7 @@ circos_TNR = combine_exome_rnaseq_libraries(Patient_loh_exome,genotyping_samples
 CircosPlot(circos_TNR)
 
 exome_hotspot_depth_status = Exome_common_WF.out.hotspot_depth.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -601,7 +602,7 @@ multiqc_exome_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.markdup_txt)
 
 multiqc_exome_status = multiqc_exome_input.branch{
-    normal: it[0].type == "normal_DNA"
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
     tumor:  it[0].type == "tumor_DNA"
 }
 
@@ -627,6 +628,7 @@ Multiqc(multiqc_TNR_input)
 ch_versions = ch_versions.mix(Multiqc.out.versions)
 
 combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+
 
 custom_versions_input = Multiqc.out.multiqc_report
         .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
