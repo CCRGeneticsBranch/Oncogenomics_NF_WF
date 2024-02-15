@@ -83,7 +83,7 @@ process Picard_CollectAlignmentSummaryMetrics {
 
 process Picard_MarkDuplicates {
         tag "$meta.lib"
-        publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}"
+
         input:
 
         tuple val(meta),
