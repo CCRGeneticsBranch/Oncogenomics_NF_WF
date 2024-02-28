@@ -1,8 +1,4 @@
 
-
-include {HLAminer} from '../modules/neoantigens/hlaminer'
-include {Seq2HLA} from '../modules/neoantigens/seq2hla'
-include {MergeHLA} from '../modules/neoantigens/mergeHLA'
 include {Optitype
         HLA_HD
         Merge_new_HLA} from '../modules/neoantigens/hla_calls'
@@ -10,9 +6,6 @@ include {Optitype
 workflow HLA_calls {
     take: trimmed_fq
     main:
-
-        //HLAminer(trimmed_fq)
-        //Seq2HLA(trimmed_fq)
 
         Optitype(trimmed_fq)
 
@@ -22,7 +15,6 @@ workflow HLA_calls {
 
         ch_versions = Optitype.out.versions.mix(HLA_HD.out.versions)
 
-        //MergeHLA(Seq2HLA.out.seq2hla_output.combine(HLAminer.out.hlaminer_output, by:0))
     emit:
         mergehla = Merge_new_HLA.out
         version = ch_versions
