@@ -410,9 +410,7 @@ process QC_summary_Patientlevel {
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
-    tuple val(meta),
-        path(tumor),
-        path(normal)
+    tuple val(meta),path(qc_files)
 
     output:
     tuple val(meta),path("${meta.id}.consolidated_QC.txt")
@@ -424,8 +422,8 @@ process QC_summary_Patientlevel {
 
     script:
     """
-    cat ${tumor} ${normal} |grep '^#' |sort |uniq > header
-    cat ${tumor} ${normal} |grep -v '^#' > sample_data
+    cat ${qc_files.join(' ')} |grep '^#' |sort |uniq > header
+    cat ${qc_files.join(' ')} |grep -v '^#' > sample_data
     cat header sample_data > ${meta.id}.consolidated_QC.txt
 
     """
