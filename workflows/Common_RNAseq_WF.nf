@@ -135,6 +135,8 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
             target_file = params.ribozero_target
         } else if (meta.sc == 'SmartRNA') {
             target_file = params.smartrna_target
+        } else if (meta.sc == 'ribodepleted_nebnext_v2') {
+            target_file = params.ribozero_target
         }
 
         return [meta,target_file]
@@ -151,7 +153,6 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
 
   emit:
   Fastqc_out = Fastqc.out.fastqc_results
-  coverageplot = QC_from_finalBAM.out.coverageplot
   pileup = QC_from_finalBAM.out.hotspot_pileup
   snpeff_vcf = RNAseq_GATK.out.SnpEff_vcf
   chimeric_junction = Star_RSEM.out.chimeric_junction
@@ -173,4 +174,5 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   fastq_screen = Fastq_screen.out
   Bam = RNAseq_GATK.out.Bam
   hotspot_depth = QC_from_finalBAM.out.hotspot_depth
+  coverage = QC_from_finalBAM.out.coverage
 }
