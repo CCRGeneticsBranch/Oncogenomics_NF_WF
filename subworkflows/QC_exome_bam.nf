@@ -9,7 +9,6 @@ include {CircosPlot_lib} from '../modules/qc/qc'
 include {VerifyBamID} from '../modules/qc/plots'
 include {FailedExons_Genes} from '../modules/qc/plots'
 include {Coverage} from  '../modules/qc/plots'
-include {CoveragePlot} from  '../modules/qc/plots'
 include {TargetIntervals} from  '../modules/qc/plots'
 include {HSMetrics} from  '../modules/qc/plots'
 include {Conpair_pile} from  '../modules/qc/qc'
@@ -91,7 +90,6 @@ workflow QC_exome_bam {
 
         ch_versions = ch_versions.mix(Coverage.out.versions)
 
-        CoveragePlot(Coverage.out.coverage_out)
         TargetIntervals(
           GATK_exome_bam.combine(capture_ch, by:[0]).combine(design_ch, by:[0])
         )
@@ -127,7 +125,7 @@ workflow QC_exome_bam {
 
    emit:
          hotspot_pileup = HotspotPileup.out
-         coverageplot = CoveragePlot.out
+         coverage = Coverage.out.coverage_out
          loh = Genotyping.out.loh
          gt = Genotyping.out.gt
          Exome_qc = Exome_QC.out

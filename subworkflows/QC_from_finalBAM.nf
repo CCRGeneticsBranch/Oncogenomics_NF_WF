@@ -5,7 +5,6 @@ include {Bamutil} from '../modules/qc/plots'
 include {HotspotPileup} from '../modules/qc/plots'
 include {Bam2tdf} from '../modules/qc/plots'
 include {Coverage} from  '../modules/qc/plots'
-include {CoveragePlot} from  '../modules/qc/plots'
 
 workflow QC_from_finalBAM {
 
@@ -51,11 +50,10 @@ workflow QC_from_finalBAM {
      Coverage(
         GATK_RNASeq_BR_PR_bam.combine(target_capture, by:[0])
      )
-     CoveragePlot(Coverage.out.coverage_out)
 
     emit:
          hotspot_pileup = HotspotPileup.out
-         coverageplot = CoveragePlot.out
+         coverage = Coverage.out.coverage_out
          flagstat_version = Flagstat.out.versions
          bamutil_version = Bamutil.out.versions
          flagstat = Flagstat.out.flagstat
