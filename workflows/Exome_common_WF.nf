@@ -109,7 +109,7 @@ QC_exome_bam(
 ch_versions = ch_versions.mix(QC_exome_bam.out.ch_versions)
 
 emit:
-coverageplot = QC_exome_bam.out.coverageplot
+coverage = QC_exome_bam.out.coverage
 pileup = QC_exome_bam.out.hotspot_pileup
 snpeff_vcf =Exome_GATK.out.SnpEff_vcf
 exome_final_bam = Exome_GATK.out.GATK_Exome_bam
@@ -117,8 +117,6 @@ loh = QC_exome_bam.out.loh
 gt = QC_exome_bam.out.gt
 target_capture_ch = capture_ch
 HC_snpeff_snv_vcf2txt = Exome_GATK.out.HC_snpeff_snv_vcf2txt
-//hlaminer_exome  = HLA_calls_exome.out.hlaminer_exome
-//seq2hla_exome = HLA_calls_exome.out.seq2hla_exome
 mergehla_exome = HLA_calls_exome.out.mergehla_exome
 exome_qc = QC_exome_bam.out.Exome_qc
 markdup_txt = BWA_picard.out.markdup_txt
