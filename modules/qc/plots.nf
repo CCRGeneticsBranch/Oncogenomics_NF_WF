@@ -14,11 +14,11 @@ process Hotspot_Coverage {
 
      output:
      tuple val(meta),
-        path("${meta.lib}.hotspot.depth")
+        path("${meta.lib}.*.hotspot.depth")
 
      stub:
      """
-     touch "${meta.lib}.hotspot.depth"
+     touch "${meta.lib}.*.hotspot.depth"
      """
 
     script:
@@ -31,6 +31,12 @@ process Hotspot_Coverage {
      ccbr_bam_filter_by_mapq.py -i ${bam} -o ${prefix}_filter.bam -q 30
 
      /opt2/bedtools2/bin/bedtools coverage -abam ${prefix}_filter.bam  -b ${access_hotspot} > ${prefix}.hotspot.depth
+
+    if [[ "${meta.type}" == *"DNA"* ]]; then
+        mv ${prefix}.hotspot.depth ${prefix}.bwa.hotspot.depth
+    else
+        mv ${prefix}.hotspot.depth ${prefix}.star.hotspot.depth
+    fi
 
      """
 }
@@ -275,19 +281,24 @@ process Coverage {
         path(targetcapture)
 
     output:
-    tuple val(meta),path("${meta.lib}.coverage.txt"), emit:coverage_out
+    tuple val(meta),path("${meta.lib}.*.coverage.txt"), emit:coverage_out
     path "versions.yml"             , emit: versions
 
 
     stub:
      """
-     touch "${meta.lib}.coverage.txt"
+     touch "${meta.lib}.*.coverage.txt"
      """
 
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      bedtools coverage -abam ${bam} -b  ${targetcapture} -hist |grep "^all" > ${prefix}.coverage.txt
+     if [[ "${meta.type}" == *"DNA"* ]]; then
+        mv ${prefix}.coverage.txt ${prefix}.bwa.coverage.txt
+     else
+        mv ${prefix}.coverage.txt ${prefix}.star.coverage.txt
+     fi
 
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
@@ -300,7 +311,7 @@ process Coverage {
 
 process CoveragePlot {
 
-    tag "$meta.lib"
+    tag "$meta.id"
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
     input:
@@ -309,17 +320,21 @@ process CoveragePlot {
 
     output:
     tuple val(meta),
-       path("${meta.lib}.coveragePlot.png")
+       path("${meta.id}.coveragePlot.png")
 
     stub:
      """
-     touch "${meta.lib}.coveragePlot.png"
+     touch "${meta.id}.coveragePlot.png"
      """
 
      script:
-     def prefix = task.ext.prefix ?: "${meta.lib}"
+     def prefix = task.ext.prefix ?: "${meta.id}"
      """
-     coverage.R  \$PWD ${prefix}.coveragePlot.png ${prefix}
+     TMP=tmp/
+     mkdir \$TMP
+     trap 'rm -rf "\$TMP"' EXIT
+     cp ${coverage.join(' ')} \$TMP
+     coverage.R  \$TMP ${prefix}.coveragePlot.png ${prefix}
 
      """
 
