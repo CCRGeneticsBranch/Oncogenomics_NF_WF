@@ -293,7 +293,7 @@ process Coverage {
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     bedtools coverage -abam ${bam} -b  ${targetcapture} -hist |grep "^all" > ${prefix}.coverage.txt
+     bedtools coverage -a ${targetcapture} -b ${bam} -hist |grep "^all" > ${prefix}.coverage.txt
      if [[ "${meta.type}" == *"DNA"* ]]; then
         mv ${prefix}.coverage.txt ${prefix}.bwa.coverage.txt
      else
