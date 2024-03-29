@@ -27,7 +27,7 @@ workflow QC_exome_bam {
     recode_vcf              = Channel.of(file(params.recode_vcf, checkIfExists:true))
     conpair_refbed          = Channel.of(file(params.conpair_refbed, checkIfExists:true))
     access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))
-
+    sorted_chr_order        = Channel.of(file(params.sorted_chr_order, checkIfExists:true))
     take:
          GATK_exome_bam
          bwa_picard_bam
@@ -42,7 +42,10 @@ workflow QC_exome_bam {
             .combine(genome_dict)
          )
          CircosPlot_lib(Genotyping.out.loh)
-         Read_depth(GATK_exome_bam.combine(capture_ch, by:[0]))
+         Read_depth(GATK_exome_bam
+            .combine(capture_ch, by:[0])
+            .combine(sorted_chr_order)
+         )
 
          ch_versions = Genotyping.out.versions.mix(Read_depth.out.versions)
 
@@ -85,7 +88,9 @@ workflow QC_exome_bam {
         ch_versions = ch_versions.mix(VerifyBamID.out.versions)
 
         Coverage(
-        GATK_exome_bam.combine(capture_ch, by:[0])
+        GATK_exome_bam
+            .combine(capture_ch, by:[0])
+            .combine(sorted_chr_order)
         )
 
         ch_versions = ch_versions.mix(Coverage.out.versions)
