@@ -1,5 +1,6 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
-include {MakeHotSpotDB} from  '../modules/qc/plots'
+include {MakeHotSpotDB
+        CoveragePlot} from  '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
@@ -50,6 +51,9 @@ Circosplot_input = Exome_common_WF.out.loh.map{ meta, loh -> [meta, [loh]] }
 CircosPlot(Circosplot_input)
 
 Genotyping_Sample(Exome_common_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
+
+Combined_coverage = Exome_common_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
+CoveragePlot(Combined_coverage)
 
 formatinput_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
@@ -112,7 +116,6 @@ QC_summary_Patientlevel(Exome_common_WF.out.exome_qc)
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
     .join(Exome_common_WF.out.pileup, by: [0])
-    .join(Exome_common_WF.out.coverageplot,by: [0])
     .join(Exome_common_WF.out.kraken,by: [0])
     .join(Exome_common_WF.out.verifybamid,by: [0])
     .join(Exome_common_WF.out.hsmetrics,by: [0])
