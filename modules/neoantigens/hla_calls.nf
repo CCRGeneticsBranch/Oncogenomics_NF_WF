@@ -1,7 +1,7 @@
 process Optitype {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}", pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(trim)
@@ -43,7 +43,7 @@ process Optitype {
 process HLA_HD {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}", pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(trim)
