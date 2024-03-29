@@ -278,7 +278,8 @@ process Coverage {
     tuple val(meta),
         path(bam),
         path(index),
-        path(targetcapture)
+        path(targetcapture),
+        path(sorted_chr_order)
 
     output:
     tuple val(meta),path("${meta.lib}.*.coverage.txt"), emit:coverage_out
@@ -293,7 +294,10 @@ process Coverage {
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     bedtools coverage -a ${targetcapture} -b ${bam} -hist |grep "^all" > ${prefix}.coverage.txt
+     awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} ${targetcapture} |sort -k1,1n -k3,3n |cut -f 2- > sorted_bed
+
+     bedtools coverage -a sorted_bed -sorted -b ${bam} -hist |grep "^all" > ${prefix}.coverage.txt
+
      if [[ "${meta.type}" == *"DNA"* ]]; then
         mv ${prefix}.coverage.txt ${prefix}.bwa.coverage.txt
      else
@@ -349,7 +353,8 @@ process Read_depth {
     tuple val(meta),
         path(bam),
         path(index),
-        path(targetcapture)
+        path(targetcapture),
+        path(sorted_chr_order)
 
    output:
     tuple val(meta),path("${meta.lib}.depth_per_base"), emit: read_depth_output
@@ -362,8 +367,9 @@ process Read_depth {
      def prefix = task.ext.prefix ?: "${meta.lib}"
    """
    echo -e "chr\tstart\tend\tgene\tposition\tdepth" >  ${prefix}.depth_per_base
-   cut -f1-4 ${targetcapture} > intervals.bed
-   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -split -a intervals.bed -b - -d >> ${prefix}.depth_per_base
+   awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} ${targetcapture} |sort -k1,1n -k3,3n |cut -f 2- > sorted_bed
+   cut -f1-4 sorted_bed > intervals.bed
+   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -split -a intervals.bed -sorted -b - -d >> ${prefix}.depth_per_base
 
    cat <<-END_VERSIONS > versions.yml
    "${task.process}":
