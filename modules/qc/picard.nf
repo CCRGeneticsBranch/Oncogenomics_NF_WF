@@ -132,7 +132,7 @@ process RNAlibrary_customQC {
         script:
         def prefix = task.ext.prefix ?: "${meta.lib}"
         """
-        rnaseqQC.pl ${fastqc}/${prefix}_R1.trim_fastqc/fastqc_data.txt ${picard_alignmentsummarymetrics} ${picard_rnametrics_txt} ${meta.id} ${prefix} ${meta.diagnosis} > ${prefix}.RnaSeqQC.txt
+        rnaseqQC.pl ${fastqc}/${prefix}_R1.trim_fastqc/fastqc_data.txt ${picard_alignmentsummarymetrics} ${picard_rnametrics_txt} ${meta.id} ${prefix} "${meta.diagnosis}" > ${prefix}.RnaSeqQC.txt
 
         """
 }
