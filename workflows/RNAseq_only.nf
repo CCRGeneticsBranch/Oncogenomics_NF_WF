@@ -2,7 +2,9 @@
 include {Common_RNAseq_WF} from './Common_RNAseq_WF'
 
 //import modules
-include {MakeHotSpotDB} from  '../modules/qc/plots'
+include {MakeHotSpotDB
+        Hotspot_Boxplot
+        CoveragePlot} from  '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {Multiqc} from '../modules/qc/qc'
@@ -83,7 +85,13 @@ MakeHotSpotDB(Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] 
 //Run circos plot at case level
 CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
 
+Hotspot_Boxplot(Common_RNAseq_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
+
 Genotyping_Sample(Common_RNAseq_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
+
+Combined_coverage = Common_RNAseq_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
+CoveragePlot(Combined_coverage)
+
 
 formatinput_input_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
@@ -104,7 +112,6 @@ DBinput(dbinput_ch)
 
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
-                      .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
