@@ -1,7 +1,8 @@
 include {Common_RNAseq_WF} from './Common_RNAseq_WF'
 include {Exome_common_WF} from './Exome_common_WF.nf'
 include {MakeHotSpotDB
-        Hotspot_Boxplot} from '../modules/qc/plots'
+        Hotspot_Boxplot
+        CoveragePlot} from '../modules/qc/plots'
 include {Exome_QC} from '../modules/qc/qc.nf'
 include {Vcf2txt} from '../modules/misc/snpEff'
 include {FormatInput
@@ -166,6 +167,11 @@ rnaseq_loh_to_cross = Common_RNAseq_WF.out.loh.map{ meta, loh -> [ meta.id, meta
 Combined_loh_ch = combine_exome_rnaseq_libraries(exome_loh_status_tumor_to_cross,rnaseq_loh_to_cross)
 CircosPlot(Combined_loh_ch)
 
+coverage_exome_to_cross = Exome_common_WF.out.coverage.map{meta, coverage -> [ meta.id, meta, coverage ] }
+coverage_rnaseq_to_cross = Common_RNAseq_WF.out.coverage.map{meta, coverage -> [ meta.id, meta, coverage ] }
+Combined_coverage = combine_exome_rnaseq_libraries(coverage_exome_to_cross,coverage_rnaseq_to_cross)
+CoveragePlot(Combined_coverage)
+
 
  //RNA lib processing steps
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
@@ -192,7 +198,6 @@ RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc 
 QC_summary_Patientlevel(Exome_common_WF.out.exome_qc)
 
 multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
-                      .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
