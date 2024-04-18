@@ -166,6 +166,7 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   picard_rnaseqmetrics_pdf = Star_bam_processing.out.picard_rnaseqmetrics_pdf
   picard_alignmetrics = Star_bam_processing.out.picard_alignmetrics
   picard_MD = Star_bam_processing.out.picard_MD
+  markdup_txt = Star_bam_processing.out.markdup_txt
   loh = QC_from_Star_bam.out.loh
   ch_versions = ch_versions
   gt = QC_from_Star_bam.out.gt
