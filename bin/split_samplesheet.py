@@ -38,6 +38,12 @@ with open(samplesheet, "r") as file:
     # Store the contents of the sample sheet in a list
     samplesheet_data = list(reader)
 
+# Remove spaces from columns that don't have any values
+for row in samplesheet_data:
+    for col in columns:
+        if not row[col].strip():  # Check if the column has no values
+            row[col] = row[col].strip()
+
 # Create a list to store the matching rows
 matching_rows = []
 tumor_rnaseq_rows = []
@@ -155,10 +161,11 @@ RNAseq_lib_rows = []
 rna_lib_rows = []
 
 # Check if there are unique values for RNAseq type
+# Check if there are unique values for RNAseq type
 if any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
     for row in samplesheet_data
-    if row["type"] == "tumor_RNA"
+    if row["type"] in ["tumor_RNA", "cell_line_RNA"]
 ):
     output_file = os.path.join(outdir, "RNAseq.csv")
     rna_file = open(output_file, "w", newline="")
@@ -262,12 +269,8 @@ for row in samplesheet_data:
 
     # Check if the sample and casename combination is unique
     if sample_casename_counts[(sample, casename)] == 1:
-        if row_type == "tumor_RNA" and rna_writer:
+        if row_type in ["tumor_RNA", "cell_line_RNA"] and rna_writer:
             rna_writer.writerow(row)
-        # elif row_type == "normal_DNA" and normal_writer:
-        #     normal_writer.writerow(row)
-        # elif row_type == "tumor_DNA" and tumor_writer:
-        #     tumor_writer.writerow(row)
         elif row_type in ["normal_DNA", "tumor_DNA", "cell_line_DNA"] and exome_writer:
             exome_writer.writerow(row)
 
@@ -280,6 +283,3 @@ if rna_file:
 #     tumor_file.close()
 if exome_file:
     exome_file.close()
-
-if not matching_rows:
-    print("No matches found.")
