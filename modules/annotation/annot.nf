@@ -336,7 +336,6 @@ process AddAnnotation_TN {
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-//     tuple val(meta),path(N_snpeff_txt),path(T_snpeff_txt),path(rare_annotation)
      tuple val(meta),path(snpeff),path(rare_annotation)
 
 
@@ -353,14 +352,16 @@ process AddAnnotation_TN {
      script:
 
      """
-     if [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "null" ]]; then
+     if [[ ( "${meta.normal_type}" == "normal_DNA" || "${meta.normal_type}" == "blood_DNA" ) && "${meta.type}" == "tumor_DNA" && "${meta.rna_type}" != "tumor_RNA" ]]; then
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
-     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "tumor_RNA" ]]; then
+     elif [[ ( "${meta.normal_type}" == "normal_DNA" || "${meta.normal_type}" == "blood_DNA" ) && "${meta.type}" == "tumor_DNA" && "${meta.rna_type}" == "tumor_RNA" ]]; then
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[2]}  > ${meta.rna_lib}.HC_${meta.rna_type}.annotated.txt
-
+     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.rna_type}" == "tumor_RNA" && ("${meta.normal_type}" != "normal_DNA" || "${meta.normal_type}" != "blood_DNA" ) ]]; then
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
+          addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.rna_lib}.HC_${meta.rna_type}.annotated.txt
      fi
 
      """
