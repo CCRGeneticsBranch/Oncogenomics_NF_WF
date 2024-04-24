@@ -61,6 +61,5 @@ process Vcf2txt {
      """
 
      vcf2txt.pl ${vcf} ./ > ${prefix}.${tool_ch}_${meta.type}.snpEff.txt
-      echo ${meta}
      """
 }
