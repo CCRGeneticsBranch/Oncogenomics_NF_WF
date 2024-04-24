@@ -279,7 +279,8 @@ process Coverage {
         path(bam),
         path(index),
         path(targetcapture),
-        path(sorted_chr_order)
+        path(sorted_chr_order),
+        path(genomelength)
 
     output:
     tuple val(meta),path("${meta.lib}.*.coverage.txt"), emit:coverage_out
@@ -294,9 +295,10 @@ process Coverage {
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} ${targetcapture} |sort -k1,1n -k3,3n |cut -f 2- > sorted_bed
-
-     bedtools coverage -a sorted_bed -sorted -b ${bam} -hist |grep "^all" > ${prefix}.coverage.txt
+     if ! grep -q "^chrM" ${targetcapture} ; then echo -e "chrM\t3306\t15887" >> ${targetcapture} ; fi
+     awk -F'\t'  '\$1 !~ /_/' ${targetcapture}|awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} - | \
+     sort -k1,1n -k3,3n |tr -s ' ' '\t' | cut -f 2,3,4 |sed 's/\t*\$//' > sorted_bed
+     bedtools coverage -a sorted_bed -sorted -b ${bam} -g ${genomelength} -hist |grep "^all" > ${prefix}.coverage.txt
 
      if [[ "${meta.type}" == *"DNA"* ]]; then
         mv ${prefix}.coverage.txt ${prefix}.bwa.coverage.txt
@@ -354,7 +356,8 @@ process Read_depth {
         path(bam),
         path(index),
         path(targetcapture),
-        path(sorted_chr_order)
+        path(sorted_chr_order),
+        path(genomelength)
 
    output:
     tuple val(meta),path("${meta.lib}.depth_per_base"), emit: read_depth_output
@@ -367,9 +370,12 @@ process Read_depth {
      def prefix = task.ext.prefix ?: "${meta.lib}"
    """
    echo -e "chr\tstart\tend\tgene\tposition\tdepth" >  ${prefix}.depth_per_base
-   awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} ${targetcapture} |sort -k1,1n -k3,3n |cut -f 2- > sorted_bed
+
+   awk -F'\t'  '\$1 !~ /_/' ${targetcapture}|sed  '/^chrM/d'|awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} - | \
+   sort -k1,1n -k3,3n |tr -s ' ' '\t' |cut -f2-  > sorted_bed
    cut -f1-4 sorted_bed > intervals.bed
-   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -split -a intervals.bed -sorted -b - -d >> ${prefix}.depth_per_base
+
+   samtools view -hF 0x400 -q 30 -L intervals.bed ${bam} |samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -split -a intervals.bed -sorted -b - -g ${genomelength} -d >> ${prefix}.depth_per_base
 
    cat <<-END_VERSIONS > versions.yml
    "${task.process}":
