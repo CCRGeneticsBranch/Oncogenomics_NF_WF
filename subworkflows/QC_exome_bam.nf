@@ -28,6 +28,8 @@ workflow QC_exome_bam {
     conpair_refbed          = Channel.of(file(params.conpair_refbed, checkIfExists:true))
     access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))
     sorted_chr_order        = Channel.of(file(params.sorted_chr_order, checkIfExists:true))
+    genomelength             = Channel.of(file(params.genomelength, checkIfExists:true))
+
     take:
          GATK_exome_bam
          bwa_picard_bam
@@ -45,6 +47,7 @@ workflow QC_exome_bam {
          Read_depth(GATK_exome_bam
             .combine(capture_ch, by:[0])
             .combine(sorted_chr_order)
+            .combine(genomelength)
          )
 
          ch_versions = Genotyping.out.versions.mix(Read_depth.out.versions)
@@ -91,6 +94,7 @@ workflow QC_exome_bam {
         GATK_exome_bam
             .combine(capture_ch, by:[0])
             .combine(sorted_chr_order)
+            .combine(genomelength)
         )
 
         ch_versions = ch_versions.mix(Coverage.out.versions)

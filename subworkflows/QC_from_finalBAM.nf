@@ -15,7 +15,9 @@ workflow QC_from_finalBAM {
     hg19_hotspot_pos         = Channel.of(file(params.hg19_hotspot_pos, checkIfExists:true))
     access_hotspot           = Channel.of(file(params.access_hotspot, checkIfExists:true))
     access_target            = Channel.of(file(params.access_target, checkIfExists:true))
+    genomelength             = Channel.of(file(params.genomelength, checkIfExists:true))
     sorted_chr_order        = Channel.of(file(params.sorted_chr_order, checkIfExists:true))
+
 
     take: GATK_RNASeq_BR_PR_bam
           target_capture
@@ -53,6 +55,7 @@ workflow QC_from_finalBAM {
         GATK_RNASeq_BR_PR_bam
         .combine(target_capture, by:[0])
         .combine(sorted_chr_order)
+        .combine(genomelength)
      )
 
     emit:
