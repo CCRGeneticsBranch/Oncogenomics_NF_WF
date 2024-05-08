@@ -106,12 +106,11 @@ process Fastq_screen {
 
     stub:
     """
-    touch "${meta.lib}_R1_screen.html"
-    touch "${meta.lib}_R1_screen.html"
+    touch "${meta.lib}_fastq_screen"
     """
 
     output:
-    tuple val(meta),path("fastq_screen")
+    tuple val(meta),path("${meta.lib}_fastq_screen")
 
 
     script:
@@ -119,9 +118,9 @@ process Fastq_screen {
     def prefix   = task.ext.prefix ?: "${meta.lib}"
 
     """
-    if [ ! -d fastq_screen ];then mkdir -p fastq_screen;fi
+    if [ ! -d ${meta.lib}_fastq_screen ];then mkdir -p ${meta.lib}_fastq_screen;fi
     ls ${fqs_db}
-    fastq_screen --conf ${fastq_screen_config} --subset 1000000 --aligner bowtie2 --force ${trim[0]} ${trim[1]}  --outdir fastq_screen
+    fastq_screen --conf ${fastq_screen_config} --subset 1000000 --aligner bowtie2 --force ${trim[0]} ${trim[1]}  --outdir ${meta.lib}_fastq_screen
     """
 }
 
@@ -330,17 +329,16 @@ process RNAseQC {
         path(transcript_gtf)
 
     output:
-    tuple val(meta),
-        path("rnaseqc")
+    tuple val(meta),path("${meta.lib}_rnaseqc")
 
     stub:
      """
-     touch "report.html"
+     touch "${meta.lib}_rnaseqc"
      """
 
     script:
      """
-     java -jar \$RNASEQCJAR -r ${genome} -rRNA ${rRNA_interval} -o rnaseqc -s "${meta.lib}|${bam}|${meta.lib}" -t ${transcript_gtf}
+     java -jar \$RNASEQCJAR -r ${genome} -rRNA ${rRNA_interval} -o ${meta.lib}_rnaseqc -s "${meta.lib}|${bam}|${meta.lib}" -t ${transcript_gtf}
 
      """
 
@@ -400,7 +398,8 @@ process Exome_QC {
     script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
-     QC_stats_Final.py  ${bam} ${Tbed} . ${meta.id} ${prefix} "${meta.diagnosis}" ${hsmetrics} > ${prefix}.consolidated_QC
+     awk -F'\t'  '\$1 !~ /_/' ${Tbed}|sed  '/^chrM/d' > targetbed
+     QC_stats_Final.py  ${bam} targetbed . ${meta.id} ${prefix} "${meta.diagnosis}" ${hsmetrics} > ${prefix}.consolidated_QC
      """
 }
 
