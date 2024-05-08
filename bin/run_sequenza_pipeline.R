@@ -20,7 +20,7 @@ DoSequenza <- function(sample_name) {
 	}
 	data_file <- paste(sample_name,".seqz_small.gz", sep="")
 	data.file = data_file
-	Sys.setenv(VROOM_CONNECTION_SIZE = "1310720000")
+	Sys.setenv(VROOM_CONNECTION_SIZE = "13107200000")
 	test <- sequenza.extract(data.file, chromosome.list=chrom_list)
 	CP.example <- sequenza.fit(test)
 	sequenza.results(sequenza.extract = test, cp.table = CP.example, sample.id = sample_name, out.dir=sample_name)
