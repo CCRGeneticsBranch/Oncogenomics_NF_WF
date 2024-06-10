@@ -87,8 +87,9 @@ CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
 
 Hotspot_Boxplot(Common_RNAseq_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
 
-Genotyping_Sample(Common_RNAseq_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
-
+genotyping_input = Common_RNAseq_WF.out.gt.map{ meta, gt -> [meta, [gt]] }
+Genotyping_Sample(genotyping_input,
+                Pipeline_version)
 Combined_coverage = Common_RNAseq_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
 CoveragePlot(Combined_coverage)
 
