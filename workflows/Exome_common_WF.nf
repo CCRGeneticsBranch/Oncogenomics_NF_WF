@@ -61,8 +61,9 @@ capture_ch = BWA_picard.out.picard_MD
             target_file = params.agilent.v7_target
         } else if (meta.sc == 'idt_v2_plus') {
             target_file = params.idt_v2_plus
+        } else if (meta.sc == 'xgen-hyb-panelv2') {
+            target_file = params.xgen_hyb_panelv2_target
         }
-
         return [meta,target_file]
     }
 
@@ -91,8 +92,8 @@ design_ch =  Exome_GATK.out.GATK_Exome_bam
             design_file = params.idt_v2_plus_design
         } else if (meta.sc == 'seqcapez.rms.v1') {
             design_file = params.seqcapez.rms.v1_design
-        } else if (meta.sc == 'SmartRNA') {
-            design_file = params.smartrna_target
+        } else if (meta.sc == 'xgen-hyb-panelv2') {
+            design_file = params.xgen_hyb_panelv2_design
         }
 
         return [meta,design_file]
