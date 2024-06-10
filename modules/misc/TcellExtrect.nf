@@ -12,7 +12,8 @@ process TcellExtrect {
      val(genome_version_tcellextrect)
 
      output:
-     tuple val(meta),path("${meta.lib}_TCellExTRECT_naive.txt")
+     tuple val(meta),path("${meta.lib}*.txt") , emit: naive_txt
+     tuple val(meta),path("${meta.lib}*pdf") , emit: pdf , optional: true
 
     stub:
     """
