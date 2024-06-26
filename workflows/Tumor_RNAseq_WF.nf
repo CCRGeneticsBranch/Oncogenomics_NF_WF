@@ -160,7 +160,9 @@ Hotspot_Boxplot(Combined_hotspot_ch)
 exome_genotyping_status_tumor_to_cross = Exome_common_WF.out.gt.map{ meta, tumor -> [ meta.id, meta, tumor ] }
 rnaseq_genotyping_to_cross = Common_RNAseq_WF.out.gt.map{ meta, gt -> [ meta.id, meta, gt ] }
 Combined_genotyping_ch = combine_exome_rnaseq_libraries(exome_genotyping_status_tumor_to_cross,rnaseq_genotyping_to_cross)
-Genotyping_Sample(Combined_genotyping_ch)
+Genotyping_Sample(Combined_genotyping_ch,
+                Pipeline_version)
+
 
 exome_loh_status_tumor_to_cross = Exome_common_WF.out.loh.map{ meta, tumor -> [ meta.id, meta, tumor ] }
 rnaseq_loh_to_cross = Common_RNAseq_WF.out.loh.map{ meta, loh -> [ meta.id, meta, loh ] }
@@ -221,6 +223,7 @@ multiqc_exome_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.kraken)
             .join(Exome_common_WF.out.exome_qc)
             .join(Exome_common_WF.out.markdup_txt)
+            .join(Exome_common_WF.out.fastq_screen)
 
 Combined_multiqc_input = multiqc_exome_input.merge(multiqc_rnaseq_input) { item1, item2 ->
     if (item1[0].id == item2[0].id && item1[0].casename == item2[0].casename) {
