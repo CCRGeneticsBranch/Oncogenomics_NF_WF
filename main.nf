@@ -29,73 +29,60 @@ include {Exome_only_WF} from './workflows/Exome_only_WF.nf'
 include {Tumor_multiple_libs} from './workflows/Tumor_multiple_libs.nf'
 include {Tumor_Normal_WF} from './workflows/Tumor_Normal_WF.nf'
 include {Tumor_Normal_RNAseq_WF} from './workflows/Tumor_Normal_RNAseq_WF.nf'
+include {Tumor_RNAseq_WF} from './workflows/Tumor_RNAseq_WF.nf'
 include {Mouse_RNA} from './workflows/Mouse_RNA.nf'
+
 
 // Launch workflow by checking the samplesheet availability
 workflow {
 
-/*
-  // Check if Tumor_lib.csv is present
-   if (fileExists("Tumor_lib.csv")) {
-        // Launch Exome workflow
-        Tumor_multiple_libs()
-    } else {
-        // Print a message indicating that Tumor_lib.csv is not present
-        println("No Exome workflow to run. Tumor_lib.csv is missing.")
-    }
-*/
-    if (fileExists("Exome.csv")) {
-        // Launch Exome workflow
-        Exome_only_WF()
-    } else {
-        // Print a message indicating that Tumor.csv is not present
-        println("No Exome workflow to run. Tumor.csv is missing.")
-    }
 
-    if (fileExists("Tumor_RNAseq_Normal.csv")) {
-        // Launch Exome workflow
-        Tumor_Normal_RNAseq_WF()
-    } else {
-        // Print a message indicating that Tumor.csv is not present
-        println("No TNF workflow to run. Tumor.csv is missing.")
-    }
-    // Check if RNAseq.csv is present
-
-    if (fileExists("RNAseq.csv")) {
-        // Launch RNASEQ workflow
-        RNAseq_only()
-    } else {
-        // Print a message indicating that RNAseq.csv is not present
-        println("No RNASEQ workflow to run. RNAseq.csv is missing.")
-    }
-
-/*
-    if (fileExists("RNA_lib.csv")) {
-        // Launch RNASEQ workflow
-        RNAseq_multiple_libs()
-    } else {
-        // Print a message indicating that RNAseq.csv is not present
-        println("No RNASEQ workflow to run. RNAseq.csv is missing.")
-    }
-*/
-    if (fileExists("Tumor_Normal.csv")) {
-        // Launch Tumor-Normal workflow
-        Tumor_Normal_WF ()
-    } else {
-        // Print a message indicating that Tumor_Normal.csv is not present
-        println("No Tumor-Normal workflow to run. Tumor_Normal.csv is missing.")
-    }
-
-
-    if (fileExists("mouse_rnaseq.csv")) {
-        // Launch RNASEQ workflow
-        Mouse_RNA ()
-    } else {
-        // Print a message indicating that RNAseq.csv is not present
-        println("No RNASEQ workflow to run. RNAseq.csv is missing.")
-    }
+if (fileExists("Exome.csv")) {
+    Exome_only_WF()
+} else if (fileExists("Tumor_lib.csv")) {
+    Tumor_multiple_libs()
+} else if (fileExists("Tumor_RNAseq_Normal.csv")) {
+    Tumor_Normal_RNAseq_WF()
+} else if (fileExists("RNAseq.csv")) {
+    RNAseq_only()
+} else if (fileExists("RNA_lib.csv")) {
+    RNAseq_multiple_libs()
+} else if (fileExists("Tumor_Normal.csv")) {
+    Tumor_Normal_WF()
+} else if (fileExists("Tumor_RNAseq.csv")) {
+    Tumor_RNAseq_WF()
+} else if (fileExists("mouse_rnaseq.csv")) {
+    Mouse_RNA()
+} else {
+    println("No workflow to run. Required file is missing.")
+}
 
 }
+
+workflow.onError {
+    println "Error: ngs-pipeline execution stopped with the following message: ${workflow.errorMessage}"
+}
+
+workflow.onComplete {
+
+    def msg = """\
+        <div style="font-family: monospace; white-space: pre;">
+        Hello,
+        ngs-pipeline version ${params.Pipeline_version} finished successfully on biowulf.nih.gov
+        Results available at ${workflow.launchDir}
+        </div>
+        """
+        .stripIndent().replaceAll("\n", "<br>")
+
+
+    def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
+    def htmlContent = htmlFile.text
+    def fullMessage = "${htmlContent}"
+
+
+    sendMail(to: 'vineela.gangalapudi@nih.gov' , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov' , subject: 'khanlab ngs-pipeline execution', body: fullMessage, mimeType: 'text/html')
+}
+
 
 def fileExists(String filePath) {
     new File(filePath).exists()
