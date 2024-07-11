@@ -18,9 +18,9 @@ DoSequenza <- function(sample_name) {
 	for(i in c(1:22,'X','Y')){
 			chrom_list=c(chrom_list, paste0('chr',i))
 	}
-	data_file <- paste(sample_name,".seqz_small.gz", sep="")
+	data_file <- paste(sample_name,".seqz_small", sep="")
 	data.file = data_file
-	Sys.setenv(VROOM_CONNECTION_SIZE = "13107200000")
+	Sys.setenv(VROOM_CONNECTION_SIZE = "1310720000")
 	test <- sequenza.extract(data.file, chromosome.list=chrom_list)
 	CP.example <- sequenza.fit(test)
 	sequenza.results(sequenza.extract = test, cp.table = CP.example, sample.id = sample_name, out.dir=sample_name)

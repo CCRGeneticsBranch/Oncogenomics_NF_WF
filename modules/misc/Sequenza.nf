@@ -11,12 +11,12 @@ process Sequenza_utils {
      path(genome_dict),path(gc50base)
 
      output:
-     tuple val(meta),path("${meta.lib}.seqz_small.gz") , emit: sequenza_bin
+     tuple val(meta),path("${meta.lib}.seqz_small") , emit: sequenza_bin
      path "versions.yml"             , emit: versions
 
     stub:
     """
-        touch "${meta.lib}.seqz_small.gz"
+        touch "${meta.lib}.seqz_small"
 
     """
 
@@ -24,7 +24,7 @@ process Sequenza_utils {
 
     """
     sequenza-utils bam2seqz --normal ${Nbam} --tumor ${Tbam} --fasta ${genome} -gc ${gc50base} -o ${meta.lib}.seqz.gz
-    sequenza-utils seqz_binning -w 50 -s ${meta.lib}.seqz.gz | gzip > ${meta.lib}.seqz_small.gz
+    sequenza-utils seqz_binning -w 50 -s ${meta.lib}.seqz.gz > ${meta.lib}.seqz_small
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
