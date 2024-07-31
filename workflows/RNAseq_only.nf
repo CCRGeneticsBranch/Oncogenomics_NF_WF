@@ -42,7 +42,7 @@ Pipeline_version = Channel.from(params.Pipeline_version)
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNAseq.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "tumor_RNA" || row.type == "cell_line_RNA"}
+.filter { row -> row.type == "tumor_RNA" || row.type == "cell_line_RNA" || row.type == "xeno_RNA"}
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
