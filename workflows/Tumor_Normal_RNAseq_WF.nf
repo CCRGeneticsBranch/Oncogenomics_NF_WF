@@ -576,7 +576,6 @@ hotspot_depth_TNR = combine_exome_rnaseq_libraries(Patient_hotspot_depth_exome,r
 Hotspot_Boxplot(hotspot_depth_TNR)
 
 multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
-                      .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
