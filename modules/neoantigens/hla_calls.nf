@@ -20,22 +20,23 @@ process Optitype {
     """
     if [[ "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" || "${meta.type}" == "normal_DNA" || "${meta.type}" == "blood_DNA" ]]; then
         type="--dna"
-    elif [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" ]]; then
+    elif [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" || "${meta.type}" == "xeno_RNA" ]]; then
         type="--rna"
     fi
     TMP=tmp
     mkdir \$TMP
     trap 'rm -rf "\$TMP"' EXIT
-    if [[ \$(OptiTypePipeline.py -i ${trim[0]} ${trim[1]} \$type -v -o \$TMP 2>&1 | grep -m 1 -e 'need more than 0 values to unpack' -e 'The constraint expression resolved to a trivial Boolean (False) instead of a Pyomo object.') ]]; then
+    if [[ \$(OptiTypePipeline.py -i ${trim[0]} ${trim[1]} \$type -v -o \$TMP 2>&1 | grep -m 1 -e "need more than 0 values to unpack" -e "The constraint expression resolved to a trivial Boolean (False) instead of a Pyomo object." -e "cp: cannot stat 'tmp/*/*_result.tsv': No such file or directory") ]]; then
         echo "no HLA called, output empty file"
         touch "${meta.lib}_optitype.txt"
     else
         cp \$TMP/*/*_result.tsv ${meta.lib}_optitype.txt
-    fi
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        Optitype: \$(echo \$SINGULARITY_NAME | sed 's/fred2-optitype-release-//g'|sed 's/.img//g')
-    END_VERSIONS
+   fi
+#    touch "${meta.lib}_optitype.txt"
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    Optitype: \$(echo \$SINGULARITY_NAME | sed 's/fred2-optitype-release-//g'|sed 's/.img//g')
+END_VERSIONS
     """
 }
 
