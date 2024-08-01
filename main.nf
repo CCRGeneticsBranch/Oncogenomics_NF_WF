@@ -59,28 +59,31 @@ if (fileExists("Exome.csv")) {
 
 }
 
-workflow.onError {
-    println "Error: ngs-pipeline execution stopped with the following message: ${workflow.errorMessage}"
-}
 
 workflow.onComplete {
 
-    def msg = """\
-        <div style="font-family: monospace; white-space: pre;">
-        Hello,
-        ngs-pipeline version ${params.Pipeline_version} finished successfully on biowulf.nih.gov
-        Results available at ${workflow.launchDir}
-        </div>
-        """
-        .stripIndent().replaceAll("\n", "<br>")
+    if (workflow.success) {
+        def msg = """\
+            <div style="font-family: monospace; white-space: pre;">
+            Hello,
+            ngs-pipeline version ${params.Pipeline_version} finished successfully on biowulf.nih.gov
+            Results available at ${workflow.launchDir}
+            </div>
+            """
+            .stripIndent().replaceAll("\n", "<br>")
 
 
-    def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
-    def htmlContent = htmlFile.text
-    def fullMessage = "${htmlContent}"
+        def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
+        def htmlContent = htmlFile.text
+        def fullMessage = "${htmlContent}"
 
 
-    sendMail(to: 'vineela.gangalapudi@nih.gov' , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov' , subject: 'khanlab ngs-pipeline execution', body: fullMessage, mimeType: 'text/html')
+        sendMail(to: 'vineela.gangalapudi@nih.gov' , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov' , subject: 'khanlab ngs-pipeline execution', body: fullMessage, mimeType: 'text/html')
+
+    } else {
+        println "Workflow completed with errors. No success email sent."
+    }
+
 }
 
 
