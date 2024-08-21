@@ -1,20 +1,23 @@
 # Running the workflow.
- The workflow can be started by executing the `launch.sh` script in a interactive node. This wrapper script spawns new jobs and submits them to the SLURM 
+
+The workflow can be started by executing the `launch.sh` script in a interactive node. This wrapper script spawns new jobs and submits them to the SLURM
 scheduling system.
 
+```
+       sh launch.sh tag /path/to/samplesheet
+       This script takes two inputs
+       Provide Tag argument - This will add a tag to your resultsdir.
+       Provide samplesheet with complete path
+       example: sh launch.sh projectname /path/to/samplesheet  #this will create work.projectname and results.projectname folders under `OUTDIR` path.
 
- ```
-        sh launch.sh tag /path/to/samplesheet        
-        This script takes two inputs
-        Provide Tag argument - This will add a tag to your resultsdir.
-        Provide samplesheet with complete path
-        example: sh launch.sh projectname /path/to/samplesheet  #this will create work.projectname and results.projectname folders under `OUTDIR` path.
-        
- ```
+```
 
 ### Case1:
+
 Test samplesheet with subsamples is available here `/data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
-### Case2: 
+
+### Case2:
+
 Test samplesheet with 20 samples is available here `/data/khanlab/projects/Nextflow_dev/testing/20_samplesheet.csv`
 
 To ensure you dont run into permission issues please run the #Case1 before launching full samples with #Case2
@@ -22,32 +25,33 @@ To ensure you dont run into permission issues please run the #Case1 before launc
 The following command should kick initiate the pipeline and display the status.
 
 `sh launch.sh vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
-                                                or 
+or
 `sbatch --mem=50g --time=24:00:00 sh launch vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
-# Workflow log
-When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
 
+# Workflow log
+
+When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
 
 ```
 [gangalapudiv2@cn4305 AWS_POC_Nextflow]$ ./launch.sh vg0416
-[+] Loading singularity  3.10.5  on cn4305 
-[+] Loading java 17.0.3.1  ... 
-[+] Loading nextflow  23.04.1 
-[+] Loading Graphviz v 2.46.1  ... 
+[+] Loading singularity  3.10.5  on cn4305
+[+] Loading java 17.0.3.1  ...
+[+] Loading nextflow  23.04.1
+[+] Loading Graphviz v 2.46.1  ...
 NXF_HOME=/data/khanlab2/NF_benchmarking/results.vg0416/.nextflow
-nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm 
+nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm
 /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume -with-trace -with-timeline
 N E X T F L O W  ~  version 23.04.1
 Launching `/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf` [gigantic_moriondo] DSL2 - revision: 47347c03a7
-R N A S E Q - N F   P I P E L I N E  
+R N A S E Q - N F   P I P E L I N E
 ===================================
 NF version   : 23.04.1
 runName      : gigantic_moriondo
 username     : gangalapudiv2
-configs      : [/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config, 
+configs      : [/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config,
 /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config]
 profile      : biowulf_test_run_slurm
-cmd line     : nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm 
+cmd line     : nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm
 /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume -with-trace -with-timeline
 start time   : 2023-07-14T08:38:30.805092321-04:00
 projectDir   : /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow
@@ -66,7 +70,7 @@ homeDir      : /home/gangalapudiv2
 ```
 
 # Workflow Resources
+
 $Script_home ---> data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow
-$Script_home/nextflow.config ---> All the pipeline config  resources are called from this file. We are using `biowulf_test_run_slurm` profile to run the samples on biowulf.
+$Script_home/nextflow.config ---> All the pipeline config resources are called from this file. We are using `biowulf_test_run_slurm` profile to run the samples on biowulf.
 $Script_home/config ---> Cluster config, singularity config, docker config and params config are located here
-   
