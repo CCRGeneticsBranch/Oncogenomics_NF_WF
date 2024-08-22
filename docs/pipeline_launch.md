@@ -1,76 +1,67 @@
 # Running the workflow.
 
-The workflow can be started by executing the `launch.sh` script in a interactive node. This wrapper script spawns new jobs and submits them to the SLURM
-scheduling system.
+To initiate the workflow, execute the `launch.sh` script on an interactive node. This script acts as a wrapper, spawning and submitting jobs to the SLURM scheduling system. It extracts the `PatientID` and `Casename` information from the samplesheet, creates the corresponding output directory for each case, and organizes all results and log files under `[output_directory]/PatientID/Casename/`.
 
 ```
-       sh launch.sh tag /path/to/samplesheet
-       This script takes two inputs
-       Provide Tag argument - This will add a tag to your resultsdir.
-       Provide samplesheet with complete path
-       example: sh launch.sh projectname /path/to/samplesheet  #this will create work.projectname and results.projectname folders under `OUTDIR` path.
+Usage: ./launch.sh <samplesheet_with_full_path> [output_directory] [genome]
+This script requires at least one positional argument:
+1. Full path to samplesheet csv file
+Optional arguments:
+2. Path to results directory (default: /data/khanlab/projects/processed_DATA)
+3. Genome name. Accepted values are hg19 and mm39 (default: hg19)
 
 ```
-
-### Case1:
-
-Test samplesheet with subsamples is available here `/data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
-
-### Case2:
-
-Test samplesheet with 20 samples is available here `/data/khanlab/projects/Nextflow_dev/testing/20_samplesheet.csv`
-
-To ensure you dont run into permission issues please run the #Case1 before launching full samples with #Case2
-
-The following command should kick initiate the pipeline and display the status.
-
-`sh launch.sh vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
-or
-`sbatch --mem=50g --time=24:00:00 sh launch vg0416 /data/khanlab/projects/Nextflow_dev/testing/exome-rnaseq_samplesheet.csv`
 
 # Workflow log
 
 When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
 
 ```
-[gangalapudiv2@cn4305 AWS_POC_Nextflow]$ ./launch.sh vg0416
-[+] Loading singularity  3.10.5  on cn4305
+[+] Loading singularity  4.0.3  on cn4280
 [+] Loading java 17.0.3.1  ...
-[+] Loading nextflow  23.04.1
+[+] Loading nextflow  23.10.0
 [+] Loading Graphviz v 2.46.1  ...
-NXF_HOME=/data/khanlab2/NF_benchmarking/results.vg0416/.nextflow
-nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm
-/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume -with-trace -with-timeline
-N E X T F L O W  ~  version 23.04.1
-Launching `/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf` [gigantic_moriondo] DSL2 - revision: 47347c03a7
-R N A S E Q - N F   P I P E L I N E
+NXF_HOME=/data/khanlab/projects/Nextflow_dev/dev/NCI0439/TestTNR/.nextflow
+nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nextflow.config -profile biowulf_test_run_slurm --logdir /data/khanlab/projects/Nextflow_dev/dev/NCI0439/TestTNR/log /vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/main.nf -resume -with-trace -with-timeline -with-dag
+ESC[33mNextflow 24.04.4 is available - Please consider updating your version to itESC(BESC[m
+N E X T F L O W  ~  version 23.10.0
+Launching `/vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/main.nf` [shrivelled_stallman] DSL2 - revision: b8c8cd72d2
+E X O M E - R N A S E Q - N F   P I P E L I N E
 ===================================
-NF version   : 23.04.1
-runName      : gigantic_moriondo
+NF version   : 23.10.0
+runName      : shrivelled_stallman
 username     : gangalapudiv2
-configs      : [/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config,
-/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config]
+configs      : [/vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nextflow.config, /vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nextflow.config]
 profile      : biowulf_test_run_slurm
-cmd line     : nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/nextflow.config -profile biowulf_test_run_slurm
-/vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow/main.nf -resume -with-trace -with-timeline
-start time   : 2023-07-14T08:38:30.805092321-04:00
-projectDir   : /vf/users/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow
-launchDir    : /gpfs/gsfs10/users/khanlab2/NF_benchmarking/results.vg0416
-workdDir     : /data/khanlab2/NF_benchmarking/work.vg0416
+cmd line     : nextflow run -c /vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nextflow.config -profile biowulf_test_run_slurm --logdir /data/khanlab/projects/Nextflow_dev/dev/NCI0439/TestTNR/log /vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/main.nf -resume -with-trace -with-timeline -with-dag
+start time   : 2024-08-20T12:54:52.989621486-04:00
+projectDir   : /vf/users/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF
+launchDir    : /vf/users/khanlab/projects/Nextflow_dev/dev/NCI0439/TestTNR
+workdDir     : /vf/users/khanlab/projects/Nextflow_dev/dev/NCI0439/TestTNR/work
 homeDir      : /home/gangalapudiv2
-[bc/d5f459] process > RNAseq_multiple_libs:Common_RNAseq_WF:Cutadapt (Test1c_R_T)                           [100%] 2 of 2, cached: 2 ✔
-[19/393899] process > RNAseq_multiple_libs:Common_RNAseq_WF:Kraken (Test1_R_T)                              [100%] 2 of 2, cached: 2 ✔
-[a8/5dba33] process > RNAseq_multiple_libs:Common_RNAseq_WF:Krona (Test1c_R_T)                              [100%] 2 of 2, cached: 2 ✔
-[a1/839bd7] process > RNAseq_multiple_libs:Common_RNAseq_WF:Fastqc (Test1c_R_T)                             [100%] 2 of 2, cached: 2 ✔
-[6b/05eb55] process > RNAseq_multiple_libs:Common_RNAseq_WF:Star_RSEM:Star (Test1_R_T)                      [100%] 2 of 2, cached: 2 ✔
-[ad/fe60ba] process > RNAseq_multiple_libs:Common_RNAseq_WF:Star_RSEM:Strandedness (Test1_R_T)              [100%] 2 of 2, cached: 2 ✔
-[d5/1866a1] process > RNAseq_multiple_libs:Common_RNAseq_WF:Star_RSEM:Rsem (Test1_R_T)                      [100%] 2 of 2, cached: 2 ✔
-[70/0bb5d2] process > RNAseq_multiple_libs:Common_RNAseq_WF:Fusion_calling:Arriba (Test1c_R_T)              [100%] 2 of 2, cached: 2 ✔
+
+[-        ] process > Tumor_Normal_RNAseq_WF:Comm... -
+[-        ] process > Tumor_Normal_RNAseq_WF:Comm... -
+[-        ] process > Tumor_Normal_RNAseq_WF:Comm... -
+[-        ] process > Tumor_Normal_RNAseq_WF:Comm... -
+[-        ] process > Tumor_Normal_RNAseq_WF:Comm... -
 
 ```
 
 # Workflow Resources
 
-$Script_home ---> data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow
+$Script_home ---> Path to the code repository (/data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow).
+
 $Script_home/nextflow.config ---> All the pipeline config resources are called from this file. We are using `biowulf_test_run_slurm` profile to run the samples on biowulf.
-$Script_home/config ---> Cluster config, singularity config, docker config and params config are located here
+
+$Script_home/config ---> Cluster config, singularity config, docker config and params config are located here.
+
+$Script_home/main.nf ---> This script calls the workflows and subworkflows in the pipeline.
+
+# Run Debugging
+
+Run-related Files: All files associated with the run will be generated in the `[output_directory]/PatientID/Casename` directory.
+
+Log Files: The log file, ending in `*.out`, will be located in `[output_directory]/PatientID/Casename`. This file contains details on any errors encountered during the run and provides the path to the work directory for troubleshooting.
+
+Work Directory: Inside `[output_directory]/PatientID/Casename/work`, you will find subfolders containing `.command.sh`, `.command.log`, and `.command.err` files for each process. These files offer detailed information about the execution of each command and any issues that may have occurred.
