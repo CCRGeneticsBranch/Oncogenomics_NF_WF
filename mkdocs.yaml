@@ -2,12 +2,12 @@
 site_name: khanlab-NGS-Pipeline
 site_author: Vineela Gangalapudi
 site_description: >-
-  The space will be used to provided documentation for khanlab NGS pipeline. 
+  The space will be used to provided documentation for khanlab NGS pipeline.
 
 # Repository
 repo_name: AWS_POC_MVP_NF
-repo_url: https://github.com/CCRGeneticsBranch/AWS_POC_MVP_NF
-edit_uri: https://github.com/CCRGeneticsBranch/AWS_POC_MVP_NF/edit
+repo_url: https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF
+edit_uri: https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/edit
 
 # Copyright
 copyright: Copyright &copy; 2022 CCR Genetics
@@ -19,7 +19,7 @@ theme:
     - navigation.tabs
     - navigation.top
     - navigation.indexes
-    - toc.integrate 
+    - toc.integrate
   palette:
     - scheme: default
       primary: indigo
@@ -43,7 +43,6 @@ plugins:
   - minify:
       minify_html: true
 
-
 # Customization
 extra:
   social:
@@ -55,7 +54,6 @@ extra:
       link: https://hub.docker.com/orgs/nciccbr/repositories
   version:
     provider: mike
-
 
 # Extensions
 markdown_extensions:
@@ -73,9 +71,6 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.critic
   - pymdownx.details
-  - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
@@ -95,5 +90,8 @@ markdown_extensions:
 
 # Page Tree
 nav:
-  - Profile-Run_upto_quants : index.md
-
+  - Overview: index.md
+  - Setting up Samplesheet: samplesheet.md
+  - Running the Pipeline: pipeline_launch.md
+  - Pipeline References & Tools: references.md
+  - Dockers: dockers.md
