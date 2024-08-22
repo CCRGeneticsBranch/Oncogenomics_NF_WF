@@ -10,7 +10,7 @@ The pipeline requires a CSV file as input for each patient. The samplesheet must
 | sample          | Patient name                                       | NCI-Test1                                                                   |
 | library         | Name of the sample library                         | Test1_T1D_E                                                                 |
 | read1           | Full path to the read1                             | /data/khanlab/DATA/Sample_Test1_T1D_E/Sample_Test1_T1D_E.R1.fastq.gz        |
-| read2           | Full path to the read2                             | /data/khanlab/DATA/Sample_Test1_T1D_E/Sample_Test1_T1D_E.R1.fastq.gz        |
+| read2           | Full path to the read2                             | /data/khanlab/DATA/Sample_Test1_T1D_E/Sample_Test1_T1D_E.R2.fastq.gz        |
 | sample_captures | Name of the capture kit used                       | List of supported capture kits are [here](index.md#sequencing-capture-kits) |
 | Matched_RNA     | Matched RNA library for the tumor library          | Test1_T1R_T                                                                 |
 | Matched_normal  | Matched exome normal library for the tumor library | Test1_N1D_E                                                                 |
