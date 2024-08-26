@@ -271,6 +271,7 @@ elsif($CALLER eq 'STRELKA_I'){
 		chomp;
 		my @field=split(/\t/,$_);
 		my ($chr, $start, $end, $ref, $alt, $qual, $filter, $info, $format, $Normal, $Tumor) = @field;
+		if($filter !~ /PASS/) {next;}
 		print "$chr\t$start\t$end\t$ref\t$alt\t$qual\t$filter\t$info\t$sname\t";
 		my (@format) = split(":", $format);
 		my ($DPindex, $TIRindex);
@@ -304,28 +305,7 @@ elsif($CALLER eq 'STRELKA_I'){
 	close FH;
 	`rm -rf $TEMP/$sname.i $TEMP/.err_$sname.i`;
 }
-elsif($CALLER eq 'Platypus'){
-	`perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.p 2>$TEMP/.err_$sname.p`;
-        print "Chr\tStart\tEnd\tRef\tAlt\tQUAL\tFILTER\tINFO\tSampleName";
-        foreach(@NSAMPLES){
-                print "\t$_.GT\tTotalCoverage\tRefCoverage\tVarCoverage\tVariant Allele Freq";
-        }
-        print "\n";
-	open (FH, "$TEMP/$sname.p");
-	while(<FH>){
-		chomp;
-		my ($chr, $start, $end, $ref, $alt, $qual, $filter, $info, $format, @samples) = split("\t", $_);
-		print "$chr\t$start\t$end\t$ref\t$alt\t$qual\t$filter\t$info\t$sname";
-		foreach (@samples){
-			my @out = Platypus($format, $_);
-			print "\t`$out[0]\t$out[1]\t$out[2]\t$out[3]\t$out[4]";
-		}
-		print "\n";
 
-	}
-	close FH;
-	`rm -rf $TEMP/$sname.p $TEMP/.err_$sname.p`;
-}
 elsif($CALLER eq 'GATK'){
 #	print "perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g\n\n";
 #	system("perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.g 2>$TEMP/.err_$sname.g") == 0
@@ -349,28 +329,6 @@ elsif($CALLER eq 'GATK'){
 	}
 	close FH;
 	`rm -rf $TEMP/$sname.g $TEMP/.err_$sname.g`;
-}
-elsif($CALLER eq 'freeBayes'){
-	`perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.fb 2>$TEMP/.err_$sname.fb`;
-	print "Chr\tStart\tEnd\tRef\tAlt\tQUAL\tFILTER\tINFO\tSampleName";
-	foreach(@NSAMPLES){
-		print "\t$_.GT\tTotalCoverage\tRefCoverage\tVarCoverage\tVariant Allele Freq";
-	}
-	print "\n";
-	open(FH, "$TEMP/$sname.fb");
-	while(<FH>){
-		chomp;
-		my ($chr, $start, $end, $ref, $alt, $qual, $filter, $info, $format, @samples) = split("\t", $_);
-		print "$chr\t$start\t$end\t$ref\t$alt\t$qual\t$filter\t$info\t$sname";
-		foreach (@samples){
-			my @out = FREEBAYES($format, $_);
-			print "\t`$out[0]\t$out[1]\t$out[2]\t$out[3]\t$out[4]";
-		}
-		print "\n";
-	}
-	close FH;
-	`rm -rf $TEMP/$sname.fb $TEMP/.err_$sname.fb`;
-
 }
 elsif($CALLER eq 'bam2mpg'){
 	`perl $convert2annovar --format vcf4old --includeinfo $input 2>/dev/null| cut -f 1-5,11-10000 > $TEMP/$sname.mpg 2>$TEMP/.err_$sname.mpg`;
