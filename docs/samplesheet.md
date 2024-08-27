@@ -5,6 +5,25 @@ Along with processing the data, if you want to visualize the results on [ClinOmi
 
 For khanlab purposes, pipeline is always launched using the information in the mastersheets on biowulf under /data/khanlab space. The script [samplesheet_builder.py](https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/blob/feature/casename/samplesheet_builder.py) queries the mastersheets to build a samplesheet for the pipeline. A copy of this script is available in the pipeline git repo. This script takes two inputs `PatientID` and `casename`. By default, it queries all mastersheets found in the `/data/khanlab/projects/DATA/Sequencing_Tracking_Master` directory and uses `/data/khanlab/projects/DATA` as the default input directory.
 
+When using a non-Khanlab master sheet, ensure the following columns are included:
+
+- **Patient ID**: `PatientID`
+- **Library ID**: `LibraryID`
+- **Enrichment Step**: `Capture kit name`
+- **Matched RNA-seq Library**: `Matching RNA lib for the Exome library` (can be left empty)
+- **Matched Normal**: `Matching normal lib for the Exome library` (can be left empty)
+- **Diagnosis**: `Diagnosis`
+- **Case Name**: `casename for website`
+- **Type**: `Data type information`
+- **FCID**: `flowcell ID` (optional)
+- **Project**: `Project name`
+
+  **Read1, Read2 Construction**: The script uses information from the Input directory and following columns to build the file paths for `read1` and `read2`.
+
+- **Library ID**
+- **FCID** (optional)
+  If **FCID** is provided, it will be used to build the paths; otherwise, the paths will be constructed using only the **Input Path** and **Library ID**.
+
 ```
 Usage: python ./samplesheet_builder.py <patient_id> <case_name>
 Default Samplesheet Directory: /data/khanlab/projects/DATA/Sequencing_Tracking_Master
@@ -16,9 +35,18 @@ To use custom directories, modify the script:
 
 ` python ./samplesheet_builder.py Test_Patient casename` will output a file Test_Patient_casename.csv in the same folder.
 
+### Error Handling
+
+The script includes the following error handling mechanisms:
+
+- **Patient ID or Case Name Not Found**:
+  If the provided patient ID case name combination is not found in the master sheet, the script will generate an error message.
+- **Invalid `read1` and `read2` Paths**:
+  If the paths for `read1` and `read2` are invalid, the script will output an error message. This message will prompt you to check and verify the input paths.
+
 ## Build your own samplesheet
 
-Alternately, we can build the pipeline input csv file using these columns.
+Alternately, we can build custom samplesheet without mastersheet. These are the required columns.
 
 | Column name     | Notes                                                                                             | Example                                                                            |
 | --------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -34,7 +62,7 @@ Alternately, we can build the pipeline input csv file using these columns.
 | type            | Data type                                                                                         | example: tumor_RNA, tumor_DNA, normal_DNA, blood_DNA, cell_line_DNA, cell_line_RNA |
 | FCID            | Flowcell ID                                                                                       | ACJ678349                                                                          |
 
-### example samplesheet:
+### Example samplesheet:
 
 sample,library,read1,read2,sample_captures,Diagnosis,Matched_RNA,Matched_normal,casename,type,FCID,Project
 Test8,Test5_T1D_E,/data/khanlab/projects/fastq/Test5_T1D_E_R1.fastq.gz,/data/khanlab/projects/fastq/Test5_T1D_E_R2.fastq.gz,clin.ex.v1,Osteosarcoma,,Test8_N2D_E,NFtest0523,tumor_DNA,AWXYNH2,Test
