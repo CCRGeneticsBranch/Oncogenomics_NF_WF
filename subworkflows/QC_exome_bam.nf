@@ -52,7 +52,50 @@ workflow QC_exome_bam {
 
          ch_versions = Genotyping.out.versions.mix(Read_depth.out.versions)
 
-         FailedExons_Genes(Read_depth.out.read_depth_output)
+
+        failed_exon_input = Read_depth.out.read_depth_output
+          .map {tuple ->
+                def meta = tuple[0]
+                def depth = tuple[1]
+                def threshold = ''
+
+                if (meta.sc == 'clin.ex.v1' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['clin_ex_v1']['Tumor']
+                } else if (meta.sc == 'clin.ex.v1' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['clin_ex_v1']['Normal']
+                } else if (meta.sc == 'wholegenome' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['wholegenome']['Tumor']
+                } else if (meta.sc == 'wholegenome' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['wholegenome']['Normal']
+                } else if (meta.sc == 'seqcapez.rms.v1' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['seqcapez_rms_v1']['Tumor']
+                } else if (meta.sc == 'seqcapez.rms.v1' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['seqcapez_rms_v1']['Normal']
+                } else if (meta.sc == 'comp_ex_v1' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['comp_ex_v1']['Tumor']
+                } else if (meta.sc == 'comp_ex_v1' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['comp_ex_v1']['Normal']
+                } else if ((meta.sc == 'clin.snv.v1'|| meta.sc == 'clin.snv.v2') && (meta.type =='tumor_DNA' )) {
+                  threshold = params.failed_exon['clin_snv']['Tumor']
+                } else if ((meta.sc == 'clin.snv.v1'|| meta.sc == 'clin.snv.v2') && (meta.type =='normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['clin_snv']['Normal']
+                } else if (meta.sc == 'xgen-hyb-panelv2' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['xgen_hyb_panelv2']['Tumor']
+                } else if (meta.sc == 'xgen-hyb-panelv2' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['xgen_hyb_panelv2']['Normal']
+                } else if (meta.sc == 'seqcapez.hu.ex.v3' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['seqcapez_hu_ex_v3']['Tumor']
+                } else if (meta.sc == 'seqcapez.hu.ex.v3' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['seqcapez_hu_ex_v3']['Normal']
+                } else if (meta.sc == 'agilent.v7' && meta.type == 'tumor_DNA' ) {
+                  threshold = params.failed_exon['agilent_v7']['Tumor']
+                } else if (meta.sc == 'agilent.v7' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                  threshold = params.failed_exon['agilent_v7']['Normal']
+                }
+                return [meta,depth,threshold]
+          }
+         failed_exon_input|FailedExons_Genes
+         //FailedExons_Genes(Read_depth.out.read_depth_output)
          /*
          Bam2tdf(
           GATK_exome_bam
