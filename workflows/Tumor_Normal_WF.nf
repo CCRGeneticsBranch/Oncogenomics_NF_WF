@@ -15,6 +15,7 @@ include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
 include {MutationalSignature} from '../modules/misc/MutationalSignature.nf'
 include {Cosmic3Signature} from '../modules/misc/MutationalSignature.nf'
 include {MutationBurden} from '../modules/misc/MutationBurden.nf'
+include {Mantis_MSI} from '../modules/misc/Mantis.nf'
 include {Sequenza_annotation} from '../subworkflows/Sequenza_annotation'
 include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
 include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
@@ -25,7 +26,7 @@ include {DBinput_multiples } from '../modules/misc/DBinput'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
-include {TcellExtrect} from '../modules/misc/TcellExtrect'
+include {TcellExtrect_TN} from '../modules/misc/TcellExtrect'
 include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
@@ -38,19 +39,16 @@ include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversi
 
 def combineSamples = { normalSamples, tumorSamples ->
     normalSamples.cross(tumorSamples).map { normal, tumor ->
-        def meta = [:]
+                def meta = tumor[1]
+                [
+                    meta + [
+                        N_sc: normal[1].sc,
+                        normal_id: normal[1].lib,
+                        normal_type: normal[1].type
+        ],
+        normal[2], tumor[2] ]
+            }
 
-        meta.id         = tumor[1].id
-        meta.normal_id  = normal[1].lib
-        meta.normal_type = normal[1].type
-        meta.casename   = normal[1].casename
-        meta.lib        = tumor[1].lib
-        meta.type       = tumor[1].type
-        meta.T_sc       = tumor[1].sc
-        meta.N_sc       = normal[1].sc
-
-        [meta, normal[2], tumor[2]]
-    }
 }
 
 workflow Tumor_Normal_WF {
@@ -112,18 +110,14 @@ pileup_samples_tumor_to_cross = pileup_Status.tumor.map{ meta, pileup -> [ meta.
 //Use cross to combine normal with tumor samples
 pileup_pair = pileup_samples_normal_to_cross.cross(pileup_samples_tumor_to_cross)
             .map { normal, tumor ->
-                def meta = [:]
-
-                meta.id         = tumor[1].id
-                meta.normal_id  = normal[1].lib
-                meta.normal_type = normal[1].type
-                meta.casename        = normal[1].casename
-                meta.lib   = tumor[1].lib
-                meta.type = tumor[1].type
-                meta.T_sc  = tumor[1].sc
-                meta.N_sc  = normal[1].sc
-
-                [ meta, [normal[2], tumor[2]] ]
+                def meta = tumor[1]
+                [
+                    meta + [
+                        N_sc: normal[1].sc,
+                        normal_id: normal[1].lib,
+                        normal_type: normal[1].type
+            ],
+                 [normal[2], tumor[2]] ]
             }
 
 
@@ -149,20 +143,17 @@ bam_variant_calling_pair_to_cross = bam_variant_calling_status.tumor.map{ meta, 
 
 bam_variant_calling_pair = bam_variant_calling_normal_to_cross.cross(bam_variant_calling_pair_to_cross)
             .map { normal, tumor ->
-                def meta = [:]
+                def meta = tumor[1]
+                [
+                    meta + [
+                        N_sc: normal[1].sc,
+                        normal_id: normal[1].lib,
+                        normal_type: normal[1].type
+        ],
+        normal[2], normal[3], tumor[2], tumor[3],tumor[4]
+                ]
 
-                meta.id         = tumor[1].id
-                meta.normal_id  = normal[1].lib
-                meta.normal_type = normal[1].type
-                meta.casename        = normal[1].casename
-                meta.lib   = tumor[1].lib
-                meta.type = tumor[1].type
-                meta.T_sc  = tumor[1].sc
-                meta.N_sc  = normal[1].sc
-
-                [ meta, normal[2], normal[3], tumor[2], tumor[3],tumor[4] ]
             }
-
 
 
 CNVkitPaired(
@@ -213,18 +204,15 @@ HC_snpeff_snv_vcftxt_samples_tumor_to_cross = HC_snpeff_snv_vcftxt_status.tumor.
 //Use cross to combine normal with tumor samples
 HC_snpeff_snv_vcftxt_pair = HC_snpeff_snv_vcftxt_samples_normal_to_cross.cross(HC_snpeff_snv_vcftxt_samples_tumor_to_cross)
             .map { normal, tumor ->
-                def meta = [:]
+                def meta = tumor[1]
+                [
+                    meta + [
+                        N_sc: normal[1].sc,
+                        normal_id: normal[1].lib,
+                        normal_type: normal[1].type
+        ],
 
-                meta.id         = tumor[1].id
-                meta.normal_id  = normal[1].lib
-                meta.normal_type = normal[1].type
-                meta.casename        = normal[1].casename
-                meta.lib   = tumor[1].lib
-                meta.type = tumor[1].type
-                meta.T_sc  = tumor[1].sc
-                meta.N_sc  = normal[1].sc
-
-                [ meta, normal[2], tumor[2] ]
+        normal[2], tumor[2] ]
             }
 
 
@@ -292,6 +280,7 @@ mergehla_status = Exome_common_WF.out.mergehla_exome.branch{
     tumor:  it[0].type == "tumor_DNA"
 }
 
+
 //All Germline samples HLA in  [meta.id, meta, file] format
 mergehla_samples_normal_to_cross = mergehla_status.normal.map{ meta, mergedcalls  -> [ meta.id, meta, mergedcalls ] }
 
@@ -299,24 +288,16 @@ vep_out_to_cross = VEP.out.vep_out.map{ meta, vcf -> [ meta.id, meta, vcf ] }
 
 hla_with_updated_meta_ch = vep_out_to_cross.cross(mergehla_samples_normal_to_cross)
             .map { vcf, hla ->
-                def meta = [:]
-
-                meta.id         = vcf[1].id
-                meta.normal_id  = vcf[1].normal_id
-                meta.normal_type = vcf[1].normal_type
-                meta.casename        = vcf[1].casename
-                meta.lib   = vcf[1].lib
-                meta.type = vcf[1].type
-                meta.T_sc  = vcf[1].T_sc
-                meta.N_sc  = vcf[1].N_sc
-
+                def meta = vcf[1]
                 [ meta, hla[2] ]
             }
 
-
 pvacseq_input = split_vcf_files.combine(hla_with_updated_meta_ch,by:[0])
 
+
 Pvacseq(pvacseq_input)
+
+ch_versions = ch_versions.mix(Pvacseq.out.versions)
 
 combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, [*files] ] }
 
@@ -347,13 +328,13 @@ Sequenza_annotation(
 ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
 
 
-tcellextrect_input = Exome_common_WF.out.exome_final_bam
-                    .join(Exome_common_WF.out.target_capture_ch,by:[0])
-                    .combine(genome_version_tcellextrect)
 
-TcellExtrect(tcellextrect_input)
+tcellextrect_input = bam_variant_calling_pair
+                        .join(Sequenza_annotation.out.alternate,by:[0])
+                        .combine(genome_version_tcellextrect)
 
 
+TcellExtrect_TN(tcellextrect_input)
 
 highconfidence_somatic_threshold = tumor_target_capture
    .map {tuple ->
@@ -362,38 +343,44 @@ highconfidence_somatic_threshold = tumor_target_capture
         def Normal = ''
         def Tumor = ''
         def VAF =  ''
-        if (meta.T_sc == 'clin.ex.v1' || meta.T_sc == 'nextera.ex.v1'|| meta.T_sc == 'vcrome2.1_pkv2' || meta.T_sc == 'seqcapez.hu.ex.v3' || meta.T_sc == 'seqcapez.hu.ex.utr.v1' || meta.T_sc == 'agilent.v7'|| meta.T_sc == 'panel_paed_v5_w5.1'|| meta.T_sc == 'idt_v2_plus') {
+        if (meta.sc == 'clin.ex.v1' || meta.sc == 'nextera.ex.v1'|| meta.sc == 'vcrome2.1_pkv2' || meta.sc == 'seqcapez.hu.ex.v3' || meta.sc == 'seqcapez.hu.ex.utr.v1' || meta.sc == 'agilent.v7'|| meta.sc == 'panel_paed_v5_w5.1'|| meta.sc == 'idt_v2_plus') {
             Normal = params.highconfidence_somatic_threshold['threshold_1']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_1']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_1']['VAF']
-        } else if (meta.T_sc == 'clin.snv.v1'|| meta.T_sc == 'clin.snv.v2') {
+        } else if (meta.sc == 'clin.snv.v1'|| meta.sc == 'clin.snv.v2') {
             Normal = params.highconfidence_somatic_threshold['threshold_2']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_2']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_2']['VAF']
-        } else if (meta.T_sc == 'seqcapez.rms.v1') {
+        } else if (meta.sc == 'seqcapez.rms.v1') {
             Normal = params.highconfidence_somatic_threshold['threshold_3']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_3']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_3']['VAF']
-        } else if (meta.T_sc == 'wholegenome'){
+        } else if (meta.sc == 'wholegenome'){
             Normal = params.highconfidence_somatic_threshold['threshold_4']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_4']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_4']['VAF']
+        } else if (meta.sc == 'comp_ex_v1'){
+            Normal = params.highconfidence_somatic_threshold['threshold_5']['Normal']
+            Tumor = params.highconfidence_somatic_threshold['threshold_5']['Tumor']
+            VAF = params.highconfidence_somatic_threshold['threshold_5']['VAF']
         }
         return [meta,Normal,Tumor,VAF]
    }
-/*
+
 targetbp_MB_ch = tumor_target_capture
     .map { tuple ->
         def meta = tuple[0]
         def bed = tuple[1]
         def targetbp_mb = ''
 
-        if (meta.T_sc == 'clin.ex.v1') {
+        if (meta.sc == 'clin.ex.v1') {
             targetbp_mb = params.clin_ex_v1_MB
-        } else if (meta.T_sc == 'seqcapez.hu.ex.v3') {
+        } else if (meta.sc == 'seqcapez.hu.ex.v3') {
             targetbp_mb = params.seqcapez.hu.ex.v3_MB
-        } else if (meta.T_sc == 'agilent.v7') {
+        } else if (meta.sc == 'agilent.v7') {
             targetbp_mb = params.agilent.v7_MB
+        } else if (meta.sc == 'comp_ex_v1') {
+            targetbp_mb = params.comp_ex_v1_MB
         }
 
         return [meta,targetbp_mb]
@@ -407,7 +394,33 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
                     .combine(strelka_snvsch)
 
 MutationBurden(mutationburden_input_ch)
-*/
+
+mantis_input = bam_variant_calling_pair.map{
+    tuple ->
+    def meta = tuple[0]
+    def nbam = tuple[1]
+    def nbai = tuple[2]
+    def tbam = tuple[3]
+    def tbai = tuple[4]
+    def Tbed = tuple[5]
+    def loci_bed = ''
+    def genome = params.genome
+
+    if (meta.sc == 'clin.ex.v1') {
+        loci_bed = params.clin_ex_v1_loci
+    } else if (meta.sc == 'agilent.v7') {
+        loci_bed = params.agilent.v7_loci
+    } else {
+        return [meta, nbam, nbai, tbam, tbai]
+    }
+    return [meta, nbam, nbai, tbam, tbai, loci_bed, genome]
+}
+.filter { tuple ->
+    tuple.size() == 7
+}
+
+mantis_input|Mantis_MSI
+
 exome_qc_status = Exome_common_WF.out.exome_qc.branch{
     normal: it[0].type == "normal_DNA"
     tumor:  it[0].type == "tumor_DNA"
@@ -418,8 +431,8 @@ exome_qc_normal_status_to_cross = exome_qc_status.normal.map{ meta, normal -> [ 
 exome_qc_tumor_status_to_cross = exome_qc_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
 
 qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_status_to_cross)
-
-QC_summary_Patientlevel(qc_summary_ch)
+qc_summary_input_ch = qc_summary_ch.map{meta, normal, tumor -> [meta, [normal, tumor] ]}
+QC_summary_Patientlevel(qc_summary_input_ch)
 
 exome_genotyping_status = Exome_common_WF.out.gt.branch{
     normal: it[0].type == "normal_DNA"
@@ -431,7 +444,9 @@ exome_genotyping_status_normal_to_cross = exome_genotyping_status.normal.map{ me
 exome_genotyping_status_tumor_to_cross = exome_genotyping_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
 
 Patient_genotyping_ch = combineSamples(exome_genotyping_status_normal_to_cross,exome_genotyping_status_tumor_to_cross)
-Genotyping_Sample(Patient_genotyping_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
+Combined_genotyping_ch = Patient_genotyping_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] }
+Genotyping_Sample(Combined_genotyping_ch,
+                Pipeline_version)
 
 exome_loh_status = Exome_common_WF.out.loh.branch{
     normal: it[0].type == "normal_DNA"
@@ -473,8 +488,6 @@ multiqc_channel = multiqc_status.tumor.merge(multiqc_status.normal) { item1, ite
     }
 }
 
-/*
-//multiqc_channel.view()
 Multiqc(multiqc_channel)
 
 
@@ -485,6 +498,5 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
         .combine(Pipeline_version)
 
-//CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
-*/
+CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 }
