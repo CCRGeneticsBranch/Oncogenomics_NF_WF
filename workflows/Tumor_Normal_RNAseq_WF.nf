@@ -538,7 +538,8 @@ genotyping_samples_rnaseq_to_cross = Common_RNAseq_WF.out.gt.map{ meta, gt -> [ 
 
 genotyping_TNR =  combine_exome_rnaseq_libraries(Patient_genotyping_exome,genotyping_samples_rnaseq_to_cross)
 
-Genotyping_Sample(genotyping_TNR)
+Genotyping_Sample(genotyping_TNR,
+                Pipeline_version)
 
 exome_loh_status = Exome_common_WF.out.loh.branch{
     normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
