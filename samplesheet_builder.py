@@ -156,7 +156,7 @@ def process_samplesheets(
             print(f"Read1: {read1}, Read2: {read2}")
 
 
-# column mapping including the new Project field
+# column mapping
 column_mapping = {
     "Patient ID": "sample",
     "Library ID": "library",
@@ -169,7 +169,7 @@ column_mapping = {
     "Case Name": "casename",
     "Type": "type",
     "FCID": "FCID",
-    "Project": "Project",  # New field added
+    "Project": "Project",
 }
 
 # Call the function to process all samplesheets
