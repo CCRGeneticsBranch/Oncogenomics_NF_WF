@@ -50,8 +50,10 @@ MakeHotSpotDB(MakeHotSpotDB_input)
 Circosplot_input = Exome_common_WF.out.loh.map{ meta, loh -> [meta, [loh]] }
 CircosPlot(Circosplot_input)
 
-Genotyping_Sample(Exome_common_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
 
+genotyping_input = (Exome_common_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
+Genotyping_Sample(genotyping_input,
+                Pipeline_version)
 Combined_coverage = Exome_common_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
 CoveragePlot(Combined_coverage)
 
