@@ -64,7 +64,7 @@ for row in samplesheet_data:
     sample_casename_counts[(sample, casename)] += 1
 
     # Check if the row is a Tumor type
-    if row["type"] == "tumor_DNA":
+    if row["type"] in ["tumor_DNA", "cell_line_DNA"]:
         # Get the values of Matched_RNA and Matched_normal
         matched_rna = row["Matched_RNA"]
         matched_normal = row["Matched_normal"]
@@ -165,7 +165,7 @@ rna_lib_rows = []
 if any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
     for row in samplesheet_data
-    if row["type"] in ["tumor_RNA", "cell_line_RNA"]
+    if row["type"] in ["tumor_RNA", "cell_line_RNA", "xeno_RNA"]
 ):
     output_file = os.path.join(outdir, "RNAseq.csv")
     rna_file = open(output_file, "w", newline="")
@@ -269,7 +269,7 @@ for row in samplesheet_data:
 
     # Check if the sample and casename combination is unique
     if sample_casename_counts[(sample, casename)] == 1:
-        if row_type in ["tumor_RNA", "cell_line_RNA"] and rna_writer:
+        if row_type in ["tumor_RNA", "cell_line_RNA", "xeno_RNA"] and rna_writer:
             rna_writer.writerow(row)
         elif row_type in ["normal_DNA", "tumor_DNA", "cell_line_DNA"] and exome_writer:
             exome_writer.writerow(row)
