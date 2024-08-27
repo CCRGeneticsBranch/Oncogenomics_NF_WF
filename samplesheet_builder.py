@@ -12,7 +12,7 @@ DEFAULT_INPUT_DIR = "/data/khanlab/projects/DATA"
 # Check if the correct number of arguments is provided
 if len(sys.argv) != 3:
     print(f"Usage: python {sys.argv[0]} <patient_id> <case_name>")
-    print(f"Default Samplesheet Directory: {DEFAULT_SAMPLESHEET_DIR}")
+    print(f"Default Mastersheet Directory: {DEFAULT_SAMPLESHEET_DIR}")
     print(f"Default Input Directory: {DEFAULT_INPUT_DIR}")
     print("To use custom directories, modify the script:")
     print(f"   - Change 'DEFAULT_SAMPLESHEET_DIR' to your samplesheet directory path")
