@@ -54,7 +54,7 @@ workflow Tumor_RNAseq_WF {
 // Parse the samplesheet to generate fastq tuples
 samples = Channel.fromPath("Tumor_RNAseq.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" || row.type == "tumor_RNA" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" || row.type == "tumor_RNA" || row.type == "cell_line_RNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -71,7 +71,7 @@ samples = Channel.fromPath("Tumor_RNAseq.csv")
 
 samples_branch = samples.branch{
         exome: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"
-        rnaseq: it[0].type == "tumor_RNA"
+        rnaseq: it[0].type == "tumor_RNA" || it[0].type == "cell_line_RNA"
 }
 
 samples_branch.rnaseq|Common_RNAseq_WF
