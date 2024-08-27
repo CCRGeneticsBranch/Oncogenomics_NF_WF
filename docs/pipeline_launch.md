@@ -1,6 +1,6 @@
 # Running the workflow.
 
-To initiate the workflow, execute the `launch.sh` script on an interactive node. This script acts as a wrapper, spawning and submitting jobs to the SLURM scheduling system. It extracts the `PatientID` and `Casename` information from the samplesheet, creates the corresponding output directory for each case, and organizes all results and log files under `[output_directory]/PatientID/Casename/`.
+To initiate the workflow, execute the `launch.sh` script in a interactive node. This script acts as a wrapper, spawning and submitting jobs to the SLURM scheduling system. It extracts the `PatientID` and `Casename` information from the [samplesheet](samplesheet.md), creates the corresponding output directory for each case, and organizes all results and log files under `[output_directory]/PatientID/Casename/`.
 
 ```
 Usage: ./launch.sh <samplesheet_with_full_path> [output_directory] [genome]
@@ -14,7 +14,13 @@ Optional arguments:
 
 # Workflow log
 
-When the workflow is launched, it will produce a log that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
+When the workflow is launched, it will produce a log file that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
+
+The log file will be generated under /Resultsdir/PatientID/casename directory. This is the logfile naming convention. `patientid_casename_jobid_datelaunched-timelaunched.out`
+
+`Example: NCI0439_TestTNR_34233573_20240822-183525.out`
+
+### Sample log file:
 
 ```
 [+] Loading singularity  4.0.3  on cn4280
@@ -50,7 +56,7 @@ homeDir      : /home/gangalapudiv2
 
 # Workflow Resources
 
-$Script_home ---> Path to the code repository (/data/khanlab/projects/Nextflow_dev/AWS_POC_Nextflow).
+$Script_home ---> Path to the code repository (/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF).
 
 $Script_home/nextflow.config ---> All the pipeline config resources are called from this file. We are using `biowulf_test_run_slurm` profile to run the samples on biowulf.
 
@@ -64,4 +70,4 @@ Run-related Files: All files associated with the run will be generated in the `[
 
 Log Files: The log file, ending in `*.out`, will be located in `[output_directory]/PatientID/Casename`. This file contains details on any errors encountered during the run and provides the path to the work directory for troubleshooting.
 
-Work Directory: Inside `[output_directory]/PatientID/Casename/work`, you will find subfolders containing `.command.sh`, `.command.log`, and `.command.err` files for each process. These files offer detailed information about the execution of each command and any issues that may have occurred.
+Work directory: Inside `[output_directory]/PatientID/Casename/work`, you will find subfolders containing `.command.sh`, `.command.log`, and `.command.err` files for each process. These files offer detailed information about the execution of each command and any issues that may have occurred.
