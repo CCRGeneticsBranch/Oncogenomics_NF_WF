@@ -2,7 +2,7 @@ process Split_vcf {
 
    tag "$meta.lib"
 
-   publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}"
+   //publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}"
 
   input:
   tuple val(meta),path(vep_vcf)
@@ -35,6 +35,7 @@ process Pvacseq {
 
   output:
   tuple val(meta),path("*filtered.tsv"), emit: pvacseq_output_ch
+  path "versions.yml"             , emit: versions
 
   stub:
   """
@@ -53,6 +54,12 @@ process Pvacseq {
   else
     touch \$SAMPLE.filtered.tsv
   fi
+
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    pvacseq: \$(pvactools --version)
+END_VERSIONS
+
   """
 
 }
