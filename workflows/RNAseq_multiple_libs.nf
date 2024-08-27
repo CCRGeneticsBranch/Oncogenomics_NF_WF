@@ -2,18 +2,23 @@
 include {Common_RNAseq_WF} from './Common_RNAseq_WF'
 
 //import modules
-include {RNAqc_TrancriptCoverage} from '../modules/qc/picard'
-include {MakeHotSpotDB} from '../modules/qc/plots'
+include {RNAqc_TrancriptCoverage
+        Combine_customRNAQC} from '../modules/qc/picard'
+include {MakeHotSpotDB
+        Hotspot_Boxplot
+        CoveragePlot} from '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
-include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
-include {CircosPlot} from '../modules/qc/qc'
+include {Fusion_Annotation
+        Merge_fusion_annotation} from '../modules/annotation/Fusion_Annotation'
+include {CircosPlot
+        Genotyping_Sample} from '../modules/qc/qc'
 include {Actionable_fusion} from '../modules/Actionable.nf'
 include {Actionable_variants} from '../modules/Actionable.nf'
 include {DBinput_multiple} from '../modules/misc/DBinput'
 include {Multiqc} from '../modules/qc/qc'
-
+include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,16 +30,15 @@ def combinelibraries(inputData) {
     def processedData = inputData.map { meta, file ->
         meta2 = [
             id: meta.id,
-            casename: meta.casename
+            casename: meta.casename,
+            type: meta.type,
+            sc: meta.sc
         ]
         [meta2, file]
     }.groupTuple()
-     .map { meta, files -> [meta, *files] }
-     .filter { tuple ->
-        tuple.size() > 2
-     }
-    return processedData
+     .map { meta, files -> [meta, [*files]] }
 }
+
 
 
 workflow RNAseq_multiple_libs {
@@ -47,12 +51,15 @@ genome_version = Channel.from(params.genome_version)
 pfamdb  = Channel.of(file(params.pfamdb, checkIfExists:true))
 genome  = Channel.of(file(params.genome, checkIfExists:true))
 group               = Channel.from("rnaseq")
+genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_annotation)
+genome_version = Channel.from(params.genome_version)
+Pipeline_version = Channel.from(params.Pipeline_version)
 
 
 //create a sample channel using meta hashmap
 samples_rnaseq = Channel.fromPath("RNA_lib.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "RNAseq" }
+.filter { row -> row.type == "tumor_RNA" || row.type == "cell_line_RNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -70,237 +77,95 @@ samples_rnaseq = Channel.fromPath("RNA_lib.csv")
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
 
-//create combined fusion calls channel of multiple libraries
-Common_RNAseq_WF.out.fusion_calls.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_fusion_ch }
+Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
+                        .join(Common_RNAseq_WF.out.fusion_calls, by:[0])
+                        .combine(pfamdb)
+                        .combine(genome)
+                        .combine(genome_version_fusion_annotation)
+                        .combine(genome_version)
 
-//Create actionable fusions
-Actionable_fusion(
-combined_fusion_ch.map { tuple -> tuple.drop(1) },
-combined_fusion_ch.map { tuple -> tuple[0] }
-)
+Fusion_Annotation(Fusion_Annotation_input)
+merge_fusion_anno_input = Fusion_Annotation.out.map { meta, file ->
+                    new_meta = [
+                    id: meta.id,
+                    casename: meta.casename
+                    ]
+                return [ new_meta, file ]
+                }
+                .groupTuple()
+                .map { meta, files -> [ meta, [*files ]] }
 
-//create combined isoform calls channel of multiple libraries
-Common_RNAseq_WF.out.rsem_isoforms.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_rsem_ch }
+Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
 
-/*
-Fusion_Annotation(
-    combined_rsem_ch.map { tuple -> tuple.drop(1) },
-    Actionable_fusion.out.combine(pfamdb).combine(genome),
-    genome_version_fusion_annotation,
-    genome_version
-)
-*/
+actionable_fusion_input = combinelibraries(Common_RNAseq_WF.out.fusion_calls)
+Actionable_fusion(actionable_fusion_input)
+combine_customRNAQC_input = combinelibraries(Common_RNAseq_WF.out.rnalib_custum_qc)
+Combine_customRNAQC(combine_customRNAQC_input)
+RNAqc_TrancriptCoverage_input = combinelibraries(Common_RNAseq_WF.out.picard_rnaseqmetrics)
+genotyping_input = combinelibraries(Common_RNAseq_WF.out.gt)
+Genotyping_Sample(genotyping_input,
+                Pipeline_version)
+circos_input = combinelibraries(Common_RNAseq_WF.out.loh)
+CircosPlot(circos_input)
+hotspot_depth_input = combinelibraries(Common_RNAseq_WF.out.hotspot_depth)
+Hotspot_Boxplot(hotspot_depth_input)
+coverage_plot_input = combinelibraries(Common_RNAseq_WF.out.coverage)
+CoveragePlot(coverage_plot_input)
 
+makehotspotdb_input = combinelibraries(Common_RNAseq_WF.out.pileup)
+MakeHotSpotDB(makehotspotdb_input)
 
-//create combined qc channel of multiple libraries
-Common_RNAseq_WF.out.rnalib_custum_qc.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_RNAqc_ch }
+combined_snpefflibs = combinelibraries(Common_RNAseq_WF.out.snpeff_vcf)
 
-//create combined Picard qc channel of multiple libraries
-Common_RNAseq_WF.out.picard_rnaseqmetrics.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_rnaseqmetrics_ch }
+format_input = combined_snpefflibs.join(MakeHotSpotDB.out,by:[0])
+FormatInput(format_input)
 
-//gather channels for custom qc
-combined_RNAqc_list_ch = combined_RNAqc_ch.map { tuple -> tuple.drop(1) }
-combined_rnaseqmetrics_list_ch = combined_rnaseqmetrics_ch.map { tuple -> tuple.drop(1) }
-combined_rnaseqmetrics_meta_ch = combined_rnaseqmetrics_ch.map { tuple -> tuple[0] }
-
-//Custom RNA QC
-RNAqc_TrancriptCoverage(
-    combined_RNAqc_list_ch,
-    combined_rnaseqmetrics_list_ch,
-    combined_rnaseqmetrics_meta_ch
-)
-
-//create combined mpileup channel of multiple libraries
-Common_RNAseq_WF.out.pileup.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type,
-        sc: meta.sc
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_pileup_ch }
-
-//gather channels for makehotspotdb
-pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) }
-pileup_meta_ch = combined_pileup_ch.map { tuple -> tuple[0] }
-
-//Run Makehotspotdb
-MakeHotSpotDB(pileup_input_ch,
-                   pileup_meta_ch
-)
-
-//create combined snpeff channel of multiple libraries
-Common_RNAseq_WF.out.snpeff_vcf.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_snpeff_ch }
-
-
-//Run FormatInput
-FormatInput(
-    combined_snpeff_ch.map { tuple -> tuple.drop(1) },
-    MakeHotSpotDB.out
-)
-
-//Run Annotation subworkflow
 Annotation(FormatInput.out)
-
-//create combined loh channel of multiple libraries
-Common_RNAseq_WF.out.loh.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_loh }
-
-//Run circos plot at case level
-CircosPlot(
-    combined_loh.map { tuple -> tuple.drop(1) },
-    combined_loh.map { tuple -> tuple[0] }
-)
-
-//create combined channel of snpeff.txt and rare_annotation
-merged_ch = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation)
-updated_tuples = merged_ch.map { tuple ->
-    [tuple[0], tuple[1], tuple[3]]
-}
-//Run AddAnnotation
-AddAnnotation(updated_tuples)
+ch_versions = Common_RNAseq_WF.out.ch_versions.mix(Annotation.out.version)
 
 
-//create combined snpeff channel of multiple libraries
-Common_RNAseq_WF.out.snpeff_vcf.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type,
-        sc: meta.sc
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { dbinput_combined_snpeff_txt }
+add_annotation_input = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation.map{meta, file -> [file]})
+AddAnnotation(add_annotation_input)
 
+combined_annotationlibs = combinelibraries(AddAnnotation.out)
+dbinput_input = combined_annotationlibs.join(combined_snpefflibs,by:[0])
+DBinput_multiple(dbinput_input)
 
-//create combined Annotation channel of multiple libraries
-AddAnnotation.out.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type,
-        sc: meta.sc
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { dbinput_combined_addannot_txt }
-
-//Run DBinput
-DBinput_multiple(
-    dbinput_combined_addannot_txt,
-    dbinput_combined_snpeff_txt
-)
-
-//Run Actionable_RNAseq to generate .rnaseq files
-Actionable_variants(DBinput_multiple.out
-       .combine(Annotation.out.rare_annotation,by:[0])
-       .combine(combined_gene_list)
-       .combine(somatic_actionable_sites)
-       .combine(group)
-)
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
-                   .join(Common_RNAseq_WF.out.coverageplot, by: [0])
                    .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
-                   .join(Common_RNAseq_WF.out.rsem_genes, by: [0]).join(Common_RNAseq_WF.out.rnaseqc, by: [0])
+                   .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
+                   .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
                    .join(Common_RNAseq_WF.out.circos_plot, by: [0])
+                   .join(Common_RNAseq_WF.out.strandedness, by: [0])
+                   .join(Common_RNAseq_WF.out.rnalib_custum_qc, by: [0])
+                   .join(Common_RNAseq_WF.out.picard_rnaseqmetrics, by: [0])
+                   .join(Common_RNAseq_WF.out.picard_rnaseqmetrics_pdf, by: [0])
+                   .join(Common_RNAseq_WF.out.picard_alignmetrics, by: [0])
+                   .join(Common_RNAseq_WF.out.markdup_txt, by: [0])
+                   .join(Common_RNAseq_WF.out.flagstat, by: [0])
+                   .join(Common_RNAseq_WF.out.fastq_screen, by: [0])
 
-multiqc_input.map { meta, fastqc, pileup, coverage, chimeric, rsem, rnaseqc, circos ->
+multiqc_input.map { meta, fastqc, pileup, chimeric, rsem, rnaseqc, circos, strand, rna_qc, picardqc, picardqc_pdf, picardqc_metric, markdup, flagstat, fastq_screen ->
     meta2 = [
         id: meta.id,
         casename: meta.casename,
         type: meta.type
     ]
-    [ meta2, fastqc, pileup, coverage, chimeric, rsem, rnaseqc, circos ]
+    [ meta2, fastqc, pileup, chimeric, rsem, rnaseqc, circos, strand, rna_qc, picardqc, picardqc_pdf, picardqc_metric, markdup, flagstat, fastq_screen ]
   }.groupTuple()
-   .map { meta, fastqcs, pileups, coverages, chimerics, rsems, rnaseqcs, circoss -> [ meta, *fastqcs, *pileups, *coverages, *chimerics, *rsems, *rnaseqcs, *circoss ] }
+   .map { meta, fastqcs, pileups, chimerics, rsems, rnaseqcs, circoss, strands, rna_qcs, picardqcs, picardqc_pdfs, picardqc_metrics, markdups, flagstats, fastq_screens -> [ meta, [*fastqcs, *pileups, *chimerics, *rsems, *rnaseqcs, *circoss, *strands, *rna_qcs, *picardqcs, *picardqc_pdfs, *picardqc_metrics, *markdups, *flagstats, *fastq_screens ]] }
    .set { multiqc_ch }
+
 Multiqc(multiqc_ch)
+ch_versions = ch_versions.mix(Multiqc.out.versions)
+
+combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+
+custom_versions_input = Multiqc.out.multiqc_report
+        .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+        .combine(Pipeline_version)
+
+CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 
 }
