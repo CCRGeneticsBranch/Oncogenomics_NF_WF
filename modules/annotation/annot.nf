@@ -359,7 +359,7 @@ process AddAnnotation_TN {
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.normal_id}.HC_${meta.normal_type}.annotated.txt
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[2]}  > ${meta.rna_lib}.HC_${meta.rna_type}.annotated.txt
-     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.rna_type}" == "tumor_RNA" && ("${meta.normal_type}" != "normal_DNA" || "${meta.normal_type}" != "blood_DNA" ) ]]; then
+     elif [[ ( "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" ) && ( "${meta.rna_type}" == "tumor_RNA" || "${meta.rna_type}" == "cell_line_RNA") && ("${meta.normal_type}" != "normal_DNA" || "${meta.normal_type}" != "blood_DNA" ) ]]; then
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[0]}  > ${meta.lib}.HC_${meta.type}.annotated.txt
           addAnnotations2vcf.pl  ${rare_annotation} ${snpeff[1]}  > ${meta.rna_lib}.HC_${meta.rna_type}.annotated.txt
      fi
