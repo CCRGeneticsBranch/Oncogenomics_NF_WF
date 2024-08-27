@@ -426,7 +426,8 @@ process FailedExons_Genes {
 
     input:
     tuple val(meta),
-        path(depth_per_base)
+        path(depth_per_base),
+        val(threshold)
 
    output:
     tuple val(meta),
@@ -441,7 +442,7 @@ process FailedExons_Genes {
    script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
    """
-   failed_Exon_Final.pl ${depth_per_base} 10 ${prefix}.failExons ${prefix}.failGenes
+   failed_Exon_Final.pl ${depth_per_base} ${threshold} ${prefix}.failExons ${prefix}.failGenes
    """
 }
 
