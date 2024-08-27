@@ -35,6 +35,7 @@ fi
 export PATIENT=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="sample") s=i} NR>1 {print $s}' "$SAMPLESHEET" | sort | uniq)
 export CASENAME=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="casename") c=i} NR>1 {print $c}' "$SAMPLESHEET" | sort | uniq)
 
+
 if [[ -z "$PATIENT" || -z "$CASENAME" ]]; then
     echo "Error: Could not extract PATIENT or CASENAME from the samplesheet."
     exit 1
