@@ -36,7 +36,7 @@ Please clone this repository to your local filesystem using the following comman
 1. This workflow is hosted on biowulf in khanlab space /data/khanlab/projects/Nextflow_dev/dev/AWS_POC_Nextflow.
 2. All the pipeline config can be accessed using nextflow.config file.
 3. Within the nextflow.config file you can select the profile to launch the pipeline. To run pipeline on biowulf select profile `biowulf`. This is set up to work with biowulf batch resources.
-4. Guidelines to create an input samplesheet can be found here.
+4. Guidelines to create an input samplesheet can be found [here](samplesheet.md).
 5. All the references, annotation and bed files are currently located under /data/khanlab. We currently support data processing for these capture kits.
 
 ### Sequencing capture kits
