@@ -39,8 +39,6 @@ To use custom directories, modify the script:
 
 The script includes the following error handling mechanisms:
 
-- **Patient ID or Case Name Not Found**:
-  If the provided patient ID case name combination is not found in the master sheet, the script will generate an error message.
 - **Invalid `read1` and `read2` Paths**:
   If the paths for `read1` and `read2` are invalid, the script will output an error message. This message will prompt you to check and verify the input paths.
 
