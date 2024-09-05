@@ -5,7 +5,7 @@ process Star {
 
     input:
     tuple val(meta), path(trim),path(star_genomeIndex),path(gtf)
-        
+
     output:
     tuple val(meta), path("${meta.lib}.Aligned.toTranscriptome.out.bam") , emit: transcriptome_bam
     tuple val(meta), path("${meta.lib}.Aligned.sortedByCoord.out.bam"), emit: genome_bam
@@ -26,8 +26,8 @@ process Star {
     TMP=tmp/
     mkdir \$TMP
     trap 'rm -rf "\$TMP"' EXIT
-    
-        
+
+
         # run STAR alignment
         STAR --genomeDir ${star_genomeIndex} \
             --readFilesIn ${trim[0]} ${trim[1]} \
@@ -45,11 +45,11 @@ process Star {
             --chimSegmentReadGapMax 3 \
             --outFilterMismatchNmax 2 \
             --outSAMtype BAM Unsorted \
-            --quantMode TranscriptomeSAM 
-            
+            --quantMode TranscriptomeSAM
+
         # sort files
         samtools sort -@ ${task.cpus}  -T \$TMP -o ${prefix}.Aligned.sortedByCoord.out.bam -O BAM ${prefix}.Aligned.out.bam
-    
+
 
     # index files
     samtools index -@ ${task.cpus} ${prefix}.Aligned.sortedByCoord.out.bam

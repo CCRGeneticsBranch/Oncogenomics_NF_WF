@@ -19,7 +19,7 @@ process UnionSomaticCalls {
      def prefix = task.ext.prefix ?: "${meta.lib}"
      """
      UnionSomaticCalls.pl ${strelka_snvs_fulltxt} ${strelka_indels_fulltxt} ${mutect_fulltxt} >${prefix}.unionSomaticVarsFull.txt
-    
+
      """
 
 

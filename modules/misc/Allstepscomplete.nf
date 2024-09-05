@@ -26,5 +26,3 @@ process Allstepscomplete {
 
     """
 }
-
-

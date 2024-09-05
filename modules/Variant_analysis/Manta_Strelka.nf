@@ -111,7 +111,7 @@ process Strelka_vcf_processing {
      path(snvs_vcf_tbi),
      path(indels_vcf),
      path(indels_vcf_tbi)
-    
+
 
      output:
      tuple val(meta),path("${meta.lib}.strelka.snvs.raw.vcf"), emit: strelka_snv
