@@ -1,7 +1,7 @@
 process Star {
     tag "$meta.lib"
     scratch true
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "copy",pattern: "${meta.lib}*"
+    //publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}", mode: "${params.publishDirMode}" ,pattern: "${meta.lib}*"
 
     input:
     tuple val(meta), path(trim),path(star_genomeIndex),path(gtf)
