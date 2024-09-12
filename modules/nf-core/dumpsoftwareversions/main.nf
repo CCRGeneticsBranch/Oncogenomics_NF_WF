@@ -7,7 +7,7 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
 
     output:
     path "*config*.txt"    , emit: config
-    path "successful.txt"   , emit: successful
+    //path "successful.txt"   , emit: successful
 
     when:
     task.ext.when == null || task.ext.when
@@ -18,6 +18,6 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
 
     dumpsoftwareversions.py ${versions} ${nextflow.version} Software_versions ${meta.id} ${pipeline_version}
     sed -i "s/'//g" ${meta.id}.config*txt
-    touch successful.txt
+    #touch successful.txt
     """
 }
