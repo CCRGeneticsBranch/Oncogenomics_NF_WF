@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 import groovy.json.JsonSlurper
 
 log.info """\
-         R N A S E Q - N F   P I P E L I N E
+         E X O M E - R N A S E Q - N F   P I P E L I N E
          ===================================
          NF version   : $nextflow.version
          runName      : $workflow.runName
@@ -57,7 +57,22 @@ if (fileExists("Exome.csv")) {
     println("No workflow to run. Required file is missing.")
 }
 
+
+/*
+get_project_list()
+*/
 }
+/*
+process get_project_list {
+    output:
+    path "list.txt"
+
+    script:
+    """
+    python3 /data/khanlab/projects/processed_DATA/nf_samplesheets/projectlist.py /data/khanlab/projects/processed_DATA/nf_samplesheets/PAXCPA_PAXCPA.csv > list.txt
+    """
+}
+*/
 
 
 workflow.onComplete {
@@ -65,17 +80,21 @@ workflow.onComplete {
 
     if (workflow.success) {
 
+        def successFile = new File("${workflow.launchDir}/successful.txt")
+        successFile.createNewFile()
+
         def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
         def htmlContent = htmlFile.text
         def fullMessage = "${htmlContent}"
 
 
-        //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution', body: fullMessage, mimeType: 'text/html')
+        //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
 
         sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution', body: fullMessage, mimeType: 'text/html')
 
     } else {
-        println "Workflow completed with errors. No success email sent."
+        fullMessage = "Workflow completed with errors. Error log is located at ${workflow.launchDir}"
+        sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution failed', body: fullMessage, mimeType: 'text/html')
     }
 
 }
