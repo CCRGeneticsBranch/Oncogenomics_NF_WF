@@ -230,7 +230,10 @@ for row in samplesheet_data:
     ):
         tumor_lib_rows.append(row)
 
-    if sample_casename_counts[(sample, casename)] > 1 and row_type == "tumor_RNA":
+    if sample_casename_counts[(sample, casename)] > 1 and row_type in [
+        "tumor_RNA",
+        "cell_line_RNA",
+    ]:
         match_found = False
 
         # Iterate over the rows again to find matches
