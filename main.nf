@@ -90,11 +90,11 @@ workflow.onComplete {
 
         //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
 
-        sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution', body: fullMessage, mimeType: 'text/html')
+        sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
 
     } else {
         fullMessage = "Workflow completed with errors. Error log is located at ${workflow.launchDir}"
-        sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution failed', body: fullMessage, mimeType: 'text/html')
+        sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'gangalapudiv2@mail.nih.gov', subject: 'khanlab ngs-pipeline execution failed', body: fullMessage, mimeType: 'text/html')
     }
 
 }
