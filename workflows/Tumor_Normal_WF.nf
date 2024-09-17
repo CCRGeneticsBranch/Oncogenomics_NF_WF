@@ -471,6 +471,7 @@ multiqc_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.kraken)
             .join(Exome_common_WF.out.exome_qc)
             .join(Exome_common_WF.out.markdup_txt)
+            .join(Exome_common_WF.out.fastq_screen)
 
 
 multiqc_status = multiqc_input.branch{

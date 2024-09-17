@@ -600,6 +600,7 @@ multiqc_exome_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.kraken)
             .join(Exome_common_WF.out.exome_qc)
             .join(Exome_common_WF.out.markdup_txt)
+            .join(Exome_common_WF.out.fastq_screen)
 
 multiqc_exome_status = multiqc_exome_input.branch{
     normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
