@@ -5,7 +5,7 @@ use List::Util qw(first);
 ###########################################################
 #
 #   Author: Rajesh Patidar rajbtpatidar@gmail.com
-#   Parse defuse, tophat-fusion, fusion cather result to make 
+#   Parse defuse, tophat-fusion, fusion cather result to make
 #    actionable fusions based on some rules.
 #
 ###########################################################
@@ -13,15 +13,15 @@ my $library        = $ARGV[0];
 my $fusioncatcher  = $ARGV[1];
 my $star_fusion	   = $ARGV[2];
 my $arriba         = $ARGV[3];
-my $destination    = $ARGV[4];
+
 print "#LeftGene\tRightGene\tChr_Left\tPosition\tChr_Right\tPosition\tSample\tTool\tSpanReadCount\n";
 ###########################################################
 unless (open(FC, "$fusioncatcher")){
         print STDERR "Can not open the file $fusioncatcher\n";
         exit;
 }
-unless (open(FC_OUT, ">$destination/$library.fusion-catcher.txt")){
-	print STDERR "Can not open the file $destination/$library.fusion-catcher.txt\n";
+unless (open(FC_OUT, ">$library.filtered_fusion-catcher.txt")){
+	print STDERR "Can not open the file $library.fusion-catcher.txt\n";
 	die $!;
 }
 while(<FC>){
@@ -42,18 +42,18 @@ unless (open(SF, "$star_fusion")){
         print STDERR "Can not open the file $star_fusion\n";
         exit;
 }
-unless (open(SF_OUT, ">$destination/$library.STAR-fusion.txt")){
-        print STDERR "Can not open the file $destination/$library.STAR-fusion.txt\n";
+unless (open(SF_OUT, ">$library.filtered_STAR-fusion.txt")){
+        print STDERR "Can not open the file $library.STAR-fusion.txt\n";
         die $!;
 }
 while(<SF>){
 	chomp;
 	my @local =split("\t", $_);
 	if($_ =~ /#FusionName/){print SF_OUT "$_\n"; next}
-	my @l_gene =split(/\^/, $local[4]);
-	my @R_gene =split(/\^/, $local[6]);
-	my @left  = split(":", $local[5]);
-	my @right = split(":", $local[7]);
+	my @l_gene =split(/\^/, $local[6]);
+	my @R_gene =split(/\^/, $local[8]);
+	my @left  = split(":", $local[7]);
+	my @right = split(":", $local[9]);
 	print "$l_gene[0]\t$R_gene[0]\t$left[0]\t$left[1]\t$right[0]\t$right[1]\t$library\tSTAR-fusion\t$local[1]\n";
 	print SF_OUT "$_\n";
 }
@@ -64,8 +64,8 @@ unless (open(AR, "$arriba")){
         print STDERR "Can not open the file $arriba\n";
         exit;
 }
-unless (open(AR_OUT, ">$destination/$library.arriba-fusion.txt")){
-        print STDERR "Can not open the file $destination/$library.arriba-fusion.txt\n";
+unless (open(AR_OUT, ">$library.filtered_arriba-fusion.txt")){
+        print STDERR "Can not open the file $library.arriba-fusion.txt\n";
         die $!;
 }
 while(<AR>){
@@ -79,4 +79,3 @@ while(<AR>){
 }
 close AR;
 close AR_OUT;
-

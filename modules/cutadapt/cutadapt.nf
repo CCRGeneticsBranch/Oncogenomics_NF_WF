@@ -1,32 +1,34 @@
 process Cutadapt {
-        tag { dataset_id }
-        publishDir "$params.resultsdir/$dataset_id", mode: 'copy'
+     tag "$meta.lib"
+//        publishDir "$params.resultsdir/${meta.id}/${meta.casename}/${meta.lib}/Cutadapt", mode: 'copy'
+     input:
+     tuple val(meta), path(r1fq), path(r2fq)
 
-        input:
-        tuple val(dataset_id),
-            path(r1fq),
-            path(r2fq)
+     output:
+     tuple val(meta), path("*.gz") , emit: trim_reads
+     path "versions.yml"             , emit: versions
 
-        output:
-        tuple val("${dataset_id}"),
-            path("${dataset_id}_R1.trim.fastq.gz"),
-            path("${dataset_id}_R2.trim.fastq.gz")
+     script:
+     def args = task.ext.args   ?: ''
+     def prefix   = task.ext.prefix ?: "${meta.lib}"
 
-        // container 'nciccbr/ncigb_cutadapt_v1.18:latest'
+     """
+     cutadapt --pair-filter=any \\
+        --nextseq-trim=2 \\
+        --trim-n \\
+        -n 5 -O 5 \\
+        -q 10,10 -m 30:30 \\
+        -b file:/opt2/TruSeq_and_nextera_adapters.consolidated.fa \\
+        -B file:/opt2/TruSeq_and_nextera_adapters.consolidated.fa \\
+        -j $task.cpus \\
+        -o ${prefix}_R1.trim.fastq.gz \\
+        -p ${prefix}_R2.trim.fastq.gz \\
+        $r1fq $r2fq
 
-        script:
-        """
-	cutadapt --pair-filter=any \\
-	--nextseq-trim=2 \\
-	--trim-n \\
-	-n 5 -O 5 \\
-	-q 10,10 -m 30:30 \\
-	-b file:/opt2/TruSeq_and_nextera_adapters.consolidated.fa \\
-	-B file:/opt2/TruSeq_and_nextera_adapters.consolidated.fa \\
-	-j $task.cpus \\
-        -o ${dataset_id}_R1.trim.fastq.gz \\
-        -p ${dataset_id}_R2.trim.fastq.gz \\
-	$r1fq $r2fq      
-        """
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+         Cutadapt: \$(cutadapt --version)
+     END_VERSIONS
+     """
 
 }

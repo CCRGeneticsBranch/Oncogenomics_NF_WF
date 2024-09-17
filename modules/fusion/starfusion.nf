@@ -1,31 +1,36 @@
 process Starfusion{
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/starfusion", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/fusion", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
     input:
-    tuple val(dataset_id),
-        path(chimeric_junctions),
-        path(genome_lib_dir)
-    
+    tuple val(meta),path(trim),path(genome_lib_dir)
+
     output:
-    tuple val("${dataset_id}"),
-        path("STAR-fusion.txt")
-//        path("${dataset_id}.fusion_predictions.tsv")
+    tuple val(meta),path("${meta.lib}.STAR-fusion.txt"), emit: star_fusion
+    path "versions.yml"             , emit: versions
 
     stub:
     """
-    touch ("STAR-fusion.txt")
-//    touch "${dataset_id}.fusion_predictions.tsv"
+    touch ("${meta.lib}.STAR-fusion.txt")
     """
 
-    shell:
-    '''
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
     set -exo pipefail
-	STAR-Fusion \
-        --genome_lib_dir !{genome_lib_dir} \
-        --chimeric_junction !{chimeric_junctions} \
-        --CPU !{task.cpus}
-    cp STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv STAR-fusion.txt
-    '''
+        STAR-Fusion \
+        --genome_lib_dir ${genome_lib_dir} \
+        --left_fq ${trim[0]} \
+        --right_fq ${trim[1]} \
+        --output_dir STAR-Fusion_outdir \
+        --CPU ${task.cpus}
+    cp STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv ${prefix}.STAR-fusion.txt
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        STAR-Fusion: \$(STAR-Fusion --version|sed '/^\$/d'|sed 's/.*version: //')
+    END_VERSIONS
+
+    """
 }

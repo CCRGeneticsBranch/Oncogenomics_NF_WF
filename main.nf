@@ -1,9 +1,9 @@
-
 // Using DSL-2
 nextflow.enable.dsl=2
+import groovy.json.JsonSlurper
 
 log.info """\
-         R N A S E Q - N F   P I P E L I N E  
+         E X O M E - R N A S E Q - N F   P I P E L I N E
          ===================================
          NF version   : $nextflow.version
          runName      : $workflow.runName
@@ -16,99 +16,102 @@ log.info """\
          launchDir    : $workflow.launchDir
          workdDir     : $workflow.workDir
          homeDir      : $workflow.homeDir
-         reads        : ${params.reads}
          """
          .stripIndent()
 
+
+
 //import workflows
 
-include {Cutadapt} from './modules/cutadapt/cutadapt'
-include {Fastqc} from './modules/qc/qc'
-include {Multiqc} from './modules/qc/qc'
-include {Mixcr_VCJtools} from './modules/misc/mixcr'
-include {HLA_calls} from './workflows/hla_calls'
-include {Star_rsem} from './workflows/star-rsem'
-include {Fusion_calling} from './workflows/Fusion_calling'
-include {Star_bam_processing} from './workflows/Star_bam_processing'
-include {RNAseq_GATK} from './workflows/RNAseq_GATK'
-include {QC_from_finalBAM} from './workflows/QC_from_finalBAM'
-include {Annotation} from './workflows/Annotation'
-include {QC_from_Star_bam} from './workflows/QC_from_Star_bam'
+include {RNAseq_only} from './workflows/RNAseq_only.nf'
+include {RNAseq_multiple_libs} from './workflows/RNAseq_multiple_libs.nf'
+include {Exome_only_WF} from './workflows/Exome_only_WF.nf'
+include {Tumor_multiple_libs} from './workflows/Tumor_multiple_libs.nf'
+include {Tumor_Normal_WF} from './workflows/Tumor_Normal_WF.nf'
+include {Tumor_Normal_RNAseq_WF} from './workflows/Tumor_Normal_RNAseq_WF.nf'
+include {Tumor_RNAseq_WF} from './workflows/Tumor_RNAseq_WF.nf'
+include {Mouse_RNA} from './workflows/Mouse_RNA.nf'
 
+
+// Launch workflow by checking the samplesheet availability
 workflow {
-    read_pairs              = Channel
-                                .fromFilePairs(params.reads, flat: true)
-                                .ifEmpty { exit 1, "Read pairs could not be found: ${params.reads}" }
-//    starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
-//    mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
 
-// Trim away adapters
-Cutadapt(read_pairs)
 
-// combine raw fastqs and trimmed fastqs as input to fastqc
-fastqc_input = Cutadapt.out.combine(read_pairs)
-fastqc_input.branch { id1,trimr1,trimr2,id2,r1,r2 ->
-           fqc_input: id1 == id2
-               return ( tuple (id1,r1,r2,trimr1,trimr2) )
-           other: true
-               return ( tuple (id1,id2) )
-              } \
-           .set { fqc_inputs }
+if (fileExists("Exome.csv")) {
+    Exome_only_WF()
+} else if (fileExists("Tumor_lib.csv")) {
+    Tumor_multiple_libs()
+} else if (fileExists("Tumor_RNAseq_Normal.csv")) {
+    Tumor_Normal_RNAseq_WF()
+} else if (fileExists("RNAseq.csv")) {
+    RNAseq_only()
+} else if (fileExists("RNA_lib.csv")) {
+    RNAseq_multiple_libs()
+} else if (fileExists("Tumor_Normal.csv")) {
+    Tumor_Normal_WF()
+} else if (fileExists("Tumor_RNAseq.csv")) {
+    Tumor_RNAseq_WF()
+} else if (fileExists("mouse_rnaseq.csv")) {
+    Mouse_RNA()
+} else {
+    println("No workflow to run. Required file is missing.")
+}
 
-// QC with FastQC 
-Fastqc(fqc_inputs.fqc_input)
 
-if (params.run_upto_counts) {
- 
-  Star_rsem(Cutadapt.out)
-}  else {
+/*
+get_project_list()
+*/
+}
+/*
+process get_project_list {
+    output:
+    path "list.txt"
 
-  starfusion_db           = Channel.of(file(params.starfusion_db, checkIfExists:true))
-  mixcr_license           = Channel.of(file(params.mixcr_license, checkIfExists:true))
+    script:
+    """
+    python3 /data/khanlab/projects/processed_DATA/nf_samplesheets/projectlist.py /data/khanlab/projects/processed_DATA/nf_samplesheets/PAXCPA_PAXCPA.csv > list.txt
+    """
+}
+*/
 
-  Star_rsem(Cutadapt.out) 
-  Starfusion_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-  Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
-              other: true
-                  return( tuple(id, chimeric_junctions))} \
-              .set{Starfusion_input_tmp}
-  Starfusion_input = Starfusion_input_tmp.other.combine(starfusion_db)
-  Fusion_calling (
-         Cutadapt.out,
-         Starfusion_input
-     )
-  PicardARG_input = Star_rsem.out.star.flatMap{it -> [id: it[0], chimeric_junctions: it[4]]}
-  Star_rsem.out.star.branch{ id, tbam, bam, bai, chimeric_junctions ->
-              other: true
-                  return( tuple(id, bam, bai))} \
-              .set{PicardARG_input}  
- // PicardARG_input.view()
 
-  Star_bam_processing(PicardARG_input)
-  HLA_calls(Cutadapt.out)
-  QC_from_Star_bam(
-      Star_bam_processing.out.picard_ARG,
-      Star_bam_processing.out.picard_MD
-  )
-  RNAseq_GATK(Star_bam_processing.out.picard_MD)
-  QC_from_finalBAM(RNAseq_GATK.out.GATK_RNAseq_bam)
-  Annotation(
-      RNAseq_GATK.out.SnpEff_vcf.combine(QC_from_finalBAM.out.hotspot_pileup, by:0),
-      RNAseq_GATK.out.SnpEff_vcf
-)
-  }
-  if (params.run_upto_counts) {
+workflow.onComplete {
 
-    multiqc_input = Fastqc.out.join(Star_rsem.out.star).join(Star_rsem.out.rsem)
-    Multiqc(multiqc_input)
-  }  else {  
-    multiqc_input = Fastqc.out \
-                       .join(QC_from_finalBAM.out.hotspot_pileup) \
-                       .join(QC_from_finalBAM.out.coverageplot) \
-                       .join(Star_rsem.out.star) \
-                       .join(Star_rsem.out.rsem).join(QC_from_Star_bam.out.rnaseqc) \
-                       .join(QC_from_Star_bam.out.circos) 
-    Multiqc(multiqc_input)
-  }
 
+    if (workflow.success) {
+
+        if (workflow.profile == "biowulf_mouse_RNA_slurm") {
+            // Special handling for the mouse workflow
+            def successFile = new File("${workflow.launchDir}/completed.txt")
+            successFile.createNewFile()
+
+            def fullMessage = "Mouse RNAseq workflow completed successfully. Results are located at ${workflow.launchDir}"
+            sendMail(to: "${workflow.userName}@mail.nih.gov", subject: 'Mouse RNAseq Workflow Complete', body: fullMessage, mimeType: 'text/plain')
+
+        } else {
+
+
+            def successFile = new File("${workflow.launchDir}/successful.txt")
+            successFile.createNewFile()
+
+            def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
+            def htmlContent = htmlFile.text
+            def fullMessage = "${htmlContent}"
+
+
+            //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+
+            sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+        }
+
+    } else {
+        fullMessage = "Workflow completed with errors. Error log is located at ${workflow.launchDir}"
+        sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'gangalapudiv2@mail.nih.gov', subject: 'khanlab ngs-pipeline execution failed', body: fullMessage, mimeType: 'text/html')
+    }
+
+}
+
+
+def fileExists(String filePath) {
+    new File(filePath).exists()
 }

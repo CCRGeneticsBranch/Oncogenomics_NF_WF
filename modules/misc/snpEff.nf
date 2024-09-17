@@ -1,60 +1,65 @@
 process SnpEff {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}",pattern: "${meta.lib}*"
 
      input:
-     tuple val(dataset_id),
+     tuple val(meta),
         path(vcf),
         path(dbNSFP2_4),
-        path(dbNSFP2_4_tbi)
+        path(dbNSFP2_4_tbi),
+        path(Biowulf_snpEff_config),
+        val(tool_ch)
 
      output:
-     tuple val("${dataset_id}"),
-        path("${dataset_id}.HC_RNASeq.raw.snpEff.vcf")
+     tuple val(meta),path("${meta.lib}.*${meta.type}.raw.snpEff.vcf"), emit: raw_snpeff
+     path "versions.yml"             , emit: versions
 
      stub:
      """
-     touch "${dataset_id}.HC_RNASeq.raw.snpEff.vcf"
+     touch "${meta.lib}.*${meta.type}.raw.snpEff.vcf"
      """
 
-     shell:
-     '''
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
+
      set -exo pipefail
 
-     java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db !{dbNSFP2_4}   -a !{vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon GRCh37.75 > !{dataset_id}.HC_RNASeq.raw.snpEff.vcf
+     java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db ${dbNSFP2_4}  -c ${Biowulf_snpEff_config} -a ${vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon GRCh37.75 > ${prefix}.${tool_ch}_${meta.type}.raw.snpEff.vcf
 
-     '''
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Snpsift: \$(java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp 2>&1 |grep -E '^SnpSift'|cut -f3 -d " ")
+    END_VERSIONS
+     """
 }
+
 
 
 process Vcf2txt {
 
-     tag { dataset_id }
+     tag "$meta.lib"
 
-     publishDir "${params.resultsdir}/${dataset_id}/GATK_RNAseq", mode: "${params.publishDirMode}"
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/calls", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(dataset_id),
-        path(vcf)
+     tuple val(meta),path(vcf),val(tool_ch)
 
      output:
-     tuple val("${dataset_id}"),
-        path("${dataset_id}.HC_RNASeq.snpEff.txt")
+     tuple val(meta),
+        path("${meta.lib}.${tool_ch}_${meta.type}.snpEff.txt")
 
      stub:
      """
-     touch "${dataset_id}.HC_RNASeq.snpEff.txt"
+     touch "${meta.lib}.${tool_ch}_${meta.type}.snpEff.txt"
      """
 
-     shell:
-     '''
-     set -exo pipefail
+     script:
+     def prefix = task.ext.prefix ?: "${meta.lib}"
+     """
 
-     vcf2txt.pl !{vcf} ./ > !{dataset_id}.HC_RNASeq.snpEff.txt
-
-     '''
+     vcf2txt.pl ${vcf} ./ > ${prefix}.${tool_ch}_${meta.type}.snpEff.txt
+     """
 }
-
-
