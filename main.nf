@@ -80,17 +80,29 @@ workflow.onComplete {
 
     if (workflow.success) {
 
-        def successFile = new File("${workflow.launchDir}/successful.txt")
-        successFile.createNewFile()
+        if (workflow.profile == "biowulf_mouse_RNA_slurm") {
+            // Special handling for the mouse workflow
+            def successFile = new File("${workflow.launchDir}/completed.txt")
+            successFile.createNewFile()
 
-        def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
-        def htmlContent = htmlFile.text
-        def fullMessage = "${htmlContent}"
+            def fullMessage = "Mouse RNAseq workflow completed successfully. Results are located at ${workflow.launchDir}"
+            sendMail(to: "${workflow.userName}@mail.nih.gov", subject: 'Mouse RNAseq Workflow Complete', body: fullMessage, mimeType: 'text/plain')
+
+        } else {
 
 
-        //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+            def successFile = new File("${workflow.launchDir}/successful.txt")
+            successFile.createNewFile()
 
-        sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+            def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
+            def htmlContent = htmlFile.text
+            def fullMessage = "${htmlContent}"
+
+
+            //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+
+            sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+        }
 
     } else {
         fullMessage = "Workflow completed with errors. Error log is located at ${workflow.launchDir}"
