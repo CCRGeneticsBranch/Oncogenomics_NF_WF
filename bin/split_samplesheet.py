@@ -224,7 +224,11 @@ for row in samplesheet_data:
     # Check if the sample and casename combination is not unique, type is Tumor, and Matched_RNA and Matched_normal are empty
     if (
         sample_casename_counts[(sample, casename)] > 1
-        and row_type == "tumor_DNA"
+        and row_type
+        in [
+            "tumor_DNA",
+            "cell_line_DNA",
+        ]
         and not row["Matched_RNA"]
         and not row["Matched_normal"]
     ):
