@@ -18,25 +18,31 @@ process DBinput {
      script:
 
      """
-     if [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" ]]; then
+     if [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" || "${meta.type}" == "xeno_RNA" ]]; then
           tag="rnaseq"
           makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag
 
-     elif [[ "${meta.type}" == "normal_DNA" ]]; then
+     elif [[ "${meta.type}" == "normal_DNA" || "${meta.type}" == "blood_DNA" ]]; then
           tag="germline"
           makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
           addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
           rm -rf ${meta.id}.\$tag.tmp
-     elif [[ ( "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" ) && "${meta.normal_type}" == "null" ]]; then
+     elif [[ ( "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" ) && "${meta.normal_type}" != "normal_DNA" && "${meta.normal_type}" != "blood_DNA" && "${meta.rna_type}" != "tumor_RNA" && "${meta.rna_type}" != "cell_line_RNA" && "${meta.rna_type}" != "xeno_RNA" ]]; then
           tag="variants"
           makeDBVariantFile.pl ${dbinput_annot_libs.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag.tmp
           addFS.pl ${meta.id}.\$tag.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag
           rm -rf ${meta.id}.\$tag.tmp
-
-     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "null" ]]; then
+     elif [[ "${meta.type}" == "tumor_DNA" && ( "${meta.normal_type}" == "normal_DNA" || "${meta.normal_type}" == "blood_DNA" ) && "${meta.rna_type}" != "tumor_RNA" && "${meta.rna_type}" != "xeno_RNA" ]]; then
           tag1="somatic"
           tag2="germline"
-     elif [[ "${meta.type}" == "tumor_DNA" && "${meta.normal_type}" == "normal_DNA" && "${meta.rna_type}" == "tumor_RNA" ]]; then
+     elif [[ ( "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" ) && ( "${meta.rna_type}" == "tumor_RNA" || "${meta.rna_type}" == "cell_line_RNA" ) && "${meta.normal_type}" != "normal_DNA" && "${meta.normal_type}" != "blood_DNA" ]]; then
+          tag1="variants"
+          tag2="rnaseq"
+          makeDBVariantFile.pl ${dbinput_annot_libs[0]}|sed 's/trim_//'|AddSampleType.pl - "${meta.rna_lib} ${meta.rna_type} ${meta.lib} ${meta.type}" "${meta.rna_lib} ${meta.RNA_sc} ${meta.lib} ${meta.sc}" > ${meta.id}.\$tag1.tmp
+          addFS.pl ${meta.id}.\$tag1.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag1
+          makeDBVariantFile.pl ${dbinput_annot_libs[1]} |sed 's/trim_//'|AddSampleType.pl - "${meta.rna_lib} ${meta.rna_type} ${meta.lib} ${meta.type}" "${meta.rna_lib} ${meta.RNA_sc} ${meta.lib} ${meta.sc}" > ${meta.id}.\$tag2
+          rm *.tmp
+     elif [[ ( "${meta.normal_type}" == "normal_DNA" || "${meta.normal_type}" == "blood_DNA" ) && "${meta.type}" == "tumor_DNA" && ( "${meta.rna_type}" == "tumor_RNA" || "${meta.rna_type}" == "xeno_RNA" ) ]]; then
           tag1="somatic"
           tag2="germline"
           tag3="rnaseq"
@@ -47,7 +53,7 @@ process DBinput {
           addFS.pl ${meta.id}.\$tag2.tmp ${dbinput_snpeff_libs.join(' ')} >${meta.id}.\$tag2
           #rnaseq
           makeDBVariantFile.pl ${dbinput_annot_libs[2]} |sed 's/trim_//'|AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type} ${meta.rna_lib} ${meta.rna_type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.sc} ${meta.rna_lib} ${meta.RNA_sc}" > ${meta.id}.\$tag3
-          ##rm *.tmp
+          rm *.tmp
 
      fi
 
@@ -58,39 +64,77 @@ process DBinput {
 
 process DBinput_multiple {
 
-     tag "$meta.lib"
+     tag "$meta.id"
 
      publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
 
      input:
-     tuple val(meta),path(annotated1), path(annotated2)
-     tuple val(meta),path(snpeff1), path(snpeff2)
-
-
+     tuple val(meta),path(annotated), path(snpeff)
 
      output:
      tuple val(meta),
-        path("${meta.id}.${meta.type}")
+        path("${meta.id}*")
 
      stub:
      """
-     touch "${meta.id}.${meta.type}"
+     touch "${meta.id}*"
      """
 
      script:
 
      """
-     LIB1=`echo ${annotated1}|awk -F"." '{print \$1}'`
-     LIB2=`echo ${annotated2}|awk -F"." '{print \$1}'`
-    makeDBVariantFile.pl ${annotated1} ${annotated2}|sed 's/trim_//'|AddSampleType.pl - "\$LIB1 ${meta.type} \$LIB2 ${meta.type}" "\$LIB1 ${meta.sc} \$LIB2 ${meta.sc}" > ${meta.id}.${meta.type}.tmp
-    if [ ${meta.type}  == 'germline' ] || [ ${meta.type} == 'variants' ]; then
-         addFS.pl ${meta.id}.${meta.type}.tmp ${snpeff1} ${snpeff2} >${meta.id}.${meta.type}
-         rm -rf ${meta.id}.${meta.type}.tmp
-    else
-        mv ${meta.id}.${meta.type}.tmp ${meta.id}.${meta.type}
-    fi
+     LIB1=`echo ${annotated[0]}|awk -F"." '{print \$1}'`
+     LIB2=`echo ${annotated[1]}|awk -F"." '{print \$1}'`
+
+     if [[ "${meta.type}" == *"RNA"* ]]; then
+          tag="rnaseq"
+          makeDBVariantFile.pl ${annotated.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "\$LIB1 ${meta.type} \$LIB2 ${meta.type}" "\$LIB1 ${meta.sc} \$LIB2 ${meta.sc}" > ${meta.id}.\$tag.tmp
+          mv ${meta.id}.\$tag.tmp ${meta.id}.\$tag
+     else
+          tag="variants"
+          makeDBVariantFile.pl ${annotated.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "\$LIB1 ${meta.type} \$LIB2 ${meta.type}" "\$LIB1 ${meta.sc} \$LIB2 ${meta.sc}" > ${meta.id}.\$tag.tmp
+          addFS.pl ${meta.id}.\$tag.tmp ${snpeff.join(' ')} > ${meta.id}.\$tag
+     fi
+
      """
 }
+
+process DBinput_multiple_new {
+
+     tag "$meta.id"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),val(libtype), val(libsc), path(annot)
+     path(snpeff)
+
+     output:
+     tuple val(meta),
+        path("${meta.id}*")
+
+     stub:
+     """
+     touch "${meta.id}*"
+     """
+
+     script:
+
+     """
+
+     if [[ "${libtype}" == *"RNA"* ]]; then
+          tag="rnaseq"
+          makeDBVariantFile.pl ${annot.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.\$tag.tmp
+          mv ${meta.id}.\$tag.tmp ${meta.id}.\$tag
+     else
+          tag="variants"
+          makeDBVariantFile.pl ${annot.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.\$tag.tmp
+          addFS.pl ${meta.id}.\$tag.tmp ${snpeff.join(' ')} > ${meta.id}.\$tag
+     fi
+
+     """
+}
+
 
 process DBinput_multiples {
 
@@ -120,12 +164,10 @@ process DBinput_multiples {
 
      """
      ##Somatic
-     makeDBVariantFile.pl ${annot_mutect} ${annot_strelka1} ${annot_strelka2}|sed 's/trim_//'|AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.T_sc}" > ${meta.id}.${somatic}.tmp
-     addFS.pl ${meta.id}.${somatic}.tmp ${HC_snpeff1} ${HC_snpeff2} ${somatic_mutect_snpeff} ${somatic_strelka1_snpeff} ${somatic_strelka2_snpeff} > ${meta.id}.${somatic}
-     rm -rf ${meta.id}.${somatic}.tmp
+     makeDBVariantFile.pl ${annot_mutect} ${annot_strelka1} ${annot_strelka2}|sed 's/trim_//'|AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.sc}" > ${meta.id}.${somatic}
 
      ##Germline
-     makeDBVariantFile.pl ${annot_tumor} ${annot_normal} | AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.T_sc}" > ${meta.id}.${germline}.tmp
+     makeDBVariantFile.pl ${annot_tumor} ${annot_normal} | AddSampleType.pl - "${meta.normal_id} ${meta.normal_type} ${meta.lib} ${meta.type}" "${meta.normal_id} ${meta.N_sc} ${meta.lib} ${meta.sc}" > ${meta.id}.${germline}.tmp
      addFS.pl ${meta.id}.${germline}.tmp ${HC_snpeff1} ${HC_snpeff2} ${somatic_mutect_snpeff} ${somatic_strelka1_snpeff} ${somatic_strelka2_snpeff} > ${meta.id}.${germline}
      rm -rf ${meta.id}.${germline}.tmp
 
