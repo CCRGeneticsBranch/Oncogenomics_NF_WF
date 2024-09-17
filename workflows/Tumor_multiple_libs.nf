@@ -1,22 +1,55 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
-include {MakeHotSpotDB} from  '../modules/qc/plots'
+include {MakeHotSpotDB
+        Hotspot_Boxplot
+        CoveragePlot} from  '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {CNVkitPooled} from '../modules/cnvkit/CNVkitPooled'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
+include {DBinput_multiple_new} from '../modules/misc/DBinput'
+include {Genotyping_Sample
+        Multiqc
+        CircosPlot
+        QC_summary_Patientlevel} from '../modules/qc/qc'
+include {TcellExtrect} from '../modules/misc/TcellExtrect'
+include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN MAIN WORKFLOW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+def combinelibraries(inputData) {
+    def processedData = inputData.map { meta, file ->
+        meta2 = [
+            id: meta.id,
+            casename: meta.casename,
+            diagnosis: meta.diagnosis
+        ]
+        [meta2, file]
+    }.groupTuple()
+     .map { meta, files -> [meta, [*files]] }
+}
+
 
 workflow Tumor_multiple_libs {
 
+
+    genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
+    Pipeline_version = Channel.from(params.Pipeline_version)
+
+
 samples_exome = Channel.fromPath("Tumor_lib.csv")
 .splitCsv(header:true)
-.filter { row -> row.type == "Tumor" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
     meta.lib   =  row.library
     meta.sc    =  row.sample_captures
-    meta.casename  = row.casename 
+    meta.casename  = row.casename
     meta.type     = row.type
     meta.diagnosis =row.Diagnosis
     def fastq_meta = []
@@ -27,59 +60,137 @@ samples_exome = Channel.fromPath("Tumor_lib.csv")
 
 Exome_common_WF(samples_exome)
 
-Exome_common_WF.out.pileup.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_pileup_ch }
+makehotspotdb_input = combinelibraries(Exome_common_WF.out.pileup)
+MakeHotSpotDB(makehotspotdb_input)
 
-pileup_input_ch = combined_pileup_ch.map { tuple -> tuple.drop(1) } 
-pileup_meta_ch = combined_pileup_ch.map { tuple -> tuple[0] }
+combined_snpefflibs = combinelibraries(Exome_common_WF.out.HC_snpeff_snv_vcf2txt)
 
-MakeHotSpotDB(pileup_input_ch,
-                   pileup_meta_ch
-)
-
-Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map { meta, file ->
-    meta2 = [
-        id: meta.id,
-        casename: meta.casename,
-        type: meta.type,
-        diagnosis: meta.diagnosis 
-    ]
-    [ meta2, file ]
-  }.groupTuple()
-   .map { meta, files -> [ meta, *files ] }
-   .filter { tuple ->
-    tuple.size() > 2
-  }
-   .set { combined_snpeff_ch }
-
-formatinput_snpeff_ch  = combined_snpeff_ch.map { tuple -> tuple.drop(1) }
-
-FormatInput(
-    formatinput_snpeff_ch,
-    MakeHotSpotDB.out
-)
+format_input = combined_snpefflibs.join(MakeHotSpotDB.out,by:[0])
+FormatInput(format_input)
 Annotation(FormatInput.out)
+ch_versions = Exome_common_WF.out.ch_versions.mix(Annotation.out.version)
+add_annotation_input = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation.map{meta, file -> [file]})
+AddAnnotation(add_annotation_input)
+annot_ch_dbinput = AddAnnotation.out.map{ meta, file -> [ meta.id, meta.casename, meta, file ] }
+            .map { patient, casename, meta, file ->
+            meta2 = [
+                lib: meta.lib,
+                sc: meta.sc,
+                type: meta.type
+            ]
+            [patient,casename, meta2, file]
+    }
+    .reduce([[:], [], [], []]) { result, item ->
+        def (patient, casename, meta, filePath) = item
 
-merged_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation)
-updated_tuples = merged_ch.map { tuple ->
-    [tuple[0], tuple[1], tuple[3]]
+        // Dynamically set the id from the meta data
+        result[0] = [id: patient, casename: casename]
+
+        // Append library and type to the result
+        result[1].add(meta.lib)
+        result[1].add(meta.type)
+
+        // Append library and source class to the result
+        result[2].add(meta.lib)
+        result[2].add(meta.sc)
+
+        // Append file paths
+        result[3].add(filePath)
+
+        return result
+    }
+
+//combined_annotationlibs = combinelibraries(AddAnnotation.out)
+//dbinput_input = combined_annotationlibs.join(combined_snpefflibs,by:[0])
+DBinput_multiple_new(annot_ch_dbinput,
+                    combined_snpefflibs.map{meta, file -> file})
+
+cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
+        tumor: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"  }
+        .map { tuple ->
+        def meta = tuple[0]
+        def bam = tuple[1]
+        def bai = tuple[2]
+        def cnv_ref = ''
+
+        if (meta.sc == 'clin.ex.v1') {
+            cnv_ref = params.cnvkit_clin_ex_v1
+        } else if (meta.sc == 'clin.snv.v1') {
+            cnv_ref = params.cnvkit_clin_snv_v1
+        } else if (meta.sc == 'clin.cnv.v2') {
+            cnv_ref = params.cnvkit_clin_cnv_v2
+        } else if (meta.sc == 'clin.snv.v2') {
+            cnv_ref = params.cnvkit_clin_snv_v2
+        } else if (meta.sc == 'seqcapez.rms.v1') {
+            cnv_ref = params.cnvkit_seqcapez_rms_v1
+        } else if (meta.sc == 'seqcapez.hu.ex.v3') {
+            cnv_ref = params.cnvkit_seqcapez_hu_ex_v3
+        } else if (meta.sc == 'agilent.v7') {
+            cnv_ref = params.cnvkit_agilent.v7
+        } else {
+            return [meta, bam, bai]
+        }
+        return [meta, bam, bai, cnv_ref]
 }
-AddAnnotation(updated_tuples)
-cnvkit_clin_ex_v1 = Channel.of(file(params.cnvkit_clin_ex_v1, checkIfExists:true))
+.filter { tuple ->
+    tuple.size() == 4
+}
 
-CNVkitPooled(
-    Exome_common_WF.out.exome_final_bam.combine(cnvkit_clin_ex_v1)
+cnvkit_input_bam|CNVkitPooled
+
+CNVkitPooled.out.cnvkit_pdf|CNVkit_png
+
+TcellExtrect(
+    Exome_common_WF.out.exome_final_bam
+    .join(Exome_common_WF.out.target_capture_ch,by:[0])
+    .combine(genome_version_tcellextrect)
 )
-CNVkit_png(CNVkitPooled.out.cnvkit_pdf)
+
+genotyping_input = combinelibraries(Exome_common_WF.out.gt)
+
+Genotyping_Sample(genotyping_input,
+                Pipeline_version)
+
+circos_input = combinelibraries(Exome_common_WF.out.loh)
+CircosPlot(circos_input)
+hotspot_depth_input = combinelibraries(Exome_common_WF.out.hotspot_depth)
+Hotspot_Boxplot(hotspot_depth_input)
+coverage_plot_input = combinelibraries(Exome_common_WF.out.coverage)
+CoveragePlot(coverage_plot_input)
+qc_summary_Patientlevel_input = combinelibraries(Exome_common_WF.out.exome_qc)
+QC_summary_Patientlevel(qc_summary_Patientlevel_input)
+
+multiqc_input = Exome_common_WF.out.Fastqc_out.join(Exome_common_WF.out.pileup, by: [0])
+                .join(Exome_common_WF.out.kraken, by: [0])
+                .join(Exome_common_WF.out.verifybamid, by: [0])
+                .join(Exome_common_WF.out.hsmetrics, by: [0])
+                .join(Exome_common_WF.out.fastq_screen, by: [0])
+                .join(Exome_common_WF.out.flagstat,by: [0])
+                .join(Exome_common_WF.out.markdup_txt,by: [0])
+                .join(Exome_common_WF.out.krona,by: [0])
+
+
+
+multiqc_input.map { meta, fastqc, pileup, kraken, verifybamid, hsmetrics, fastq_screen, flagstat, markdup, krona ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename,
+    ]
+    [ meta2, fastqc, pileup, kraken, verifybamid, hsmetrics, fastq_screen, flagstat, markdup, krona ]
+  }.groupTuple()
+   .map { meta, fastqcs, pileups, krakens, verifybamids, hsmetricss, fastq_screens, flagstats, markdups, kronas -> [ meta, [*fastqcs,*pileups, *krakens, *verifybamids, *hsmetricss, *fastq_screens, *flagstats, *markdups, *kronas ]] }
+   .set { multiqc_ch }
+
+Multiqc(multiqc_ch)
+ch_versions = ch_versions.mix(Multiqc.out.versions)
+
+combine_versions  = ch_versions.unique().collectFile(name: 'collated_versions.yml')
+
+custom_versions_input = Multiqc.out.multiqc_report
+        .combine(combine_versions).map{ meta, multiqc, version -> [meta, version] }
+        .combine(Pipeline_version)
+
+CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+
+
 }
