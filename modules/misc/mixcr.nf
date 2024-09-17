@@ -16,10 +16,10 @@ process Mixcr{
 
     input:
     tuple val(dataset_id),
-        path(r1), 
+        path(r1),
         path(r2),
         path(license)
-    
+
     output:
     tuple val("${dataset_id}"),
         path("mixcr")
@@ -32,7 +32,7 @@ if [ -d /lscratch/${SLURM_JOB_ID} ];then
     TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_mixcr"
 elif [ -d /dev/shm ];then
     TMPDIR="/dev/shm/!{dataset_id}_mixcr"
-else 
+else
     TMPDIR="/tmp/!{dataset_id}_mixcr"
 fi
 if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR}; fi
@@ -54,7 +54,7 @@ mkdir -p mixcr && cd mixcr
 
 mixcr analyze rnaseq-tcr-full-length --species hsa --rna ../!{r1} ../!{r2} !{dataset_id}
 
-if [ -f "!{dataset_id}.clones.tsv" ];then 
+if [ -f "!{dataset_id}.clones.tsv" ];then
     mv "!{dataset_id}.clones.tsv" "!{dataset_id}.clones.RNA.txt"
 else
     touch "!{dataset_id}.clones.RNA.txt"
@@ -103,7 +103,7 @@ process VDJtools{
     input:
     tuple val(dataset_id),
         path(mixcrDir)
-    
+
     output:
     tuple val("${dataset_id}"),
         path("${dataset_id}.summarystats.RNA.txt")
@@ -116,7 +116,7 @@ if [ -d /lscratch/${SLURM_JOB_ID} ];then
     TMPDIR="/lscratch/${SLURM_JOB_ID}/!{dataset_id}_VDJtools"
 elif [ -d /dev/shm ];then
     TMPDIR="/dev/shm/!{dataset_id}_VDJtools"
-else 
+else
     TMPDIR="/tmp/!{dataset_id}_VDJtools"
 fi
 if [ -d ${TMPDIR} ];then rm -rf ${TMPDIR}; fi
@@ -144,17 +144,17 @@ java -Djava.io.tmpdir=${TMPDIR} -jar ${VDJTOOLS_JAR} CalcBasicStats convert.!{da
 #   CRAN page: https://cran.r-project.org/package=circlize
 #   Github page: https://github.com/jokergoo/circlize
 #   Documentation: https://jokergoo.github.io/circlize_book/book/
-#   
+#
 #   If you use it in published research, please cite:
 #   Gu, Z. circlize implements and enhances circular visualization
 #     in R. Bioinformatics 2014.
-#   
+#
 #   This message can be suppressed by:
 #     suppressPackageStartupMessages(library(circlize))
 #   ========================================
-#   
+#
 #   Loading required package: RColorBrewer
-#   Error in apply(temp[1, 2:m], 2, as.character) : 
+#   Error in apply(temp[1, 2:m], 2, as.character) :
 #     dim(X) must have a positive length
 #   Execution halted
 # java -Djava.io.tmpdir=${TMPDIR} -jar ${VDJTOOLS_JAR} PlotFancyVJUsage convert.!{dataset_id}.clones.RNA.txt !{dataset_id}.RNA

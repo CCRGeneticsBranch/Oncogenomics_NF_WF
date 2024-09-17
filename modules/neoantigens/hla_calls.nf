@@ -1,108 +1,111 @@
+process Optitype {
+    tag "$meta.lib"
 
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}", pattern: "${meta.lib}*"
 
-workflow HLA_calls {
-    take: trimmed_fq
-    main:
-        HLAminer(trimmed_fq)
-        Seq2HLA(trimmed_fq)
-        MergeHLA(Seq2HLA.out.combine(HLAminer.out, by:0))
-    emit:
-        MergeHLA.out
-}
-
-
-process HLAminer {
-    tag { dataset_id }
-
-    publishDir "${params.resultsdir}/${dataset_id}/HLA", mode: "${params.publishDirMode}"
     input:
-    tuple val(dataset_id),
-        path(r1), 
-        path(r2)
-    
-    output:
-    tuple val("${dataset_id}"),
-        path("${dataset_id}_HLAminer_HPTASR.csv")
+    tuple val(meta), path(trim)
 
+    output:
+    tuple val(meta), path("${meta.lib}_optitype.txt"), emit: Optitype_output
+    path "versions.yml"             , emit: versions
 
     stub:
     """
-    touch "${dataset_id}_HLAminer_HPTASR.csv"
+    touch "${meta.lib}_optitype.txt"
     """
 
-
-    shell:
-    '''
-    set -exo pipefail
-
-    
-    echo !{r1} >patient.fof
-    echo !{r2} >>patient.fof
-
-
-    HPTASRrnaseq_classI.sh .
-    mv HLAminer_HPTASR.csv !{dataset_id}_HLAminer_HPTASR.csv
-    '''
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
+    if [[ "${meta.type}" == "tumor_DNA" || "${meta.type}" == "cell_line_DNA" || "${meta.type}" == "normal_DNA" || "${meta.type}" == "blood_DNA" ]]; then
+        type="--dna"
+    elif [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" || "${meta.type}" == "xeno_RNA" ]]; then
+        type="--rna"
+    fi
+    TMP=tmp
+    mkdir \$TMP
+    trap 'rm -rf "\$TMP"' EXIT
+    if [[ \$(OptiTypePipeline.py -i ${trim[0]} ${trim[1]} \$type -v -o \$TMP 2>&1 | grep -m 1 -e "need more than 0 values to unpack" -e "The constraint expression resolved to a trivial Boolean (False) instead of a Pyomo object." -e "cp: cannot stat 'tmp/*/*_result.tsv': No such file or directory") ]]; then
+        echo "no HLA called, output empty file"
+        touch "${meta.lib}_optitype.txt"
+    else
+        cp \$TMP/*/*_result.tsv ${meta.lib}_optitype.txt
+   fi
+#    touch "${meta.lib}_optitype.txt"
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    Optitype: \$(echo \$SINGULARITY_NAME | sed 's/fred2-optitype-release-//g'|sed 's/.img//g')
+END_VERSIONS
+    """
 }
 
-process Seq2HLA {
-    tag { dataset_id }
 
-    publishDir "$params.resultsdir/$dataset_id/HLA", mode: "${params.publishDirMode}"
+process HLA_HD {
+    tag "$meta.lib"
+
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}", pattern: "${meta.lib}*"
 
     input:
-    tuple val(dataset_id),
-        path(r1), 
-        path(r2)
-    
+    tuple val(meta), path(trim)
+
     output:
-    tuple val("${dataset_id}"),
-        path("${dataset_id}-ClassI.HLAgenotype4digits")
+    tuple val(meta), path("${meta.lib}_HLAHD.txt"), emit: hlahd_output
+    path "versions.yml"             , emit: versions
 
     stub:
     """
-    touch "${dataset_id}-ClassI.HLAgenotype4digits"
+    touch "${meta.lib}_HLAHD.txt"
     """
 
-    shell:
-    '''
-    set -exo pipefail
+    script:
+    def prefix = task.ext.prefix ?: "${meta.lib}"
+    """
+    TMP=tmp
+    mkdir \$TMP
+    trap 'rm -rf "\$TMP"' EXIT
+    gunzip -c ${trim[0]} > ${meta.lib}_R1_unzipped.fastq
+    gunzip -c ${trim[1]} > ${meta.lib}_R2_unzipped.fastq
 
-    seq2HLA \
-        references/ \
-        -1 !{r1} \
-        -2 !{r2} \
-        -p !{task.cpus} \
-        -r "!{dataset_id}"
-    '''
+    hlahd.sh -t ${task.cpus} \
+        -m 70 -f /data2/hlahd.1.7.0/freq_data \
+        ${meta.lib}_R1_unzipped.fastq ${meta.lib}_R2_unzipped.fastq \
+        /data2/hlahd.1.7.0/HLA_gene.split.txt \
+        /data2/hlahd.1.7.0/dictionary \
+        ${meta.lib} \
+        \$TMP
+    cp \$TMP/${meta.lib}/result/${meta.lib}_final.result.txt ${meta.lib}_HLAHD.txt
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        HLA-HD: \$(hlahd.sh 2>&1 | grep -o 'HLA-HD version [0-9.]*' | awk '{print \$NF}')
+    END_VERSIONS
+    """
 }
 
+process Merge_new_HLA {
 
-process MergeHLA {
-    tag { dataset_id }
+    tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${dataset_id}/HLA", mode: "${params.publishDirMode}"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/HLA", mode: "${params.publishDirMode}"
     input:
-    tuple val(dataset_id),
-        path(seq2hla),
-        path(hlaminer)
+
+    tuple val(meta),
+        path(optitype),
+        path(hlahd)
 
     output:
-	path "${dataset_id}.Calls.txt"
+	tuple val(meta),path("${meta.lib}.Calls.txt")
 
     stub:
     """
-    touch "${dataset_id}.Calls.txt"
+    touch "${meta.lib}.Calls.txt"
     """
 
 
-    shell:
-    '''
-    set -exo pipefail
+    script:
+    """
+    HLA_consensus.py ${optitype} ${hlahd} ${meta.lib}.Calls.txt
 
-    consensusHLA.pl !{hlaminer} !{seq2hla} |sort > !{dataset_id}.Calls.txt
-
-    '''
+    """
 }
-
-
