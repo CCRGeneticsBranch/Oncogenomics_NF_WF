@@ -121,7 +121,6 @@ multiqc_input = Exome_common_WF.out.Fastqc_out
     .join(Exome_common_WF.out.kraken,by: [0])
     .join(Exome_common_WF.out.verifybamid,by: [0])
     .join(Exome_common_WF.out.hsmetrics,by: [0])
-    .join(TcellExtrect.out,by: [0])
     .join(Exome_common_WF.out.fastq_screen,by: [0])
     .join(Exome_common_WF.out.flagstat,by: [0])
     .join(Exome_common_WF.out.markdup_txt,by: [0])
