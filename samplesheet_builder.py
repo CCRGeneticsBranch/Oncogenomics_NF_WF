@@ -23,7 +23,7 @@ if len(sys.argv) != 3:
 sample_id = sys.argv[1]
 case_name = sys.argv[2]
 
-# Use default directories
+# default directories
 samplesheet_dir = DEFAULT_SAMPLESHEET_DIR
 inputdir = DEFAULT_INPUT_DIR
 
@@ -122,12 +122,6 @@ def process_samplesheets(
             )
             all_filtered_data.extend(filtered_data)
             all_invalid_paths.extend(invalid_paths)
-
-    if not all_filtered_data:
-        print(
-            f"No matching records found for Patient ID '{sample_id}' and Case Name '{case_name}'."
-        )
-        sys.exit(1)
 
     # Group data and write to output files
     grouped_data = defaultdict(list)
