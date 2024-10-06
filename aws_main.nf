@@ -18,37 +18,11 @@ log.info """\
          .stripIndent()
 
 
-process Check_samplesheet {
-
-	publishDir "${params.resultsdir}"
-
-	input:
-	path(input_csv)
-
-	output:
-	path("*csv")
-
-	script:
-	"""
-	${workflow.projectDir}/bin/split_samplesheet.py ${input_csv} .
-	"""
-
-}
 
 include {RNAseq_only} from './workflows/RNAseq_only.nf'
 
 workflow {
-    Check_samplesheet(params.samplesheet)
-	basename = Check_samplesheet.out
-            .map{ file -> file.baseName}
-    basename.view()
 
-
-    if (basename.contains("RNAseq")) {
-        RNAseq_only()
-    } else {
-        println("No workflow to run. Required file is missing.")
-    }
-
+RNAseq_only()
 
 }
