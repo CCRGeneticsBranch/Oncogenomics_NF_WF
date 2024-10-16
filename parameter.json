@@ -1,18 +1,18 @@
 {
-    "samplesheet": {
-        "description": "Input data",
-        "optional": true
-    },
-    "outdir": {
-        "description": "The output directory where the results will be saved.",
-        "optional": true
-    },
-    "resultsdir": {
-        "description": "The output directory where the results will be saved.",
-        "optional": true
-    },
-    "ecr_registry": {
-        "description": "Amazon ECR Registry to use for container images",
-        "optional": false
-    }
+  "samplesheet": {
+    "description": "Input data",
+    "optional": true
+  },
+  "outdir": {
+    "description": "The output directory where the results will be saved.",
+    "optional": true
+  },
+  "resultsdir": {
+    "description": "The output directory where the results will be saved.",
+    "optional": true
+  },
+  "ecr_registry": {
+    "description": "Amazon ECR Registry to use for container images",
+    "optional": false
+  }
 }
