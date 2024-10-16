@@ -23,7 +23,7 @@ process Arriba {
     set -exo pipefail
 
     TMP=tmp/
-    mkdir \$TMP
+    mkdir -p \$TMP
     trap 'rm -rf "\$TMP"' EXIT
 
         STAR --genomeDir ${star_genomeIndex} \
