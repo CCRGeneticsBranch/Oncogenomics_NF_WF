@@ -101,7 +101,7 @@ workflow.onComplete {
 
             //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
 
-            sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'khanjav@mail.nih.gov, weij@mail.nih.gov, wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
+            sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
         }
 
     } else {
