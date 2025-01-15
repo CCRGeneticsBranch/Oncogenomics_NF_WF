@@ -19,6 +19,7 @@ Options:
 
   --Name   To include in Mail
   --Diagnosis To include in the mail body
+  --Pipeline_version To include in mail body
 Examples:
 
   1. $(basename $0) --Name NCI00001 input.csv
@@ -56,6 +57,10 @@ while true; do
     --diagnosis)
       shift
       diagnosis="$1"
+      ;;
+    --pipeline)
+      shift
+      pipeline="$1"
       ;;
     --help)
       usage
@@ -121,7 +126,7 @@ echo "<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 <body>
 <p>
 Hello,<br><br>
-     ngs-pipeline version v5.1 finished successfully on biowulf.nih.gov<br><br>
+     ngs-pipeline version $pipeline finished successfully on biowulf.nih.gov<br><br>
      Please check the genotyping result on <b>$diagnosis</b> patient \"$name\"; a cell with <font color=\"red\">red</font> color indicate that corresponding library might not belong to the patient $name.<br><br>
 </p>
 "

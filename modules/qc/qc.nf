@@ -38,8 +38,9 @@ process Kraken {
 }
 
 process Krona {
-    tag "$meta.lib"
 
+    tag "$meta.lib"
+	errorStrategy 'ignore'
     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/kraken", mode: 'copy'
 
     input:
@@ -261,7 +262,7 @@ process Genotyping_Sample {
      sed -i 's/.bwa//g' ${meta.id}.genotyping.txt
      sed -i 's/.star//g' ${meta.id}.genotyping.txt
 
-     sh tsv2html.sh --name ${meta.id} --diagnosis '${meta.diagnosis}' --head ${meta.id}.genotyping.txt  > genotyping.html
+     sh tsv2html.sh --name ${meta.id} --diagnosis '${meta.diagnosis}' --pipeline ${Pipeline_version} --head ${meta.id}.genotyping.txt  > genotyping.html
      """
 
 }
