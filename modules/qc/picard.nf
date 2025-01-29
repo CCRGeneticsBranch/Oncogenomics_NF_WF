@@ -138,7 +138,7 @@ process RNAlibrary_customQC {
 }
 
 process Combine_customRNAQC {
-        tag "$meta.lib"
+        tag "$meta.id"
 
         publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
@@ -158,7 +158,7 @@ process Combine_customRNAQC {
         """
 }
 process RNAqc_TrancriptCoverage {
-        tag "$meta.lib"
+        tag "$meta.id"
 
         publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/qc", mode: "${params.publishDirMode}"
 
