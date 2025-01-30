@@ -6,9 +6,10 @@ include {MakeHotSpotDB
 include {Exome_QC} from '../modules/qc/qc.nf'
 include {Vcf2txt} from '../modules/misc/snpEff'
 include {FormatInput
-        AddAnnotation_TN} from '../modules/annotation/annot'
+        AddAnnotation as AddAnnotation_exome
+        AddAnnotation as AddAnnotation_rnaseq} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
-include {DBinput} from '../modules/misc/DBinput'
+include {DBinput_exome_rnaseq} from '../modules/misc/DBinput'
 include {CNVkitPooled
         CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
@@ -23,21 +24,35 @@ include {Combine_customRNAQC
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
 
-def combine_exome_rnaseq_libraries = { exomelib, RNAlib ->
-    exomelib.cross(RNAlib).map { exome, rnaseq ->
-                def meta = exome[1]
-                [
-                    meta + [
-                        rna_lib: rnaseq[1].lib,
-                        rna_type: rnaseq[1].type,
-                        RNA_sc: rnaseq[1].sc
-                    ],
-
-                    [exome[2], rnaseq[2]]
-                ]
-            }
+def combinelibraries(inputData) {
+    def processedData = inputData.map { meta, file ->
+        meta2 = [
+            id: meta.id,
+            casename: meta.casename,
+            diagnosis: meta.diagnosis
+        ]
+        [meta2, file]
+    }.groupTuple()
+     .map { meta, files -> [meta, [*files]] }
 }
 
+
+def metadatareducer(inputChannel) {
+    return inputChannel.map { meta, file ->
+            [ meta.id, meta.casename, meta.diagnosis, file ]}
+        .reduce([[:], []]) { result, item ->
+            def (patient, casename, diagnosis, filePath) = item
+
+            // Dynamically set the id from the meta data
+            result[0] = [id: patient, casename: casename, diagnosis:diagnosis]
+
+            // Append file paths
+            result[1].add(filePath)
+
+
+            return result
+        }
+}
 
 
 workflow Tumor_RNAseq_WF {
@@ -79,43 +94,59 @@ samples_branch.exome|Exome_common_WF
 
 ch_versions = Exome_common_WF.out.ch_versions.mix(Common_RNAseq_WF.out.ch_versions)
 
+pileup_Channel = Exome_common_WF.out.pileup.concat(Common_RNAseq_WF.out.pileup)
+pileup_pair = metadatareducer(pileup_Channel)
 
-
-//RNA library pileup in  [meta.id, meta, file] format
-pileup_samples_rnaseq_to_cross = Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [ meta.id, meta, pileup ] }
-
-//Tumor library pileup in [meta.id, meta, file] format
-pileup_samples_tumor_to_cross = Exome_common_WF.out.pileup.map{ meta, pileup -> [ meta.id, meta, pileup ] }
-
-pileup_pair = combine_exome_rnaseq_libraries(pileup_samples_tumor_to_cross,pileup_samples_rnaseq_to_cross)
 
 MakeHotSpotDB(pileup_pair)
 
-//Tumor sample vcftxt  in [meta.id, meta, file] format
-HC_snpeff_snv_vcftxt_samples_tumor_to_cross = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map{ meta, snpeff_snv_vcftxt -> [ meta.id, meta, snpeff_snv_vcftxt ] }
-
-//RNAseq sample vcftxt  in [meta.id, meta, file] format
-HC_snpeff_snv_vcftxt_samples_rna_to_cross = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, snpeff_snv_vcftxt -> [ meta.id, meta, snpeff_snv_vcftxt ] }
-
-Combined_snpeff_vcf2txt_ch = combine_exome_rnaseq_libraries(HC_snpeff_snv_vcftxt_samples_tumor_to_cross,HC_snpeff_snv_vcftxt_samples_rna_to_cross)
-
+snpeff_vcf2txt_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.concat(Common_RNAseq_WF.out.snpeff_vcf)
+Combined_snpeff_vcf2txt_ch = metadatareducer(snpeff_vcf2txt_ch)
 format_input_ch = Combined_snpeff_vcf2txt_ch.join(MakeHotSpotDB.out,by:[0])
-
 FormatInput(format_input_ch)
-
 Annotation(FormatInput.out)
-
 ch_versions = ch_versions.mix(Annotation.out.version)
+add_annotation_exome_input = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.combine(Annotation.out.rare_annotation.map{meta, file -> [file]})
+add_annotation_rnaseq_input = Common_RNAseq_WF.out.snpeff_vcf.combine(Annotation.out.rare_annotation.map{meta, file -> [file]})
+add_annotation_exome_input|AddAnnotation_exome
+add_annotation_rnaseq_input|AddAnnotation_rnaseq
+snpeff_vcf2txt_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.concat(Common_RNAseq_WF.out.snpeff_vcf)
+annot_ch_dbinput = AddAnnotation_exome.out.concat(AddAnnotation_rnaseq.out)
+Combined_dbinput_ch = annot_ch_dbinput.map { meta, file ->
+            [ meta.id, meta.casename, meta, file ]
+        }
+        .map { patient, casename, meta, file ->
+            def meta2 = [
+                lib: meta.lib,
+                sc: meta.sc,
+                type: meta.type
+            ]
+            [patient, casename, meta2, file]
+        }
+    .reduce([[:], [], [], [], []]) { result, item ->
+        def (patient, casename, meta, filePath) = item
 
-addannotation_input_ch = Combined_snpeff_vcf2txt_ch.join(Annotation.out.rare_annotation,by:[0])
+        // Populate result[0] with patient and casename
+        result[0] = [id: patient, casename: casename]
 
-AddAnnotation_TN(addannotation_input_ch)
+        // Populate result[1] with lib and type
+        result[1].add(meta.lib)
+        result[1].add(meta.type)
 
-Combined_AddAnnotation_TN_ch = AddAnnotation_TN.out.Tumor_hc_anno_txt
-            .join(AddAnnotation_TN.out.RNA_hc_anno_txt,by:[0])
-            .map{meta, tumor, rnaseq -> [meta, [tumor, rnaseq]]}
-Combined_dbinput_ch = Combined_AddAnnotation_TN_ch.join(Combined_snpeff_vcf2txt_ch,by:[0])
-DBinput(Combined_dbinput_ch)
+        // Populate result[2] with lib and sc
+        result[2].add(meta.lib)
+        result[2].add(meta.sc)
+
+        if (filePath.toString().contains('DNA')) {result[3] << filePath.toString()}
+
+        if (filePath.toString().contains('RNA')) {result[4] << filePath.toString()}
+
+        return result
+    }
+
+DBinput_exome_rnaseq(Combined_dbinput_ch,
+                    Combined_snpeff_vcf2txt_ch.map{meta, file -> file})
+
 
 cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
         tumor: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"  }
@@ -152,27 +183,21 @@ cnvkit_input_bam|CNVkitPooled
 
 CNVkitPooled.out.cnvkit_pdf|CNVkit_png
 
-exome_hotspot_depth_status_tumor_to_cross = Exome_common_WF.out.hotspot_depth.map{meta, tumor -> [ meta.id, meta, tumor ] }
-rnaseq_hotspot_depth = Common_RNAseq_WF.out.hotspot_depth.map{ meta, rnaseq -> [ meta.id, meta, rnaseq ] }
-Combined_hotspot_ch = combine_exome_rnaseq_libraries(exome_hotspot_depth_status_tumor_to_cross,rnaseq_hotspot_depth)
-Hotspot_Boxplot(Combined_hotspot_ch)
+hotspot_ch = Exome_common_WF.out.hotspot_depth.concat(Common_RNAseq_WF.out.hotspot_depth)
+combined_hotspot_ch = metadatareducer(hotspot_ch)
+Hotspot_Boxplot(combined_hotspot_ch)
 
-exome_genotyping_status_tumor_to_cross = Exome_common_WF.out.gt.map{ meta, tumor -> [ meta.id, meta, tumor ] }
-rnaseq_genotyping_to_cross = Common_RNAseq_WF.out.gt.map{ meta, gt -> [ meta.id, meta, gt ] }
-Combined_genotyping_ch = combine_exome_rnaseq_libraries(exome_genotyping_status_tumor_to_cross,rnaseq_genotyping_to_cross)
-Genotyping_Sample(Combined_genotyping_ch,
+genotyping_ch = Exome_common_WF.out.gt.concat(Common_RNAseq_WF.out.gt)
+combined_genotyping_ch = metadatareducer(genotyping_ch)
+Genotyping_Sample(combined_genotyping_ch,
                 Pipeline_version)
+loh_ch = Exome_common_WF.out.loh.concat(Common_RNAseq_WF.out.loh)
+combined_loh_ch = metadatareducer(loh_ch)
+CircosPlot(combined_loh_ch)
 
-
-exome_loh_status_tumor_to_cross = Exome_common_WF.out.loh.map{ meta, tumor -> [ meta.id, meta, tumor ] }
-rnaseq_loh_to_cross = Common_RNAseq_WF.out.loh.map{ meta, loh -> [ meta.id, meta, loh ] }
-Combined_loh_ch = combine_exome_rnaseq_libraries(exome_loh_status_tumor_to_cross,rnaseq_loh_to_cross)
-CircosPlot(Combined_loh_ch)
-
-coverage_exome_to_cross = Exome_common_WF.out.coverage.map{meta, coverage -> [ meta.id, meta, coverage ] }
-coverage_rnaseq_to_cross = Common_RNAseq_WF.out.coverage.map{meta, coverage -> [ meta.id, meta, coverage ] }
-Combined_coverage = combine_exome_rnaseq_libraries(coverage_exome_to_cross,coverage_rnaseq_to_cross)
-CoveragePlot(Combined_coverage)
+coverage_ch = Exome_common_WF.out.coverage.concat(Common_RNAseq_WF.out.coverage)
+combined_coverage_ch = metadatareducer(coverage_ch)
+CoveragePlot(combined_coverage_ch)
 
 
  //RNA lib processing steps
@@ -187,19 +212,17 @@ Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
                         .combine(genome_version)
 Fusion_Annotation(Fusion_Annotation_input)
 
-merge_fusion_anno_input = Fusion_Annotation.out.map{ meta, fusion -> [meta, [fusion]] }
-
+merge_fusion_anno_input = combinelibraries(Fusion_Annotation.out)
 Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+qc_summary_input_ch = combinelibraries(Exome_common_WF.out.exome_qc)
+QC_summary_Patientlevel(qc_summary_input_ch)
 
-Combine_customRNAQC(Common_RNAseq_WF.out.rnalib_custum_qc.map{ meta, qc -> [meta, [qc]] })
+customRNAqc_ch = combinelibraries(Common_RNAseq_WF.out.rnalib_custum_qc)
+Combine_customRNAQC(customRNAqc_ch)
+transcriptcovRNAqc_ch = combinelibraries(Common_RNAseq_WF.out.picard_rnaseqmetrics)
+RNAqc_TrancriptCoverage(transcriptcovRNAqc_ch)
 
-RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc -> [meta, [qc]] })
-
-//DNA lib processing
-
-QC_summary_Patientlevel(Exome_common_WF.out.exome_qc)
-
-multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
+rnaseq_qc_ch = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
@@ -209,12 +232,19 @@ multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out
                       .join(Common_RNAseq_WF.out.picard_rnaseqmetrics, by: [0])
                       .join(Common_RNAseq_WF.out.picard_rnaseqmetrics_pdf, by: [0])
                       .join(Common_RNAseq_WF.out.picard_alignmetrics, by: [0])
-                      .join(Common_RNAseq_WF.out.picard_MD, by: [0])
+                      .join(Common_RNAseq_WF.out.markdup_txt, by: [0])
                       .join(Common_RNAseq_WF.out.flagstat, by: [0])
                       .join(Common_RNAseq_WF.out.fastq_screen, by: [0])
+.map { meta, fastqc, pileup, chimeric, rsem, rnaseqc, circos, strand, rna_qc, picardqc, picardqc_pdf, picardqc_metric, markdup, flagstat, fastq_screen ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename
+    ]
+    [ meta2, fastqc, pileup, chimeric, rsem, rnaseqc, circos, strand, rna_qc, picardqc, picardqc_pdf, picardqc_metric, markdup, flagstat, fastq_screen ]
+  }.groupTuple()
+   .map { meta, fastqcs, pileups, chimerics, rsems, rnaseqcs, circoss, strands, rna_qcs, picardqcs, picardqc_pdfs, picardqc_metrics, markdups, flagstats, fastq_screens -> [ meta, *fastqcs, *pileups, *chimerics, *rsems, *rnaseqcs, *circoss, *strands, *rna_qcs, *picardqcs, *picardqc_pdfs, *picardqc_metrics, *markdups, *flagstats, *fastq_screens ] }
 
-
-multiqc_exome_input = Exome_common_WF.out.Fastqc_out
+exome_qc_ch = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.verifybamid)
             .join(Exome_common_WF.out.flagstat)
             .join(Exome_common_WF.out.exome_final_bam)
@@ -224,8 +254,17 @@ multiqc_exome_input = Exome_common_WF.out.Fastqc_out
             .join(Exome_common_WF.out.exome_qc)
             .join(Exome_common_WF.out.markdup_txt)
             .join(Exome_common_WF.out.fastq_screen)
+.map { meta, fastqc, verifybamid, flagstat, bam, bai, hsmetrics, krona, kraken, exome_qc, markdup, fastq_screen ->
+    meta2 = [
+        id: meta.id,
+        casename: meta.casename
+    ]
+    [ meta2, fastqc, verifybamid, flagstat, bam, bai, hsmetrics, krona, kraken, exome_qc, markdup, fastq_screen ]
+  }.groupTuple()
+   .map { meta, fastqcs, verifybamids, flagstats, bams, bais, hsmetricss, kronas, krakens, exome_qcs, markdups, fastq_screens -> [ meta, *fastqcs, *verifybamids, *flagstats, *bams, *bais, *hsmetricss, *kronas, *krakens, *exome_qcs, *markdups, *fastq_screens ] }
 
-Combined_multiqc_input = multiqc_exome_input.merge(multiqc_rnaseq_input) { item1, item2 ->
+
+Combined_multiqc_input = exome_qc_ch.merge(rnaseq_qc_ch) { item1, item2 ->
     if (item1[0].id == item2[0].id && item1[0].casename == item2[0].casename) {
         return [[id: item1[0].id, casename: item1[0].casename]] + [item1[1..-1] + item2[1..-1]]
     } else {
@@ -233,6 +272,7 @@ Combined_multiqc_input = multiqc_exome_input.merge(multiqc_rnaseq_input) { item1
     }
 
 }
+
 Multiqc(Combined_multiqc_input)
 
 ch_versions = ch_versions.mix(Multiqc.out.versions)
