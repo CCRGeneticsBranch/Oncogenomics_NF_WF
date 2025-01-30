@@ -106,6 +106,9 @@ for row in samplesheet_data:
 
 # Write the matching rows to the respective output files
 if tumor_rnaseq_rows:
+    tumor_rnaseq_rows = list(
+        {tuple(row.items()): row for row in tumor_rnaseq_rows}.values()
+    )
     output_file_rnaseq = os.path.join(outdir, "Tumor_RNAseq.csv")
     with open(output_file_rnaseq, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=columns)
