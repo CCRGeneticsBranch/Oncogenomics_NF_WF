@@ -136,6 +136,39 @@ process DBinput_multiple_new {
 }
 
 
+process DBinput_exome_rnaseq {
+
+     tag "$meta.id"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),val(libtype), val(libsc), path(dna), path (rna)
+     path(snpeff)
+
+     output:
+     tuple val(meta),
+        path("${meta.id}*")
+
+     stub:
+     """
+     touch "${meta.id}*"
+     """
+
+     script:
+
+     """
+     makeDBVariantFile.pl ${rna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.rnaseq
+
+     makeDBVariantFile.pl ${dna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.variants.tmp
+     addFS.pl ${meta.id}.variants.tmp ${snpeff.join(' ')} > ${meta.id}.variants
+     rm ${meta.id}.variants.tmp
+
+     """
+
+}
+
+
 process DBinput_multiples {
 
      tag "$meta.lib"
