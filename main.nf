@@ -20,7 +20,6 @@ log.info """\
          .stripIndent()
 
 
-
 //import workflows
 
 include {RNAseq_only} from './workflows/RNAseq_only.nf'
@@ -57,57 +56,25 @@ if (fileExists("Exome.csv")) {
     println("No workflow to run. Required file is missing.")
 }
 
-
-/*
-get_project_list()
-*/
 }
-/*
-process get_project_list {
-    output:
-    path "list.txt"
-
-    script:
-    """
-    python3 /data/khanlab/projects/processed_DATA/nf_samplesheets/projectlist.py /data/khanlab/projects/processed_DATA/nf_samplesheets/PAXCPA_PAXCPA.csv > list.txt
-    """
-}
-*/
 
 
 workflow.onComplete {
 
+    def message = Utils.handleWorkflowCompletion(
+        workflow,
+        "biowulf_mouse_RNA_slurm",
+        workflow.profile == "biowulf_mouse_RNA_slurm" ? "completed.txt" : "successful.txt"
 
-    if (workflow.success) {
+    )
 
-        if (workflow.profile == "biowulf_mouse_RNA_slurm") {
-            // Special handling for the mouse workflow
-            def successFile = new File("${workflow.launchDir}/completed.txt")
-            successFile.createNewFile()
-
-            def fullMessage = "Mouse RNAseq workflow completed successfully. Results are located at ${workflow.launchDir}"
-            sendMail(to: "${workflow.userName}@mail.nih.gov", subject: 'Mouse RNAseq Workflow Complete', body: fullMessage, mimeType: 'text/plain')
-
-        } else {
-
-
-            def successFile = new File("${workflow.launchDir}/successful.txt")
-            successFile.createNewFile()
-
-            def htmlFile = new File("${workflow.launchDir}/qc/genotyping.html")
-            def htmlContent = htmlFile.text
-            def fullMessage = "${htmlContent}"
-
-
-            //sendMail(to: "${workflow.userName}@mail.nih.gov" , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
-
-            sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov,' , subject: 'khanlab ngs-pipeline execution successful', body: fullMessage, mimeType: 'text/html')
-        }
-
-    } else {
-        fullMessage = "Workflow completed with errors. Error log is located at ${workflow.launchDir}"
-        sendMail(to: "${workflow.userName}@mail.nih.gov" , cc: 'gangalapudiv2@mail.nih.gov', subject: 'khanlab ngs-pipeline execution failed', body: fullMessage, mimeType: 'text/html')
-    }
+    sendMail(
+        to: "${workflow.userName}@mail.nih.gov",
+        cc: workflow.profile == "biowulf_mouse_RNA_slurm" ? "" : "wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov",
+        subject: workflow.success ? "khanlab ngs-pipeline execution successful" : "khanlab ngs-pipeline execution failed",
+        body: message,
+        mimeType: 'text/html'
+    )
 
 }
 
