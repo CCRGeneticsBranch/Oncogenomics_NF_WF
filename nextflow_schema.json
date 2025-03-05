@@ -1,0 +1,61 @@
+{
+  "title": "My Nextflow Pipeline Schema",
+  "description": "This schema defines the input parameters for my Nextflow pipeline.",
+  "type": "object",
+  "definitions": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "description": "Define where the pipeline should find input data and save output data",
+      "default": "",
+      "properties": {
+        "samplesheet": {
+          "type": "string",
+          "format": "file-path",
+          "mimetype": "text/csv",
+          "pattern": "^\\S+\\.csv$",
+          "schema": "assets/schema_input.json",
+          "description": "Input data",
+          "format": "path",
+          "fa_icon": "fas fa-copy"
+        },
+        "outdir": {
+          "type": "string",
+          "fa_icon": "far fa-folder",
+          "format": "directory-path",
+          "description": "The output directory where the results will be saved."
+        },
+        "resultsdir": {
+          "type": "string",
+          "fa_icon": "far fa-folder",
+          "format": "directory-path",
+          "description": "The results directory where the results will be saved."
+        }
+      },
+      "fa_icon": "fas fa-terminal"
+    },
+    "general_options": {
+      "title": "general_options",
+      "type": "object",
+      "description": "Less common options for the pipeline, typically set in config file",
+      "default": "",
+      "properties": {
+        "ecr_registry": {
+          "type": "string",
+          "description": "Amazon ECR Registry to use for container images",
+          "fa_icon": "fas fa-cog"
+        }
+      },
+      "required": ["ecr_registry"],
+      "fa_icon": "fas fa-cogs"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/definitions/input_output_options"
+    },
+    {
+      "$ref": "#/definitions/general_options"
+    }
+  ]
+}
