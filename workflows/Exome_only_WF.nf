@@ -15,15 +15,22 @@ include {Actionable_variants} from '../modules/Actionable'
 include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 
-workflow Exome_only_WF {
-
    somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
    combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
    genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
    Pipeline_version = Channel.from(params.Pipeline_version)
 
 
-samples_exome = Channel.fromPath("Exome.csv")
+workflow Exome_only_WF {
+
+take:
+    exome_samplesheet
+
+main:
+
+
+//samples_exome = Channel.fromPath("Exome.csv")
+samples_exome = exome_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type == "cell_line_DNA" }
 .map { row ->

@@ -73,8 +73,13 @@ workflow Tumor_Normal_WF {
     genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
     Pipeline_version = Channel.from(params.Pipeline_version)
 
+take:
+    TN_samplesheet
+
+main:
+
 // Parse the samplesheet to generate fastq tuples
-samples_exome = Channel.fromPath("Tumor_Normal.csv")
+samples_exome = TN_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" }
 .map { row ->
