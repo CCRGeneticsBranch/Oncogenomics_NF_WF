@@ -38,6 +38,14 @@ with open(samplesheet, "r") as file:
     # Store the contents of the sample sheet in a list
     samplesheet_data = list(reader)
 
+for row in samplesheet_data:
+    if row["type"] == "xeno_DNA":
+        row["type"] = "tumor_DNA"
+
+for row in samplesheet_data:
+    if row["type"] == "xeno_RNA":
+        row["type"] = "tumor_RNA"
+
 # Remove spaces from columns that don't have any values
 for row in samplesheet_data:
     for col in columns:
@@ -129,27 +137,6 @@ if tumor_normal_rows:
         writer.writeheader()
         writer.writerows(tumor_normal_rows)
 
-#         # Check if at least one of the values is not empty
-#         if matched_rna or matched_normal:
-#             # Add the current row to the matching rows list
-#             matching_rows.append(row)
-
-#             # Iterate over the rows again to find matches
-#             for other_row in samplesheet_data:
-#                 # Check if the library value in the other row matches either Matched_RNA or Matched_normal
-#                 if (matched_rna and other_row["library"] == matched_rna) or (
-#                     matched_normal and other_row["library"] == matched_normal
-#                 ):
-#                     if other_row["casename"] == matched_casename:
-#                         matching_rows.append(other_row)
-
-# if matching_rows:
-#     # Write the matching rows to the Tumor_normal.csv file
-#     output_file = os.path.join(outdir, "Tumor_Normal.csv")
-#     with open(output_file, "w", newline="") as file:
-#         writer = csv.DictWriter(file, fieldnames=columns)
-#         writer.writeheader()
-#         writer.writerows(matching_rows)
 
 # Create separate file writers for RNAseq, Normal, and Tumor types
 rna_file = None
@@ -163,7 +150,6 @@ tumor_lib_rows = []
 RNAseq_lib_rows = []
 rna_lib_rows = []
 
-# Check if there are unique values for RNAseq type
 # Check if there are unique values for RNAseq type
 if any(
     sample_casename_counts[(row["sample"], row["casename"])] == 1
