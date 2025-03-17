@@ -1,6 +1,13 @@
-// Using DSL-2
-nextflow.enable.dsl=2
-import groovy.json.JsonSlurper
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl = 2
+
+// Default parameter values
+
+OUTDIR = "${params.outdir}"
+
+
+
 
 log.info """\
          E X O M E - R N A S E Q - N F   P I P E L I N E
@@ -9,18 +16,46 @@ log.info """\
          runName      : $workflow.runName
          username     : $workflow.userName
          configs      : $workflow.configFiles
-         profile      : $workflow.profile
          cmd line     : $workflow.commandLine
          start time   : $workflow.start
          projectDir   : $workflow.projectDir
          launchDir    : $workflow.launchDir
          workdDir     : $workflow.workDir
          homeDir      : $workflow.homeDir
+         samplesheet  : ${params.samplesheet}
+         outdir       : ${params.resultsdir}
          """
          .stripIndent()
 
 
-//import workflows
+
+process PREPARE_SAMPLESHEET {
+
+    input:
+    path samplesheet
+
+    output:
+    path("*csv")
+
+    script:
+    """
+    genome_v=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="genome") s=i} NR>1 {print \$s}' ${samplesheet} | sort | uniq)
+    genome_count=\$(echo "\$genome_v" | wc -l)
+    if [ "\$genome_count" -ne 1 ]; then
+        echo "Error: Multiple or no genome versions found in samplesheet. Please ensure all samples have the same genome version."
+        exit 1
+    fi
+
+    if [ "\$genome_v" == "hg19" ]; then
+        python ${workflow.projectDir}/bin/split_samplesheet.py ${samplesheet} .
+    elif [ "\$genome_v" == "mm39" ]; then
+        cp ${samplesheet} mouse_rnaseq.csv
+    else
+        echo "Error: Unknown genome: \$genome_v"
+        exit 1
+    fi
+    """
+}
 
 include {RNAseq_only} from './workflows/RNAseq_only.nf'
 include {RNAseq_multiple_libs} from './workflows/RNAseq_multiple_libs.nf'
@@ -32,32 +67,33 @@ include {Tumor_RNAseq_WF} from './workflows/Tumor_RNAseq_WF.nf'
 include {Mouse_RNA} from './workflows/Mouse_RNA.nf'
 
 
-// Launch workflow by checking the samplesheet availability
 workflow {
+prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet)
 
 
-if (fileExists("Exome.csv")) {
-    Exome_only_WF()
-} else if (fileExists("Tumor_lib.csv")) {
-    Tumor_multiple_libs()
-} else if (fileExists("Tumor_RNAseq_Normal.csv")) {
-    Tumor_Normal_RNAseq_WF()
-} else if (fileExists("RNAseq.csv")) {
-    RNAseq_only()
-} else if (fileExists("RNA_lib.csv")) {
-    RNAseq_multiple_libs()
-} else if (fileExists("Tumor_Normal.csv")) {
-    Tumor_Normal_WF()
-} else if (fileExists("Tumor_RNAseq.csv")) {
-    Tumor_RNAseq_WF()
-} else if (fileExists("mouse_rnaseq.csv")) {
-    Mouse_RNA()
-} else {
-    println("No workflow to run. Required file is missing.")
+    prepared_samplesheets.branch {
+        rnaseq: it.name == 'RNAseq.csv'
+        exome: it.name == 'Exome.csv'
+        multiple_exome: it.name == 'Tumor_lib.csv'
+        tumor_rnaseq_normal: it.name == 'Tumor_RNAseq_Normal.csv'
+        multiple_rna: it.name == 'RNA_lib.csv'
+        tumor_normal: it.name == 'Tumor_Normal.csv'
+        tumor_rnaseq: it.name == 'Tumor_RNAseq.csv'
+        mouse_rna: it.name == 'mouse_rnaseq.csv'
+
+
+    }.set { branched_samplesheets }
+
+    branched_samplesheets.rnaseq | RNAseq_only
+    branched_samplesheets.exome | Exome_only_WF
+    branched_samplesheets.multiple_exome | Tumor_multiple_libs
+    branched_samplesheets.tumor_rnaseq_normal | Tumor_Normal_RNAseq_WF
+    branched_samplesheets.multiple_rna | RNAseq_multiple_libs
+    branched_samplesheets.tumor_normal | Tumor_Normal_WF
+    branched_samplesheets.tumor_rnaseq | Tumor_RNAseq_WF
+    branched_samplesheets.mouse_rna | Mouse_RNA
+
 }
-
-}
-
 
 workflow.onComplete {
 
@@ -67,18 +103,13 @@ workflow.onComplete {
         workflow.profile == "biowulf_mouse_RNA_slurm" ? "completed.txt" : "successful.txt"
 
     )
-
-    sendMail(
-        to: "${workflow.userName}@mail.nih.gov",
-        cc: workflow.profile == "biowulf_mouse_RNA_slurm" ? "" : "wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov",
-        subject: workflow.success ? "khanlab ngs-pipeline execution successful" : "khanlab ngs-pipeline execution failed",
-        body: message,
-        mimeType: 'text/html'
-    )
-
-}
-
-
-def fileExists(String filePath) {
-    new File(filePath).exists()
+    if (workflow.profile.contains("biowulf")) {
+        sendMail(
+            to: "${workflow.userName}@mail.nih.gov",
+            cc: workflow.profile == "biowulf_mouse_RNA_slurm" ? "" : "wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov",
+            subject: workflow.success ? "khanlab ngs-pipeline execution successful" : "khanlab ngs-pipeline execution failed",
+            body: message,
+            mimeType: 'text/html'
+        )
+    }
 }
