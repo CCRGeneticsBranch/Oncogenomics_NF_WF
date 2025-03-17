@@ -30,18 +30,37 @@ if [[ "$GENOME" != "hg19" && "$GENOME" != "mm39" ]]; then
     exit 1
 fi
 
-#export PATIENT=$(basename "$SAMPLESHEET" | cut -d'_' -f1)
-#export CASENAME=$(basename "$SAMPLESHEET" | cut -d"_" -f2- | sed 's/.csv//g')
+WF_HOME="/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF"
+CONFIG_FILE="$WF_HOME/nextflow.config"
+
 export PATIENT=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="sample") s=i} NR>1 {print $s}' "$SAMPLESHEET" | sort | uniq)
 export CASENAME=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="casename") c=i} NR>1 {print $c}' "$SAMPLESHEET" | sort | uniq)
+export RESULTSDIR="$OUTDIR/$PATIENT/$CASENAME"
+
+mkdir -p "$RESULTSDIR"
+
+export LOG="$RESULTSDIR/log"
+
+mkdir -p "$LOG"
+
+export NXF_HOME="$RESULTSDIR/.nextflow"
 
 if [[ -z "$PATIENT" || -z "$CASENAME" ]]; then
     echo "Error: Could not extract PATIENT or CASENAME from the samplesheet."
     exit 1
 fi
 
-# Create the directory structure
-mkdir -p "$OUTDIR/$PATIENT/$CASENAME"
+
+cd $RESULTSDIR
+
+if [[ "$GENOME" == "hg19" ]]; then
+    PROFILE="biowulf_test_run_slurm"
+elif [[ "$GENOME" == "mm39" ]]; then
+    PROFILE="biowulf_mouse_RNA_slurm"
+else
+    echo "Unknown genome: $GENOME"
+    exit 1
+fi
 
 logname=$(basename "$SAMPLESHEET" .csv)
 timestamp=$(date +"%Y%m%d-%H%M%S")
@@ -53,7 +72,7 @@ sbatch <<EOT
 #SBATCH --mem=05g
 #SBATCH --time=08-00:00:00
 
-
-sh /data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nf.sh $SAMPLESHEET $OUTDIR $PATIENT $CASENAME $GENOME
+module load nextflow/23.10.0 singularity graphviz
+nextflow run $WF_HOME/main.nf -resume --samplesheet $SAMPLESHEET --resultsdir $OUTDIR --genome_v $GENOME -profile $PROFILE --logdir $LOG
 exit 0
 EOT
