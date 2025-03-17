@@ -40,8 +40,12 @@ workflow Tumor_multiple_libs {
     genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
     Pipeline_version = Channel.from(params.Pipeline_version)
 
+take:
+    multiple_tumor_samplesheet
 
-samples_exome = Channel.fromPath("Tumor_lib.csv")
+main:
+
+samples_exome = multiple_tumor_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" }
 .map { row ->

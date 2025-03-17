@@ -54,9 +54,6 @@ def metadatareducer(inputChannel) {
         }
 }
 
-
-workflow Tumor_RNAseq_WF {
-
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
@@ -65,9 +62,16 @@ workflow Tumor_RNAseq_WF {
     genome_version = Channel.from(params.genome_version)
     Pipeline_version = Channel.from(params.Pipeline_version)
 
+workflow Tumor_RNAseq_WF {
 
+    take:
+    rnaseq_samplesheet
+
+
+    main:
 // Parse the samplesheet to generate fastq tuples
-samples = Channel.fromPath("Tumor_RNAseq.csv")
+//samples = Channel.fromPath("Tumor_RNAseq.csv")
+samples = rnaseq_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" || row.type == "tumor_RNA" || row.type == "cell_line_RNA" }
 .map { row ->
