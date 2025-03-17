@@ -56,9 +56,13 @@ genome_version_fusion_annotation =  Channel.from(params.genome_version_fusion_an
 genome_version = Channel.from(params.genome_version)
 Pipeline_version = Channel.from(params.Pipeline_version)
 
+take:
+    multiple_rna_samplesheet
+
+main:
 
 //create a sample channel using meta hashmap
-samples_rnaseq = Channel.fromPath("RNA_lib.csv")
+samples_rnaseq = multiple_rna_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_RNA" || row.type == "cell_line_RNA" }
 .map { row ->

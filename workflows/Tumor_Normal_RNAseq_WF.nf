@@ -101,8 +101,13 @@ workflow Tumor_Normal_RNAseq_WF {
     Pipeline_version = Channel.from(params.Pipeline_version)
 
 
+take:
+    TNR_samplesheet
+
+main:
+
 // Parse the samplesheet to generate fastq tuples
-samples = Channel.fromPath("Tumor_RNAseq_Normal.csv")
+samples = TNR_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_DNA" || row.type == "normal_DNA" || row.type == "tumor_RNA" ||row.type == "blood_DNA" }
 .map { row ->

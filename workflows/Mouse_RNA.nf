@@ -16,7 +16,13 @@ workflow Mouse_RNA {
     gtf_sorted               = Channel.of(file(params.gtf_sorted, checkIfExists:true))
     gtf_sorted_index         = Channel.of(file(params.gtf_sorted_index, checkIfExists:true))
 
-samples_rnaseq = Channel.fromPath("mouse_rnaseq.csv")
+
+take:
+    mouse_samplesheet
+
+main:
+
+samples_rnaseq = mouse_samplesheet
 .splitCsv(header:true)
 .filter { row -> row.type == "tumor_RNA" || row.type == "cell_line_RNA"}
 .map { row ->
