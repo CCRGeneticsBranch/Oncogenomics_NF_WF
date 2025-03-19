@@ -58,7 +58,7 @@ process Cosmic3Signature {
     def prefix = task.ext.prefix ?: "${meta.lib}"
     """
     TMP=tmp/
-    mkdir \$TMP
+    mkdir -p \$TMP
     trap 'rm -rf "\$TMP"' EXIT
 
     mv ${mutect} ${strelka_indels} ${strelka_snvs} \$TMP
