@@ -67,17 +67,17 @@ processed_samples = set()
 for row in samplesheet_data:
     sample = row["sample"]
     casename = row["casename"]
+    # Get the values of Matched_RNA and Matched_normal
+    matched_rna = row["Matched_RNA"]
+    matched_normal = row["Matched_normal"]
+    matched_casename = row["casename"]
+    row_type = row["type"]
 
     # Increment the count for the current sample and casename combination
     sample_casename_counts[(sample, casename)] += 1
 
     # Check if the row is a Tumor type
     if row["type"] in ["tumor_DNA", "cell_line_DNA"]:
-        # Get the values of Matched_RNA and Matched_normal
-        matched_rna = row["Matched_RNA"]
-        matched_normal = row["Matched_normal"]
-        matched_casename = row["casename"]
-
         # Check additional conditions
         if matched_rna and not matched_normal:
             tumor_rnaseq_rows.append(row)
@@ -110,6 +110,31 @@ for row in samplesheet_data:
                     and other_row["casename"] == matched_casename
                 ):
                     tumor_normal_rows.append(other_row)
+                    processed_samples.add(other_row["sample"])
+    elif row_type == "normal_DNA":
+        patient_id = row["sample"]
+        has_tumor_rna = False
+        has_tumor_dna = False
+
+        # Check all entries for this patient and casename
+        for other_row in samplesheet_data:
+            if other_row["sample"] == patient_id and other_row["casename"] == casename:
+                if other_row["type"] in ["tumor_RNA", "cell_line_RNA"]:
+                    has_tumor_rna = True
+                if other_row["type"] == "tumor_DNA":
+                    has_tumor_dna = True
+
+        if has_tumor_rna and not has_tumor_dna:
+            print(f"Appending Normal DNA {sample} (only Tumor RNA found, no Tumor DNA)")
+            tumor_rnaseq_rows.append(row)
+            for other_row in samplesheet_data:
+                if (
+                    other_row["sample"] == patient_id
+                    and other_row["casename"] == casename
+                    and other_row["type"] in ["tumor_RNA", "cell_line_RNA"]
+                ):
+                    print(f"Appending RNA sample {other_row['sample']} for {casename}")
+                    tumor_rnaseq_rows.append(other_row)
                     processed_samples.add(other_row["sample"])
 
 # Write the matching rows to the respective output files
@@ -228,15 +253,17 @@ for row in samplesheet_data:
         "cell_line_RNA",
     ]:
         match_found = False
-
+        has_normal_dna = False
         # Iterate over the rows again to find matches
         for other_row in samplesheet_data:
             if other_row["Matched_RNA"] == library:
                 match_found = True
                 break
+            if other_row["casename"] == casename and other_row["type"] == "normal_DNA":
+                has_normal_dna = True
 
         # If no match is found, add the current row to rna_lib_rows
-        if not match_found:
+        if not match_found and not has_normal_dna:
             rna_lib_rows.append(row)
 
 
