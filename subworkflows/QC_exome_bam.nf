@@ -83,9 +83,9 @@ workflow QC_exome_bam {
                   threshold = params.failed_exon['xgen_hyb_panelv2']['Tumor']
                 } else if (meta.sc == 'xgen-hyb-panelv2' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
                   threshold = params.failed_exon['xgen_hyb_panelv2']['Normal']
-                } else if (meta.sc == 'seqcapez.hu.ex.v3' && meta.type == 'tumor_DNA' ) {
+                } else if ((meta.sc == 'seqcapez.hu.ex.v3'|| meta.sc == 'seqcapez.hu.ex.utr.v1') && (meta.type == 'tumor_DNA' )) {
                   threshold = params.failed_exon['seqcapez_hu_ex_v3']['Tumor']
-                } else if (meta.sc == 'seqcapez.hu.ex.v3' && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
+                } else if ((meta.sc == 'seqcapez.hu.ex.v3'|| meta.sc == 'seqcapez.hu.ex.utr.v1') && (meta.type == 'normal_DNA' || meta.type == 'cell_line_DNA' || meta.type == 'blood_DNA')) {
                   threshold = params.failed_exon['seqcapez_hu_ex_v3']['Normal']
                 } else if (meta.sc == 'agilent.v7' && meta.type == 'tumor_DNA' ) {
                   threshold = params.failed_exon['agilent_v7']['Tumor']
