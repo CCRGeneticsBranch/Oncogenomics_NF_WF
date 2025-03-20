@@ -8,6 +8,7 @@ import re
 # Set default directories
 DEFAULT_SAMPLESHEET_DIR = "/data/khanlab/projects/DATA/Sequencing_Tracking_Master"
 DEFAULT_INPUT_DIR = "/data/khanlab/projects/DATA"
+# DEFAULT_INPUT_DIR = "/data/khanlab2/kids_first_RMS/cavatica/exome_bam/DATA"
 
 # Check if the correct number of arguments is provided
 if len(sys.argv) != 3:
@@ -23,7 +24,7 @@ if len(sys.argv) != 3:
 sample_id = sys.argv[1]
 case_name = sys.argv[2]
 
-# default directories
+# Use default directories
 samplesheet_dir = DEFAULT_SAMPLESHEET_DIR
 inputdir = DEFAULT_INPUT_DIR
 
@@ -39,7 +40,6 @@ def read_and_map_samplesheet(
 ):
     samplesheet_data = []
     invalid_paths = []
-
     try:
         with open(
             samplesheet, "r", newline="", encoding="utf-8", errors="replace"
@@ -47,12 +47,14 @@ def read_and_map_samplesheet(
             reader = csv.DictReader(file, delimiter="\t")
             for row in reader:
                 # column mapping
-                mapped_row = {}
-                for old_column, new_column in column_mapping.items():
-                    if old_column in row:
-                        mapped_row[new_column] = row[old_column]
+                mapped_row = {
+                    new_column: row.get(old_column, "").strip()
+                    for old_column, new_column in column_mapping.items()
+                }
                 if "type" in mapped_row:
                     mapped_row["type"] = mapped_row["type"].replace(" ", "_")
+                if "type" in mapped_row and mapped_row["type"] == "blood_DNA":
+                    mapped_row["type"] = "normal_DNA"
                 if "Diagnosis" in mapped_row:
                     mapped_row["Diagnosis"] = re.sub(
                         r",\s*", "_", mapped_row["Diagnosis"]
@@ -71,18 +73,64 @@ def read_and_map_samplesheet(
                 else:
                     samplesheet_data.append(mapped_row)
 
-                # Handle Project field: if it contains commas, wrap values in []
-                if "Project" in mapped_row and "," in mapped_row["Project"]:
-                    mapped_row["Project"] = f"[{mapped_row['Project']}]"
+                if "/" in mapped_row.get("seq_type", ""):
+                    seqtypes = mapped_row["seq_type"].split("/")
+                    for individual_seqtype in seqtypes[1:]:
+                        new_row = dict(mapped_row)  # Create copy of the original row
+                        new_row[
+                            "seq_type"
+                        ] = individual_seqtype.strip()  # Update seqtype
+                        samplesheet_data.append(new_row)
+                else:
+                    samplesheet_data.append(mapped_row)
 
     except UnicodeDecodeError:
         print(f"Error decoding file: {samplesheet}. Please check the file encoding.")
         return [], []
-
+    ALLOWED_SAMPLE_CAPTURES = {
+        "access",
+        "polya_stranded",
+        "polya",
+        "ribozero",
+        "SmartRNA",
+        "ribodepleted_nebnext_v2",
+        "clin.ex.v1",
+        "seqcapez.hu.ex.v3",
+        "seqcapez.rms.v1",
+        "agilent.v7",
+        "idt_v2_plus",
+        "xgen-hyb-panelv2",
+        "comp_ex_v1",
+        "seqcapez.hu.ex.utr.v1",
+    }
     # Filter rows matching sample_id and case_name
     filtered_samplesheet_data = []
     for row in samplesheet_data:
-        if row.get("sample") == sample_id and row.get("casename") == case_name:
+        # if row.get("sample") == sample_id and row.get("casename") == case_name:
+        if (
+            row.get("sample") == sample_id
+            and row.get("casename") == case_name
+            and row.get("seq_type") in ["E-il", "P-il", "T-il"]
+        ):
+            sample_captures = row.get("sample_captures", "").strip()
+
+            # Check if sample_captures is missing or empty
+            if not sample_captures:
+                print(
+                    f"ERROR: 'sample_captures' is missing or empty for sample {sample_id}, case {case_name}"
+                )
+                sys.exit(1)
+            if sample_captures not in ALLOWED_SAMPLE_CAPTURES:
+                print(
+                    f"ERROR: Unrecognized 'sample_captures' value '{sample_captures}' for sample {sample_id}, case {case_name}."
+                )
+                print(
+                    "Please add this sample capture type to the workflow before creating the samplesheet."
+                )
+                sys.exit(1)
+            if row.get("genome") not in ["hg19", "hg38", "mm10"]:
+                print("genome information missing, defaulting to hg19")
+                row["genome"] = "hg19"
             library_id = row["library"]
             fcid = row.get("FCID", "")
             if fcid:  # If FCID is not empty
@@ -128,6 +176,11 @@ def process_samplesheets(
     for row in all_filtered_data:
         grouped_data[(row["sample"], row["casename"])].append(row)
 
+    for key in grouped_data:
+        grouped_data[key] = list(
+            {tuple(d.items()): d for d in grouped_data[key]}.values()
+        )
+
     if not all_invalid_paths:  # Only proceed if no invalid paths were found
         for sample_casename, rows in grouped_data.items():
             if sample_casename[1].startswith("patient_"):
@@ -163,7 +216,8 @@ column_mapping = {
     "Case Name": "casename",
     "Type": "type",
     "FCID": "FCID",
-    "Project": "Project",
+    "Type of sequencing": "seq_type",
+    "SampleRef": "genome",
 }
 
 # Call the function to process all samplesheets
