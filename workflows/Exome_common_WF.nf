@@ -22,9 +22,6 @@ main:
 
 BWA_picard(samples_exome_ch)
 
-fastqc_input = samples_exome_ch.map{ meta, r1, r2 -> [meta, [r1,r2]] }
-
-Fastqc(fastqc_input)
 
 Fastq_screen_input = samples_exome_ch.map{ meta, r1, r2 -> [meta, [r1,r2]] }
                         .combine(fastq_screen_config)
@@ -65,6 +62,8 @@ capture_ch = BWA_picard.out.picard_MD
             target_file = params.xgen_hyb_panelv2_target
         } else if (meta.sc == 'comp_ex_v1') {
             target_file = params.comp_ex_v1_target
+        } else if (meta.sc == 'seqcapez.hu.ex.utr.v1') {
+            target_file = params.seqcapez.hu.ex.utr.v1_target
         }
         return [meta,target_file]
     }
@@ -100,6 +99,8 @@ design_ch =  Exome_GATK.out.GATK_Exome_bam
             design_file = params.comp_ex_v1_design
         } else if (meta.sc == 'seqcapez.hu.ex.v3') {
             design_file = params.seqcapez.hu.ex.v3_design
+        } else if (meta.sc == 'seqcapez.hu.ex.utr.v1') {
+            design_file = params.seqcapez.hu.ex.utr.v1_design
         }
 
         return [meta,design_file]

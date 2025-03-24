@@ -337,7 +337,7 @@ process CoveragePlot {
      def prefix = task.ext.prefix ?: "${meta.id}"
      """
      TMP=tmp/
-     mkdir \$TMP
+     mkdir -p \$TMP
      trap 'rm -rf "\$TMP"' EXIT
      cp ${coverage.join(' ')} \$TMP
      coverage.R  \$TMP ${prefix}.coveragePlot.png ${prefix}

@@ -24,7 +24,7 @@ process Fusioncatcher {
     def prefix = task.ext.prefix ?: "${meta.lib}"
     """
     TMP=tmp/
-    mkdir \$TMP
+    mkdir -p \$TMP
     trap 'rm -rf "\$TMP"' EXIT
 
         fusioncatcher.py \

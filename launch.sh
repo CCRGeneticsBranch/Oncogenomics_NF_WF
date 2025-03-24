@@ -73,6 +73,6 @@ sbatch <<EOT
 #SBATCH --time=08-00:00:00
 
 module load nextflow/23.10.0 singularity graphviz
-nextflow run $WF_HOME/main.nf -resume --samplesheet $SAMPLESHEET --resultsdir $OUTDIR --genome_v $GENOME -profile $PROFILE --logdir $LOG
+nextflow run -c $CONFIG_FILE -profile $PROFILE --logdir $LOG $WF_HOME/main.nf -resume --samplesheet $SAMPLESHEET --resultsdir $OUTDIR --genome_v $GENOME
 exit 0
 EOT

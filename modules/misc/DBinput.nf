@@ -158,11 +158,18 @@ process DBinput_exome_rnaseq {
      script:
 
      """
-     makeDBVariantFile.pl ${rna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.rnaseq
+     if [[ "${libtype}" == *"normal_DNA"* ]]; then
+          makeDBVariantFile.pl ${dna.join(' ')} |sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.germline.tmp
+          addFS.pl ${meta.id}.germline.tmp ${snpeff.join(' ')} > ${meta.id}.germline
+          makeDBVariantFile.pl ${rna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.rnaseq
+          rm ${meta.id}.germline.tmp
+     else
+          makeDBVariantFile.pl ${rna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.rnaseq
 
-     makeDBVariantFile.pl ${dna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.variants.tmp
-     addFS.pl ${meta.id}.variants.tmp ${snpeff.join(' ')} > ${meta.id}.variants
-     rm ${meta.id}.variants.tmp
+          makeDBVariantFile.pl ${dna.join(' ')}|sed 's/trim_//'|AddSampleType.pl - "${libtype.join(' ')}" "${libsc.join(' ')}" > ${meta.id}.variants.tmp
+          addFS.pl ${meta.id}.variants.tmp ${snpeff.join(' ')} > ${meta.id}.variants
+          rm ${meta.id}.variants.tmp
+     fi
 
      """
 
