@@ -33,25 +33,20 @@ process PREPARE_SAMPLESHEET {
 
     input:
     path samplesheet
+    val genome_version
 
     output:
     path("*csv")
 
     script:
     """
-    genome_v=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="genome") s=i} NR>1 {print \$s}' ${samplesheet} | sort | uniq)
-    genome_count=\$(echo "\$genome_v" | wc -l)
-    if [ "\$genome_count" -ne 1 ]; then
-        echo "Error: Multiple or no genome versions found in samplesheet. Please ensure all samples have the same genome version."
-        exit 1
-    fi
 
-    if [ "\$genome_v" == "hg19" ]; then
+    if [ ${genome_version} == "hg19" ]; then
         python ${workflow.projectDir}/bin/split_samplesheet.py ${samplesheet} .
-    elif [ "\$genome_v" == "mm39" ]; then
+    elif [ ${genome_version} == "mm39" ]; then
         cp ${samplesheet} mouse_rnaseq.csv
     else
-        echo "Error: Unknown genome: \$genome_v"
+        echo "Error: Unknown genome: ${genome_version}"
         exit 1
     fi
     """
@@ -68,7 +63,7 @@ include {Mouse_RNA} from './workflows/Mouse_RNA.nf'
 
 
 workflow {
-prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet)
+prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet,params.genome_v)
 
 
     prepared_samplesheets.branch {
@@ -85,12 +80,12 @@ prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet)
     }.set { branched_samplesheets }
 
     branched_samplesheets.rnaseq | RNAseq_only
+    branched_samplesheets.tumor_rnaseq | Tumor_RNAseq_WF
     branched_samplesheets.exome | Exome_only_WF
     branched_samplesheets.multiple_exome | Tumor_multiple_libs
     branched_samplesheets.tumor_rnaseq_normal | Tumor_Normal_RNAseq_WF
     branched_samplesheets.multiple_rna | RNAseq_multiple_libs
     branched_samplesheets.tumor_normal | Tumor_Normal_WF
-    branched_samplesheets.tumor_rnaseq | Tumor_RNAseq_WF
     branched_samplesheets.mouse_rna | Mouse_RNA
 
 }
