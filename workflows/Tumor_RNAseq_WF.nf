@@ -36,7 +36,7 @@ def combinelibraries(inputData) {
      .map { meta, files -> [meta, [*files]] }
 }
 
-
+/*
 def metadatareducer(inputChannel) {
     return inputChannel.map { meta, file ->
             [ meta.id, meta.casename, meta.diagnosis, file ]}
@@ -53,6 +53,23 @@ def metadatareducer(inputChannel) {
             return result
         }
 }
+*/
+def metadatareducer(inputData) {
+    return inputData
+        .map { meta, file ->
+            [ meta.id, meta.casename, meta.diagnosis, file ]
+        }
+        .groupTuple()
+        .map { patient, casenames, diagnoses, files ->
+            def metadata = [
+                id: patient,
+                casename: casenames[0],
+                diagnosis: diagnoses[0]
+            ]
+            [metadata, files]
+        }
+}
+
 
     genome                  = Channel.of(file(params.genome, checkIfExists:true))
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
@@ -64,16 +81,16 @@ def metadatareducer(inputChannel) {
 
 workflow Tumor_RNAseq_WF {
 
-    take:
-    rnaseq_samplesheet
+take:
+    tumor_rnaseq_samplesheet
 
 
-    main:
+main:
 // Parse the samplesheet to generate fastq tuples
 //samples = Channel.fromPath("Tumor_RNAseq.csv")
-samples = rnaseq_samplesheet
+samples = tumor_rnaseq_samplesheet
 .splitCsv(header:true)
-.filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" || row.type == "tumor_RNA" || row.type == "cell_line_RNA" }
+.filter { row -> row.type == "tumor_DNA" || row.type == "cell_line_DNA" || row.type == "tumor_RNA" || row.type == "cell_line_RNA" || row.type == "normal_DNA" }
 .map { row ->
     def meta = [:]
     meta.id    =  row.sample
@@ -89,7 +106,7 @@ samples = rnaseq_samplesheet
 }
 
 samples_branch = samples.branch{
-        exome: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"
+        exome: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA" || it[0].type == "normal_DNA"
         rnaseq: it[0].type == "tumor_RNA" || it[0].type == "cell_line_RNA"
 }
 
@@ -116,6 +133,7 @@ add_annotation_exome_input|AddAnnotation_exome
 add_annotation_rnaseq_input|AddAnnotation_rnaseq
 snpeff_vcf2txt_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.concat(Common_RNAseq_WF.out.snpeff_vcf)
 annot_ch_dbinput = AddAnnotation_exome.out.concat(AddAnnotation_rnaseq.out)
+/*
 Combined_dbinput_ch = annot_ch_dbinput.map { meta, file ->
             [ meta.id, meta.casename, meta, file ]
         }
@@ -147,7 +165,26 @@ Combined_dbinput_ch = annot_ch_dbinput.map { meta, file ->
 
         return result
     }
+*/
 
+Combined_dbinput_ch = annot_ch_dbinput.map { meta, file ->
+            [ meta.id, meta.casename, meta.lib, meta.sc, meta.type, file ]
+        }
+        .groupTuple()
+        .map { patient, casenames, libs, scs, types, files ->
+            def meta = [id: patient, casename: casenames[0]]
+            def libsAndTypes = libs.collect { [it, types[libs.indexOf(it)]] }.flatten()
+            def libsAndScs = libs.collect { [it, scs[libs.indexOf(it)]] }.flatten()
+            def dnaFiles = []
+            def rnaFiles = []
+
+            files.each { filePath ->
+                if (filePath.toString().contains('DNA')) {dnaFiles << filePath}
+                if (filePath.toString().contains('RNA')) {rnaFiles << filePath}
+            }
+
+            [meta, libsAndTypes, libsAndScs, dnaFiles, rnaFiles]
+        }
 DBinput_exome_rnaseq(Combined_dbinput_ch,
                     Combined_snpeff_vcf2txt_ch.map{meta, file -> file})
 
