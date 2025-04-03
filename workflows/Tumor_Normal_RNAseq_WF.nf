@@ -459,6 +459,8 @@ targetbp_MB_ch = pileup_pair
             targetbp_mb = params.agilent.v7_MB
         } else if (meta.sc == 'seqcapez.hu.ex.utr.v1') {
             targetbp_mb = params.seqcapez.hu.ex.utr.v1_MB
+        } else if (meta.sc == 'seqcapez.rms.v1') {
+            targetbp_mb = params.seqcapez.rms.v1_MB
         }
 
         return [meta,targetbp_mb]
