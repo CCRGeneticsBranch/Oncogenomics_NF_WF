@@ -262,7 +262,7 @@ process Genotyping_Sample {
      sed -i 's/.bwa//g' ${meta.id}.genotyping.txt
      sed -i 's/.star//g' ${meta.id}.genotyping.txt
 
-     sh tsv2html.sh --name ${meta.id} --diagnosis '${meta.diagnosis}' --pipeline ${Pipeline_version} --head ${meta.id}.genotyping.txt  > genotyping.html
+     tsv2html.sh --name ${meta.id} --diagnosis '${meta.diagnosis}' --pipeline ${Pipeline_version} --head ${meta.id}.genotyping.txt  > genotyping.html
      """
 
 }
