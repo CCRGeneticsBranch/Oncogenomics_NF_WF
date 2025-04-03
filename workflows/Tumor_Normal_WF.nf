@@ -388,6 +388,8 @@ targetbp_MB_ch = tumor_target_capture
             targetbp_mb = params.comp_ex_v1_MB
         } else if (meta.sc == 'seqcapez.hu.ex.utr.v1') {
             targetbp_mb = params.seqcapez.hu.ex.utr.v1_MB
+        } else if (meta.sc == 'seqcapez.rms.v1') {
+            targetbp_mb = params.seqcapez.rms.v1_MB
         }
 
         return [meta,targetbp_mb]

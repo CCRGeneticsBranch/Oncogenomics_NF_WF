@@ -35,7 +35,7 @@ process Optitype {
 #    touch "${meta.lib}_optitype.txt"
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
-    Optitype: \$(echo \$SINGULARITY_NAME | sed 's/fred2-optitype-release-//g'|sed 's/.img//g')
+    Optitype: "v1.3.1"
 END_VERSIONS
     """
 }
