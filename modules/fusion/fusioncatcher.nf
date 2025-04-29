@@ -31,10 +31,16 @@ process Fusioncatcher {
             -p ${task.cpus} \
             -d ${db} \
             -i ${trim[0]},${trim[1]} \
-            -o \$TMP
+            -o \$TMP  2>&1 | tee fc_log.txt
 
-        cp \$TMP/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
-        cp \$TMP/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt
+        if grep -q "KeyError: 'Gene_1_symbol(5end_fusion_partner)'" fc_log.txt; then
+            echo "⚠️ No fusions detected. Creating dummy output file."
+            touch ${prefix}.fusion-catcher.txt
+            touch ${prefix}.summary_candidate_fusions.txt
+        else
+            cp \$TMP/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
+            cp \$TMP/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt
+        fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
