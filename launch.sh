@@ -3,6 +3,7 @@
 # Set default values
 DEFAULT_OUTDIR="/data/khanlab/projects/processed_DATA"
 DEFAULT_GENOME="hg19"
+DEFAULT_PLATFORM="biowulf"
 
 # Check if the required samplesheet argument is provided
 if [[ "$#" -lt 1 ]]; then
@@ -24,17 +25,22 @@ export OUTDIR=${2:-$DEFAULT_OUTDIR}
 # Assign the third argument (genome) if provided, otherwise use the default
 export GENOME=${3:-$DEFAULT_GENOME}
 
+export PLATFORM=${4:-$DEFAULT_PLATFORM}
+
 # Ensure the genome name is valid
 if [[ "$GENOME" != "hg19" && "$GENOME" != "mm39" ]]; then
     echo "Invalid genome specified. Accepted values are hg19 and mm39."
     exit 1
 fi
 
-WF_HOME="/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF"
+WF_HOME="/data/khanlab/projects/Nextflow_dev/dev/vg_dev/Oncogenomics_NF_WF"
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
-export PATIENT=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="sample") s=i} NR>1 {print $s}' "$SAMPLESHEET" | sort | uniq)
-export CASENAME=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="casename") c=i} NR>1 {print $c}' "$SAMPLESHEET" | sort | uniq)
+#export PATIENT=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="sample") s=i} NR>1 {print $s}' "$SAMPLESHEET" | sort | uniq)
+#export CASENAME=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="casename") c=i} NR>1 {print $c}' "$SAMPLESHEET" | sort | uniq)
+export PATIENT=$(python3 -c 'import csv,sys; r=csv.DictReader(open(sys.argv[1])); print("\n".join(sorted(set(row["sample"] for row in r))))' "$SAMPLESHEET")
+export CASENAME=$(python3 -c 'import csv,sys; r=csv.DictReader(open(sys.argv[1])); print("\n".join(sorted(set(row["casename"] for row in r))))' "$SAMPLESHEET")
+
 export RESULTSDIR="$OUTDIR/$PATIENT/$CASENAME"
 
 mkdir -p "$RESULTSDIR"
@@ -73,6 +79,6 @@ sbatch <<EOT
 #SBATCH --time=08-00:00:00
 
 module load nextflow/23.10.0 singularity graphviz
-nextflow run -c $CONFIG_FILE -profile $PROFILE --logdir $LOG $WF_HOME/main.nf -resume --samplesheet $SAMPLESHEET --resultsdir $OUTDIR --genome_v $GENOME
+nextflow run -c $CONFIG_FILE -profile $PROFILE --logdir $LOG $WF_HOME/main.nf -resume --samplesheet $SAMPLESHEET --resultsdir $OUTDIR --genome_v $GENOME --platform $PLATFORM
 exit 0
 EOT
