@@ -82,9 +82,12 @@ for row in samplesheet_data:
         if matched_rna and not matched_normal:
             tumor_rnaseq_rows.append(row)
             # Find other rows with the same library as matched RNA
+            matched_rnas = (
+                [rna.strip() for rna in matched_rna.split(",")] if matched_rna else []
+            )
             for other_row in samplesheet_data:
                 if (
-                    other_row["library"] == matched_rna
+                    other_row["library"] in matched_rnas
                     and other_row["casename"] == matched_casename
                 ):
                     tumor_rnaseq_rows.append(other_row)
@@ -93,8 +96,11 @@ for row in samplesheet_data:
         elif matched_rna and matched_normal:
             tumor_rnaseq_normal_rows.append(row)
             # Find other rows with the same library as matched normal and matched RNA
+            matched_rnas = (
+                [rna.strip() for rna in matched_rna.split(",")] if matched_rna else []
+            )
             for other_row in samplesheet_data:
-                if (matched_rna and other_row["library"] == matched_rna) or (
+                if (matched_rna and other_row["library"] in matched_rnas) or (
                     matched_normal and other_row["library"] == matched_normal
                 ):
                     if other_row["casename"] == matched_casename:
@@ -256,7 +262,12 @@ for row in samplesheet_data:
         has_normal_dna = False
         # Iterate over the rows again to find matches
         for other_row in samplesheet_data:
-            if other_row["Matched_RNA"] == library:
+            matched_rnas = (
+                [rna.strip() for rna in other_row["Matched_RNA"].split(",")]
+                if other_row["Matched_RNA"]
+                else []
+            )
+            if library in matched_rnas:
                 match_found = True
                 break
             if other_row["casename"] == casename and other_row["type"] == "normal_DNA":
