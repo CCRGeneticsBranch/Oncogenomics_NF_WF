@@ -31,6 +31,7 @@ include {Combine_variants
 include {DBinput} from '../modules/misc/DBinput'
 //include {DBinput_multiples as DBinput_germline} from '../modules/misc/DBinput'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
+include {CNVkitAnnotation} from '../modules/cnvkit/cnvkit_annotation'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {TcellExtrect_TN} from '../modules/misc/TcellExtrect'
 include {Split_vcf
@@ -164,17 +165,6 @@ bam_variant_calling_pair = bam_variant_calling_normal_to_cross.cross(bam_variant
             }
 
 
-CNVkitPaired(
-    bam_variant_calling_pair
-    .combine(cnv_ref_access)
-    .combine(genome)
-    .combine(genome_fai)
-    .combine(genome_dict)
-)
-
-ch_versions = ch_versions.mix(CNVkitPaired.out.versions)
-
-CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
 Manta_Strelka(bam_variant_calling_pair)
 
@@ -353,8 +343,15 @@ dbinput_ch = HC_annotated_Expressed.join(snpeff_snv_vcftxt,by:[0])
 
 DBinput(dbinput_ch)
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
-//Test mutational signature only with full sample
-MutationalSignature(UnionSomaticCalls.out)
+
+
+UnionSomaticCalls.out
+        .filter {meta, file -> def lines = file.readLines()
+        lines.size() > 50 }
+        .set {mutationalsignature_input_ch}
+
+mutationalsignature_input_ch|MutationalSignature
+//MutationalSignature(UnionSomaticCalls.out)
 
 
 
@@ -413,6 +410,27 @@ Sequenza_annotation(
 
 
 ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
+
+cnvkitpaired_input = bam_variant_calling_pair
+    .combine(Sequenza_annotation.out.alternate,by:[0])
+    .combine(Mutect_WF.out.mutect_raw_vcf,by:[0])
+
+CNVkitPaired(
+    cnvkitpaired_input,
+    params.cnv_ref_access,
+    params.genome,
+    params.genome_fai,
+    params.genome_dict
+)
+
+ch_versions = ch_versions.mix(CNVkitPaired.out.versions)
+
+CNVkitAnnotation(tumor_target_capture
+    .join(CNVkitPaired.out.cnvkit_call_cns,by:[0]),
+    params.combined_gene_list
+    )
+
+CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
 tcellextrect_input = bam_variant_calling_pair
                         .join(Sequenza_annotation.out.alternate,by:[0])
