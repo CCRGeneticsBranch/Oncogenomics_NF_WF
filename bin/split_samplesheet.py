@@ -45,6 +45,8 @@ for row in samplesheet_data:
 for row in samplesheet_data:
     if row["type"] == "xeno_RNA":
         row["type"] = "tumor_RNA"
+    if "Matched_RNA" in row and row["Matched_RNA"]:
+        row["Matched_RNA"] = row["Matched_RNA"].replace(",", "-")
 
 # Remove spaces from columns that don't have any values
 for row in samplesheet_data:
@@ -83,7 +85,7 @@ for row in samplesheet_data:
             tumor_rnaseq_rows.append(row)
             # Find other rows with the same library as matched RNA
             matched_rnas = (
-                [rna.strip() for rna in matched_rna.split(",")] if matched_rna else []
+                [rna.strip() for rna in matched_rna.split("-")] if matched_rna else []
             )
             for other_row in samplesheet_data:
                 if (
@@ -97,7 +99,7 @@ for row in samplesheet_data:
             tumor_rnaseq_normal_rows.append(row)
             # Find other rows with the same library as matched normal and matched RNA
             matched_rnas = (
-                [rna.strip() for rna in matched_rna.split(",")] if matched_rna else []
+                [rna.strip() for rna in matched_rna.split("-")] if matched_rna else []
             )
             for other_row in samplesheet_data:
                 if (matched_rna and other_row["library"] in matched_rnas) or (
@@ -263,7 +265,7 @@ for row in samplesheet_data:
         # Iterate over the rows again to find matches
         for other_row in samplesheet_data:
             matched_rnas = (
-                [rna.strip() for rna in other_row["Matched_RNA"].split(",")]
+                [rna.strip() for rna in other_row["Matched_RNA"].split("-")]
                 if other_row["Matched_RNA"]
                 else []
             )
