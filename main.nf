@@ -55,10 +55,8 @@ process PREPARE_SAMPLESHEET {
         echo "Error: Unknown genome: ${genome_version}"
         exit 1
     fi
-    #patientid=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="sample") s=i} NR>1 {print \$s}' "${samplesheet}" | sort | uniq )
-    #casename=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="casename") s=i} NR>1 {print \$s}' "${samplesheet}" | sort | uniq )
-    export patientid=\$(python -c 'import csv,sys; r=csv.DictReader(open(sys.argv[1])); print("\n".join(sorted(set(row["sample"] for row in r))))' "${samplesheet}")
-    export casenameE=\$(python -c 'import csv,sys; r=csv.DictReader(open(sys.argv[1])); print("\n".join(sorted(set(row["casename"] for row in r))))' "${samplesheet}")
+    patientid=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="sample") s=i} NR>1 {print \$s}' "${samplesheet}" | sort | uniq )
+    casename=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="casename") s=i} NR>1 {print \$s}' "${samplesheet}" | sort | uniq )
 
     export patientid
     export casename
@@ -119,8 +117,8 @@ workflow.onComplete {
 
     def message = Utils.handleWorkflowCompletion(
         workflow,
-        "biowulf_mouse_RNA_slurm",
-        workflow.profile == "biowulf_mouse_RNA_slurm" ? "completed.txt" : "successful.txt",
+        params.genome_v,
+        params.genome_v == "mm39" ? "completed.txt" : "successful.txt",
         params.platform,
         patientid_val,
         casename_val,
