@@ -1,4 +1,5 @@
 #!/usr/bin/env nextflow
+import Utils
 
 nextflow.enable.dsl = 2
 
@@ -6,7 +7,8 @@ nextflow.enable.dsl = 2
 
 OUTDIR = "${params.outdir}"
 
-
+def patientid_val = Channel.value(null)
+def casename_val = Channel.value(null)
 
 
 log.info """\
@@ -24,6 +26,8 @@ log.info """\
          homeDir      : $workflow.homeDir
          samplesheet  : ${params.samplesheet}
          outdir       : ${params.resultsdir}
+         genome_version       : ${params.genome_v}
+         platform      : ${params.platform}
          """
          .stripIndent()
 
@@ -36,7 +40,9 @@ process PREPARE_SAMPLESHEET {
     val genome_version
 
     output:
-    path("*csv")
+    path("*csv"), emit: csv_files
+    env patientid, emit: patientid
+    env casename, emit: casename
 
     script:
     """
@@ -49,6 +55,11 @@ process PREPARE_SAMPLESHEET {
         echo "Error: Unknown genome: ${genome_version}"
         exit 1
     fi
+    patientid=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="sample") s=i} NR>1 {print \$s}' "${samplesheet}" | sort | uniq )
+    casename=\$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if (\$i=="casename") s=i} NR>1 {print \$s}' "${samplesheet}" | sort | uniq )
+
+    export patientid
+    export casename
     """
 }
 
@@ -63,10 +74,16 @@ include {Mouse_RNA} from './workflows/Mouse_RNA.nf'
 
 
 workflow {
-prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet,params.genome_v)
+def prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet,params.genome_v)
+    //prepared_samplesheets.patientid.view()
 
 
-    prepared_samplesheets.branch {
+    // SAFELY extract values
+    prepared_samplesheets.patientid.subscribe { patientid_val = it }
+    prepared_samplesheets.casename.subscribe { casename_val = it }
+
+
+    prepared_samplesheets.csv_files.branch {
         rnaseq: it.name == 'RNAseq.csv'
         exome: it.name == 'Exome.csv'
         multiple_exome: it.name == 'Tumor_lib.csv'
@@ -90,18 +107,27 @@ prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet,params.genome_v)
 
 }
 
+
 workflow.onComplete {
+    println "✅ Done!"
+    println "🧬 PatientID: ${patientid_val}"
+    println "📁 Casename: ${casename_val}"
+    println "📁 Workflow: ${params.platform}"
+
 
     def message = Utils.handleWorkflowCompletion(
         workflow,
-        "biowulf_mouse_RNA_slurm",
-        workflow.profile == "biowulf_mouse_RNA_slurm" ? "completed.txt" : "successful.txt"
-
+        params.genome_v,
+        params.genome_v == "mm39" ? "completed.txt" : "successful.txt",
+        params.platform,
+        patientid_val,
+        casename_val,
+        params.resultsdir
     )
-    if (workflow.profile.contains("biowulf")) {
+    if ( params.platform == "biowulf" ) {
         sendMail(
             to: "${workflow.userName}@mail.nih.gov",
-            cc: workflow.profile == "biowulf_mouse_RNA_slurm" ? "" : "wenxi@mail.nih.gov, gangalapudiv2@mail.nih.gov",
+            cc: workflow.profile == "biowulf_mouse_RNA_slurm" ? "" : "gangalapudiv2@mail.nih.gov",
             subject: workflow.success ? "khanlab ngs-pipeline execution successful" : "khanlab ngs-pipeline execution failed",
             body: message,
             mimeType: 'text/html'
