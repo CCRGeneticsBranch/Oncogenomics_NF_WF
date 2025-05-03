@@ -25,6 +25,7 @@ include {DBinput_multiples } from '../modules/misc/DBinput'
 //include {DBinput_multiples as DBinput_germline} from '../modules/misc/DBinput'
 include {QC_summary_Patientlevel} from '../modules/qc/qc'
 include {CNVkitPaired} from '../modules/cnvkit/CNVkitPaired'
+include {CNVkitAnnotation} from '../modules/cnvkit/cnvkit_annotation'
 include {CNVkit_png} from '../modules/cnvkit/CNVkitPooled'
 include {TcellExtrect_TN} from '../modules/misc/TcellExtrect'
 include {Split_vcf} from '../modules/neoantigens/Pvacseq.nf'
@@ -160,18 +161,37 @@ bam_variant_calling_pair = bam_variant_calling_normal_to_cross.cross(bam_variant
 
             }
 
+Mutect_WF(bam_variant_calling_pair)
+
+ch_versions = Exome_common_WF.out.ch_versions.mix(Mutect_WF.out.versions)
+
+tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
+
+Sequenza_annotation(
+    bam_variant_calling_pair,
+    tumor_target_capture)
+
+ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
+
+cnvkitpaired_input = bam_variant_calling_pair
+    .combine(Sequenza_annotation.out.alternate,by:[0])
+    .combine(Mutect_WF.out.mutect_raw_vcf,by:[0])
 
 CNVkitPaired(
-    bam_variant_calling_pair
-    .combine(cnv_ref_access)
-    .combine(genome)
-    .combine(genome_fai)
-    .combine(genome_dict)
+    cnvkitpaired_input,
+    params.cnv_ref_access,
+    params.genome,
+    params.genome_fai,
+    params.genome_dict
 )
 
 
-ch_versions = Exome_common_WF.out.ch_versions.mix(CNVkitPaired.out.versions)
+ch_versions = ch_versions.mix(CNVkitPaired.out.versions)
 
+CNVkitAnnotation(tumor_target_capture
+    .join(CNVkitPaired.out.cnvkit_call_cns,by:[0]),
+    params.combined_gene_list
+    )
 
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
 
@@ -189,9 +209,6 @@ SnpEff(Manta_Strelka.out.strelka_indel_raw_vcf
 
 Vcf2txt(SnpEff.out.raw_snpeff.combine(strelka_indelch))
 
-Mutect_WF(bam_variant_calling_pair)
-
-ch_versions = ch_versions.mix(Mutect_WF.out.versions)
 
 
 HC_snpeff_snv_vcftxt_status = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.branch{
@@ -252,8 +269,11 @@ AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-MutationalSignature(UnionSomaticCalls.out)
-
+UnionSomaticCalls.out
+        .filter {meta, file -> def lines = file.readLines()
+        lines.size() > 50 }
+        .set {mutationalsignature_input_ch}
+mutationalsignature_input_ch|MutationalSignature
 
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
@@ -321,16 +341,6 @@ dbinput_somatic = AddAnnotation_somatic_variants.out
 
 
 DBinput_multiples(dbinput_somatic.combine(somatic_group).combine(germline_group))
-
-tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
-
-
-Sequenza_annotation(
-    bam_variant_calling_pair,
-    tumor_target_capture)
-
-
-ch_versions = ch_versions.mix(Sequenza_annotation.out.versions)
 
 
 

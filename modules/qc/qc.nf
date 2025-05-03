@@ -71,7 +71,7 @@ process Krona {
 process Fastqc {
     tag "$meta.lib"
 
-    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: 'copy',pattern: "fastqc"
+    publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/qc/", mode: "${params.publishDirMode}",pattern: "fastqc_${meta.lib}*"
 
     input:
     tuple val(meta), path(samples)
