@@ -33,7 +33,7 @@ if [[ "$GENOME" != "hg19" && "$GENOME" != "mm39" ]]; then
     exit 1
 fi
 
-WF_HOME="/data/khanlab/projects/Nextflow_dev/dev/vg_dev/Oncogenomics_NF_WF"
+WF_HOME="/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF"
 CONFIG_FILE="$WF_HOME/nextflow.config"
 
 #export PATIENT=$(awk -F',' 'NR==1 {for (i=1; i<=NF; i++) if ($i=="sample") s=i} NR>1 {print $s}' "$SAMPLESHEET" | sort | uniq)
