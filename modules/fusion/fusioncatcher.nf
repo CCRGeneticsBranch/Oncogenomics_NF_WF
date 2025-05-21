@@ -26,7 +26,7 @@ process Fusioncatcher {
     TMP=tmp/
     mkdir -p \$TMP
     trap 'rm -rf "\$TMP"' EXIT
-
+    touch \$TMP/reads_ids_unmapped.txt
         fusioncatcher.py \
             -p ${task.cpus} \
             -d ${db} \
