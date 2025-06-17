@@ -33,7 +33,7 @@ process Fusioncatcher {
             -i ${trim[0]},${trim[1]} \
             -o \$TMP  2>&1 | tee fc_log.txt
 
-        if grep -q "KeyError: 'Gene_1_symbol(5end_fusion_partner)'" fc_log.txt; then
+        if grep -q "KeyError: 'Gene_1_symbol(5end_fusion_partner)'" fc_log.txt || grep -q "Auto-detect found SOLEXA FASTQ format" fc_log.txt; then
             echo "⚠️ No fusions detected. Creating dummy output file."
             touch ${prefix}.fusion-catcher.txt
             touch ${prefix}.summary_candidate_fusions.txt
