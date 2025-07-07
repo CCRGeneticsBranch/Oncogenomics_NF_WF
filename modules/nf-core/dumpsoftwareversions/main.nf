@@ -6,7 +6,7 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
     tuple val(meta), path(versions),val(pipeline_version)
 
     output:
-    path "*config*.txt"    , emit: config
+    tuple val(meta), path("*config*.txt")    , emit: config
     //path "successful.txt"   , emit: successful
 
     when:
