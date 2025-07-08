@@ -22,6 +22,7 @@ include {Fusion_Annotation
 include {Combine_customRNAQC
         RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 
 
 def combinelibraries(inputData) {
@@ -104,7 +105,7 @@ samples = tumor_rnaseq_samplesheet
 
     return fastq_meta
 }
-
+ch_allcomplete = Channel.empty()
 samples_branch = samples.branch{
         exome: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA" || it[0].type == "normal_DNA"
         rnaseq: it[0].type == "tumor_RNA" || it[0].type == "cell_line_RNA"
@@ -187,7 +188,7 @@ Combined_dbinput_ch = annot_ch_dbinput.map { meta, file ->
         }
 DBinput_exome_rnaseq(Combined_dbinput_ch,
                     Combined_snpeff_vcf2txt_ch.map{meta, file -> file})
-
+ch_allcomplete = ch_allcomplete.mix( DBinput_exome_rnaseq.out.map { all -> all[1..-1] }.flatten())
 
 cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
         tumor: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"  }
@@ -227,23 +228,29 @@ CNVkitPooled.out.cnvkit_pdf|CNVkit_png
 hotspot_ch = Exome_common_WF.out.hotspot_depth.concat(Common_RNAseq_WF.out.hotspot_depth)
 combined_hotspot_ch = metadatareducer(hotspot_ch)
 Hotspot_Boxplot(combined_hotspot_ch)
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
 
 genotyping_ch = Exome_common_WF.out.gt.concat(Common_RNAseq_WF.out.gt)
 combined_genotyping_ch = metadatareducer(genotyping_ch)
 Genotyping_Sample(combined_genotyping_ch,
                 Pipeline_version)
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
+
 loh_ch = Exome_common_WF.out.loh.concat(Common_RNAseq_WF.out.loh)
 combined_loh_ch = metadatareducer(loh_ch)
 CircosPlot(combined_loh_ch)
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
 
 coverage_ch = Exome_common_WF.out.coverage.concat(Common_RNAseq_WF.out.coverage)
 combined_coverage_ch = metadatareducer(coverage_ch)
 CoveragePlot(combined_coverage_ch)
+ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
 
 
  //RNA lib processing steps
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
 Actionable_fusion(actionable_fusion_input)
+ch_allcomplete = ch_allcomplete.mix( Actionable_fusion.out.map { all -> all[1..-1] }.flatten())
 
 Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
                         .join(Common_RNAseq_WF.out.fusion_calls, by:[0])
@@ -255,13 +262,23 @@ Fusion_Annotation(Fusion_Annotation_input)
 
 merge_fusion_anno_input = combinelibraries(Fusion_Annotation.out)
 Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+ch_allcomplete = ch_allcomplete.mix( Merge_fusion_annotation.out.map { all -> all[1..-1] }.flatten())
+
+
+
 qc_summary_input_ch = combinelibraries(Exome_common_WF.out.exome_qc)
 QC_summary_Patientlevel(qc_summary_input_ch)
+ch_allcomplete = ch_allcomplete.mix( QC_summary_Patientlevel.out.map { meta, file -> file } )
 
 customRNAqc_ch = combinelibraries(Common_RNAseq_WF.out.rnalib_custum_qc)
 Combine_customRNAQC(customRNAqc_ch)
+ch_allcomplete = ch_allcomplete.mix( Combine_customRNAQC.out.map { meta, file -> file } )
+
 transcriptcovRNAqc_ch = combinelibraries(Common_RNAseq_WF.out.picard_rnaseqmetrics)
 RNAqc_TrancriptCoverage(transcriptcovRNAqc_ch)
+ch_allcomplete = ch_allcomplete.mix( RNAqc_TrancriptCoverage.out.map { meta, file -> file } )
+
+
 
 rnaseq_qc_ch = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
@@ -325,6 +342,9 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+ch_allcomplete.view()
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
 
 
 }
