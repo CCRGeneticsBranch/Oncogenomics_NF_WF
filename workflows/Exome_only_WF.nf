@@ -162,7 +162,7 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
-ch_allcomplete.view()
+
 Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
                 ch_allcomplete)
 
