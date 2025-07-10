@@ -1,6 +1,7 @@
 include {Common_RNAseq_WF} from './Common_RNAseq_WF'
 include {Exome_common_WF} from './Exome_common_WF.nf'
-include {MakeHotSpotDB} from '../modules/qc/plots'
+include {MakeHotSpotDB
+        Hotspot_Boxplot} from '../modules/qc/plots'
 include {Manta_Strelka} from '../subworkflows/Manta_Strelka.nf'
 include {Mutect_WF} from '../subworkflows/Mutect.nf'
 include {Exome_QC} from '../modules/qc/qc.nf'
@@ -33,8 +34,11 @@ include {Pvacseq} from '../modules/neoantigens/Pvacseq.nf'
 include {Merge_Pvacseq_vcf} from '../modules/neoantigens/Pvacseq.nf'
 include {Genotyping_Sample
         Multiqc
+        Conpair_concordance
+        Conpair_contamination
         CircosPlot} from '../modules/qc/qc'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 
 
 
@@ -71,6 +75,7 @@ workflow Tumor_Normal_WF {
     cosmic_genome_rda      = Channel.of(file(params.cosmic_genome_rda, checkIfExists:true))
     cosmic_dbs_rda         = Channel.of(file(params.cosmic_dbs_rda, checkIfExists:true))
     cnv_ref_access         = Channel.of(file(params.cnv_ref_access, checkIfExists:true))
+    conpair_marker          = Channel.of(file(params.conpair_marker, checkIfExists:true))
     genome_version_tcellextrect         = Channel.of(params.genome_version_tcellextrect)
     Pipeline_version = Channel.from(params.Pipeline_version)
 
@@ -96,7 +101,7 @@ samples_exome = TN_samplesheet
 
     return fastq_meta
 }
-
+ch_allcomplete = Channel.empty()
 //Run the common exome workflow, this workflow runs all the steps from BWA to GATK and QC steps
 Exome_common_WF(samples_exome)
 
@@ -192,8 +197,10 @@ CNVkitAnnotation(tumor_target_capture
     .join(CNVkitPaired.out.cnvkit_call_cns,by:[0]),
     params.combined_gene_list
     )
+ch_allcomplete = ch_allcomplete.mix( CNVkitAnnotation.out.cnvkit_genelevel.map { meta, file -> file } )
 
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
+ch_allcomplete = ch_allcomplete.mix( CNVkit_png.out.map { meta, file -> file } )
 
 Manta_Strelka(bam_variant_calling_pair)
 
@@ -274,6 +281,8 @@ UnionSomaticCalls.out
         lines.size() > 50 }
         .set {mutationalsignature_input_ch}
 mutationalsignature_input_ch|MutationalSignature
+ch_allcomplete = ch_allcomplete.mix(
+    MutationalSignature.out.map { meta, file -> file }.ifEmpty([]) )
 
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
@@ -287,6 +296,8 @@ Cosmic3Signature(
     .combine(cosmic_genome_rda)
     .combine(cosmic_dbs_rda)
 )
+ch_allcomplete = ch_allcomplete.mix( Cosmic3Signature.out.map { all -> all[1..-1] }.flatten())
+
 
 Combine_variants(somatic_variants)
 
@@ -328,6 +339,7 @@ combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files 
 
 
 Merge_Pvacseq_vcf(combined_pvacseq)
+ch_allcomplete = ch_allcomplete.mix( Merge_Pvacseq_vcf.out.map { meta, file -> file } )
 
 addannotation_TN_combined_ch = AddAnnotation_TN.out.Tumor_hc_anno_txt.join(AddAnnotation_TN.out.Normal_hc_anno_txt,by:[0])
 
@@ -341,6 +353,7 @@ dbinput_somatic = AddAnnotation_somatic_variants.out
 
 
 DBinput_multiples(dbinput_somatic.combine(somatic_group).combine(germline_group))
+ch_allcomplete = ch_allcomplete.mix( DBinput_multiples.out.map { all -> all[1..-1] }.flatten())
 
 
 
@@ -350,6 +363,8 @@ tcellextrect_input = bam_variant_calling_pair
 
 
 TcellExtrect_TN(tcellextrect_input)
+ch_allcomplete = ch_allcomplete.mix( TcellExtrect_TN.out.naive_txt.map { all -> all[1..-1] }.flatten())
+
 
 highconfidence_somatic_threshold = tumor_target_capture
    .map {tuple ->
@@ -413,6 +428,7 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
                     .combine(strelka_snvsch)
 
 MutationBurden(mutationburden_input_ch)
+ch_allcomplete = ch_allcomplete.mix( MutationBurden.out.map { all -> all[1..-1] }.flatten())
 
 mantis_input = bam_variant_calling_pair.map{
     tuple ->
@@ -452,6 +468,31 @@ exome_qc_tumor_status_to_cross = exome_qc_status.tumor.map{ meta, tumor -> [ met
 qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_status_to_cross)
 qc_summary_input_ch = qc_summary_ch.map{meta, normal, tumor -> [meta, [normal, tumor] ]}
 QC_summary_Patientlevel(qc_summary_input_ch)
+ch_allcomplete = ch_allcomplete.mix( QC_summary_Patientlevel.out.map { meta, file -> file } )
+
+
+exome_conpair_status = Exome_common_WF.out.conpair_pileup.branch{
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_conpair_status_normal_to_cross = exome_conpair_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_conpair_status_tumor_to_cross = exome_conpair_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+exome_conpair_pileup =  combineSamples(exome_conpair_status_normal_to_cross,exome_conpair_status_tumor_to_cross)
+
+Conpair_concordance(exome_conpair_pileup
+                    .combine(conpair_marker)
+                    )
+ch_allcomplete = ch_allcomplete.mix( Conpair_concordance.out.map { all -> all[1..-1] }.flatten())
+
+
+Conpair_contamination(exome_conpair_pileup
+                    .combine(conpair_marker)
+                    )
+ch_allcomplete = ch_allcomplete.mix( Conpair_contamination.out.map { all -> all[1..-1] }.flatten())
+
 
 exome_genotyping_status = Exome_common_WF.out.gt.branch{
     normal: it[0].type == "normal_DNA"
@@ -466,6 +507,8 @@ Patient_genotyping_ch = combineSamples(exome_genotyping_status_normal_to_cross,e
 Combined_genotyping_ch = Patient_genotyping_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] }
 Genotyping_Sample(Combined_genotyping_ch,
                 Pipeline_version)
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
+
 
 exome_loh_status = Exome_common_WF.out.loh.branch{
     normal: it[0].type == "normal_DNA"
@@ -478,7 +521,20 @@ exome_loh_status_tumor_to_cross = exome_loh_status.tumor.map{ meta, tumor -> [ m
 
 Patient_loh_ch = combineSamples(exome_loh_status_normal_to_cross,exome_loh_status_tumor_to_cross)
 CircosPlot(Patient_loh_ch.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
 
+exome_hotspot_depth_status = Exome_common_WF.out.hotspot_depth.branch{
+    normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
+    tumor:  it[0].type == "tumor_DNA"
+}
+
+exome_hotspot_depth_status_normal_to_cross = exome_hotspot_depth_status.normal.map{ meta, normal -> [ meta.id, meta, normal ] }
+
+exome_hotspot_depth_status_tumor_to_cross = exome_hotspot_depth_status.tumor.map{ meta, tumor -> [ meta.id, meta, tumor ] }
+
+Patient_hotspot_depth = combineSamples(exome_hotspot_depth_status_normal_to_cross,exome_hotspot_depth_status_tumor_to_cross)
+Hotspot_Boxplot(Patient_hotspot_depth.map{ meta, normal, tumor -> [meta, [normal, tumor]] })
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
 
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
@@ -519,4 +575,9 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+
+
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
+
 }
