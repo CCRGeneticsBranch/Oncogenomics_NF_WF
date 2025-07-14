@@ -224,6 +224,8 @@ cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
 cnvkit_input_bam|CNVkitPooled
 
 CNVkitPooled.out.cnvkit_pdf|CNVkit_png
+ch_allcomplete = ch_allcomplete.mix(
+    CNVkit_png.out.map { meta, file -> file }.ifEmpty([]) )
 
 hotspot_ch = Exome_common_WF.out.hotspot_depth.concat(Common_RNAseq_WF.out.hotspot_depth)
 combined_hotspot_ch = metadatareducer(hotspot_ch)
@@ -342,7 +344,7 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
-ch_allcomplete.view()
+
 Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
                 ch_allcomplete)
 
