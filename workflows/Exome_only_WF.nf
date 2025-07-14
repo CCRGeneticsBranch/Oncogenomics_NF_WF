@@ -1,6 +1,7 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
 include {MakeHotSpotDB
-        CoveragePlot} from  '../modules/qc/plots'
+        CoveragePlot
+        Hotspot_Boxplot} from  '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
@@ -68,6 +69,10 @@ ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-
 Combined_coverage = Exome_common_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
 CoveragePlot(Combined_coverage)
 ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
+
+Hotspot_Boxplot(Exome_common_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
+
 
 formatinput_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
