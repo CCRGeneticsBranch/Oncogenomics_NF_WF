@@ -25,7 +25,7 @@ process Optitype {
     fi
     TMP=tmp
     mkdir -p \$TMP
-    trap 'rm -rf "\$TMP"' EXIT
+    
     if [[ \$(OptiTypePipeline.py -i ${trim[0]} ${trim[1]} \$type -v -o \$TMP 2>&1 | grep -m 1 -e "need more than 0 values to unpack" -e "The constraint expression resolved to a trivial Boolean (False) instead of a Pyomo object." -e "cp: cannot stat 'tmp/*/*_result.tsv': No such file or directory") ]]; then
         echo "no HLA called, output empty file"
         touch "${meta.lib}_optitype.txt"
@@ -63,7 +63,7 @@ process HLA_HD {
     """
     TMP=tmp
     mkdir -p \$TMP
-    trap 'rm -rf "\$TMP"' EXIT
+    
     gunzip -c ${trim[0]} > ${meta.lib}_R1_unzipped.fastq
     gunzip -c ${trim[1]} > ${meta.lib}_R2_unzipped.fastq
 
