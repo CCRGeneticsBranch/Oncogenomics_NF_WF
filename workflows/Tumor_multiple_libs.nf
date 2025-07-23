@@ -14,6 +14,7 @@ include {Genotyping_Sample
         QC_summary_Patientlevel} from '../modules/qc/qc'
 include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -61,7 +62,7 @@ samples_exome = multiple_tumor_samplesheet
 
     return fastq_meta
 }
-
+ch_allcomplete = Channel.empty()
 Exome_common_WF(samples_exome)
 
 makehotspotdb_input = combinelibraries(Exome_common_WF.out.pileup)
@@ -108,6 +109,8 @@ annot_ch_dbinput = AddAnnotation.out.map{ meta, file -> [ meta.id, meta.casename
 //dbinput_input = combined_annotationlibs.join(combined_snpefflibs,by:[0])
 DBinput_multiple_new(annot_ch_dbinput,
                     combined_snpefflibs.map{meta, file -> file})
+ch_allcomplete = ch_allcomplete.mix( DBinput_multiple_new.out.map { all -> all[1..-1] }.flatten())
+
 
 cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
         tumor: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"  }
@@ -143,26 +146,43 @@ cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
 cnvkit_input_bam|CNVkitPooled
 
 CNVkitPooled.out.cnvkit_pdf|CNVkit_png
+ch_allcomplete = ch_allcomplete.mix(
+    CNVkit_png.out.map { meta, file -> file }.ifEmpty([]) )
+
 
 TcellExtrect(
     Exome_common_WF.out.exome_final_bam
     .join(Exome_common_WF.out.target_capture_ch,by:[0])
     .combine(genome_version_tcellextrect)
 )
+ch_allcomplete = ch_allcomplete.mix( TcellExtrect.out.naive_txt.map { all -> all[1..-1] }.flatten())
 
 genotyping_input = combinelibraries(Exome_common_WF.out.gt)
 
 Genotyping_Sample(genotyping_input,
                 Pipeline_version)
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
 
 circos_input = combinelibraries(Exome_common_WF.out.loh)
 CircosPlot(circos_input)
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
+
+
 hotspot_depth_input = combinelibraries(Exome_common_WF.out.hotspot_depth)
 Hotspot_Boxplot(hotspot_depth_input)
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
+
+
 coverage_plot_input = combinelibraries(Exome_common_WF.out.coverage)
 CoveragePlot(coverage_plot_input)
+ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
+
+
 qc_summary_Patientlevel_input = combinelibraries(Exome_common_WF.out.exome_qc)
 QC_summary_Patientlevel(qc_summary_Patientlevel_input)
+ch_allcomplete = ch_allcomplete.mix( QC_summary_Patientlevel.out.map { meta, file -> file } )
+
+
 
 multiqc_input = Exome_common_WF.out.Fastqc_out.join(Exome_common_WF.out.pileup, by: [0])
                 .join(Exome_common_WF.out.kraken, by: [0])
@@ -195,6 +215,9 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+ch_allcomplete.view()
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
 
 
 }

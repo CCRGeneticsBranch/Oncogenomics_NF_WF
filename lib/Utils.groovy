@@ -20,17 +20,17 @@ class HandleWorkflowCompletion {
         }
 
         //def successFilePath = "${workflow.launchDir}/${successFileName}"
-        def successFilePath = "${resultsdir}/${patientId}/${casename}/${successFileName}"
-        def successFile = new File(successFilePath)
+        //def successFilePath = "${resultsdir}/${patientId}/${casename}/${successFileName}"
+        //def successFile = new File(successFilePath)
 
         String fullMessage = ""
 
         if (workflow.success) {
             // Ensure the success file is overwritten
-            if (successFile.exists()) {
-                successFile.delete()
-            }
-            successFile.createNewFile()
+            //if (successFile.exists()) {
+            //    successFile.delete()
+            //}
+            //successFile.createNewFile()
 
             if (genome == "mm39") {
                 fullMessage = "Mouse RNAseq workflow completed successfully. Results are located at ${resultsdir}/${patientId}/${casename}"

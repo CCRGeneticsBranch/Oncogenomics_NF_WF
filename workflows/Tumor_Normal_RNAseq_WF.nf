@@ -43,6 +43,7 @@ include {Fusion_Annotation
 include {Combine_customRNAQC
         RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 
 
 def combineSamples = { normalSamples, tumorSamples ->
@@ -128,7 +129,7 @@ samples_branch = samples.branch{
         exome: it[0].type == "normal_DNA" || it[0].type == "tumor_DNA" || it[0].type == "blood_DNA"
         rnaseq:  it[0].type == "tumor_RNA"
 }
-
+ch_allcomplete = Channel.empty()
 samples_branch.rnaseq|Common_RNAseq_WF
 samples_branch.exome|Exome_common_WF
 
@@ -342,6 +343,9 @@ HC_annotated_Expressed = HC_annotated.join(Expressed.out,by:[0])
 dbinput_ch = HC_annotated_Expressed.join(snpeff_snv_vcftxt,by:[0])
 
 DBinput(dbinput_ch)
+ch_allcomplete = ch_allcomplete.mix( DBinput.out.map { all -> all[1..-1] }.flatten())
+
+
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 
 
@@ -351,8 +355,8 @@ UnionSomaticCalls.out
         .set {mutationalsignature_input_ch}
 
 mutationalsignature_input_ch|MutationalSignature
-//MutationalSignature(UnionSomaticCalls.out)
-
+ch_allcomplete = ch_allcomplete.mix(
+    MutationalSignature.out.map { meta, file -> file }.ifEmpty([]) )
 
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
@@ -365,6 +369,8 @@ Cosmic3Signature(
     .combine(cosmic_genome_rda)
     .combine(cosmic_dbs_rda)
 )
+ch_allcomplete = ch_allcomplete.mix( Cosmic3Signature.out.map { all -> all[1..-1] }.flatten())
+
 
 Combine_variants(somatic_variants)
 
@@ -401,6 +407,8 @@ Pvacseq(pvacseq_input)
 
 combined_pvacseq = Pvacseq.out.pvacseq_output_ch.groupTuple().map { meta, files -> [ meta, [*files] ] }
 Merge_Pvacseq_vcf(combined_pvacseq)
+ch_allcomplete = ch_allcomplete.mix( Merge_Pvacseq_vcf.out.map { meta, file -> file } )
+
 
 tumor_target_capture = bam_variant_calling_pair.map {meta, nbam, nbai, tbam, tbai, bed -> [ meta, bed ] }
 
@@ -429,14 +437,17 @@ CNVkitAnnotation(tumor_target_capture
     .join(CNVkitPaired.out.cnvkit_call_cns,by:[0]),
     params.combined_gene_list
     )
+ch_allcomplete = ch_allcomplete.mix( CNVkitAnnotation.out.cnvkit_genelevel.map { meta, file -> file } )
 
 CNVkit_png(CNVkitPaired.out.cnvkit_pdf)
+ch_allcomplete = ch_allcomplete.mix( CNVkit_png.out.map { meta, file -> file } )
 
 tcellextrect_input = bam_variant_calling_pair
                         .join(Sequenza_annotation.out.alternate,by:[0])
                         .combine(genome_version_tcellextrect)
 
 TcellExtrect_TN(tcellextrect_input)
+ch_allcomplete = ch_allcomplete.mix( TcellExtrect_TN.out.naive_txt.map { all -> all[1..-1] }.flatten())
 
 highconfidence_somatic_threshold = pileup_pair
    .map {tuple ->
@@ -492,6 +503,7 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
                     .combine(strelka_snvsch)
 
 MutationBurden(mutationburden_input_ch)
+ch_allcomplete = ch_allcomplete.mix( MutationBurden.out.map { all -> all[1..-1] }.flatten())
 
 exome_qc_status = Exome_common_WF.out.exome_qc.branch{
     normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
@@ -505,6 +517,7 @@ exome_qc_tumor_status_to_cross = exome_qc_status.tumor.map{ meta, tumor -> [ met
 qc_summary_ch = combineSamples(exome_qc_normal_status_to_cross,exome_qc_tumor_status_to_cross)
 qc_summary_input_ch = qc_summary_ch.map{meta, normal, tumor -> [meta, [normal, tumor] ]}
 QC_summary_Patientlevel(qc_summary_input_ch)
+ch_allcomplete = ch_allcomplete.mix( QC_summary_Patientlevel.out.map { meta, file -> file } )
 
 
 exome_conpair_status = Exome_common_WF.out.conpair_pileup.branch{
@@ -521,14 +534,19 @@ exome_conpair_pileup =  combineSamples(exome_conpair_status_normal_to_cross,exom
 Conpair_concordance(exome_conpair_pileup
                     .combine(conpair_marker)
                     )
+ch_allcomplete = ch_allcomplete.mix( Conpair_concordance.out.map { all -> all[1..-1] }.flatten())
+
+
 Conpair_contamination(exome_conpair_pileup
                     .combine(conpair_marker)
                     )
+ch_allcomplete = ch_allcomplete.mix( Conpair_contamination.out.map { all -> all[1..-1] }.flatten())
 
 
 //RNA lib processing steps
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
 Actionable_fusion(actionable_fusion_input)
+ch_allcomplete = ch_allcomplete.mix( Actionable_fusion.out.map { all -> all[1..-1] }.flatten())
 
 Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
                         .join(Common_RNAseq_WF.out.fusion_calls, by:[0])
@@ -541,10 +559,13 @@ Fusion_Annotation(Fusion_Annotation_input)
 merge_fusion_anno_input = Fusion_Annotation.out.map{ meta, fusion -> [meta, [fusion]] }
 
 Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+ch_allcomplete = ch_allcomplete.mix( Merge_fusion_annotation.out.map { all -> all[1..-1] }.flatten())
 
 Combine_customRNAQC(Common_RNAseq_WF.out.rnalib_custum_qc.map{ meta, qc -> [meta, [qc]] })
+ch_allcomplete = ch_allcomplete.mix( Combine_customRNAQC.out.map { all -> all[1..-1] }.flatten())
 
 RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc -> [meta, [qc]] })
+ch_allcomplete = ch_allcomplete.mix( RNAqc_TrancriptCoverage.out.map { all -> all[1..-1] }.flatten())
 
 //Patient level Circos plot
 
@@ -567,6 +588,7 @@ genotyping_TNR =  combine_exome_rnaseq_libraries(Patient_genotyping_exome,genoty
 
 Genotyping_Sample(genotyping_TNR,
                 Pipeline_version)
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
 
 exome_loh_status = Exome_common_WF.out.loh.branch{
     normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
@@ -584,6 +606,8 @@ genotyping_samples_rnaseq_to_cross = Common_RNAseq_WF.out.loh.map{ meta, loh -> 
 
 circos_TNR = combine_exome_rnaseq_libraries(Patient_loh_exome,genotyping_samples_rnaseq_to_cross)
 CircosPlot(circos_TNR)
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
+
 
 exome_hotspot_depth_status = Exome_common_WF.out.hotspot_depth.branch{
     normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
@@ -602,6 +626,8 @@ rnaseq_hotspot_depth = Common_RNAseq_WF.out.hotspot_depth.map{ meta, rnaseq -> [
 hotspot_depth_TNR = combine_exome_rnaseq_libraries(Patient_hotspot_depth_exome,rnaseq_hotspot_depth)
 
 Hotspot_Boxplot(hotspot_depth_TNR)
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
+
 
 multiqc_rnaseq_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
@@ -664,5 +690,7 @@ custom_versions_input = Multiqc.out.multiqc_report
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
 
 }
