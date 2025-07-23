@@ -8,7 +8,6 @@ include {MakeHotSpotDB
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {Multiqc} from '../modules/qc/qc'
-include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 include {AddAnnotation} from '../modules/annotation/annot'
 include {DBinput} from '../modules/misc/DBinput'
 include {Combine_customRNAQC
@@ -20,6 +19,7 @@ include {Actionable_fusion} from '../modules/Actionable.nf'
 include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
 include {Merge_fusion_annotation} from '../modules/annotation/Fusion_Annotation'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -61,11 +61,12 @@ samples_rnaseq = rnaseq_samplesheet
     return fastq_meta
 }
 
+ch_allcomplete = Channel.empty()
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }
 Actionable_fusion(actionable_fusion_input)
-
+ch_allcomplete = ch_allcomplete.mix( Actionable_fusion.out.map { meta, file -> file } )
 
 Fusion_Annotation_input = Common_RNAseq_WF.out.rsem_isoforms
                         .join(Common_RNAseq_WF.out.fusion_calls, by:[0])
@@ -79,24 +80,34 @@ Fusion_Annotation(Fusion_Annotation_input)
 merge_fusion_anno_input = Fusion_Annotation.out.map{ meta, fusion -> [meta, [fusion]] }
 
 Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+ch_allcomplete = ch_allcomplete.mix( Merge_fusion_annotation.out.map { all -> all[1..-1] }.flatten())
 
 Combine_customRNAQC(Common_RNAseq_WF.out.rnalib_custum_qc.map{ meta, qc -> [meta, [qc]] })
+ch_allcomplete = ch_allcomplete.mix( Combine_customRNAQC.out.map { meta, file -> file } )
 
 RNAqc_TrancriptCoverage(Common_RNAseq_WF.out.picard_rnaseqmetrics.map{ meta, qc -> [meta, [qc]] })
+ch_allcomplete = ch_allcomplete.mix( RNAqc_TrancriptCoverage.out.map { meta, file -> file } )
 
 MakeHotSpotDB(Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] })
 
 //Run circos plot at case level
 CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
 
 Hotspot_Boxplot(Common_RNAseq_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
+
 
 genotyping_input = Common_RNAseq_WF.out.gt.map{ meta, gt -> [meta, [gt]] }
 Genotyping_Sample(genotyping_input,
                 Pipeline_version)
+
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
+
+
 Combined_coverage = Common_RNAseq_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
 CoveragePlot(Combined_coverage)
-
+ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
 
 formatinput_input_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
@@ -114,6 +125,7 @@ dbinput_anno_ch = AddAnnotation.out.map{ meta, txt -> [meta, [txt]] }
 dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, txt -> [meta, [txt]] }
 dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
 DBinput(dbinput_ch)
+ch_allcomplete = ch_allcomplete.mix( DBinput.out.map { meta, file -> file } )
 
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
@@ -140,6 +152,7 @@ multiqc_input_ch = multiqc_input.map{ files ->
 }
 Multiqc(multiqc_input_ch)
 
+
 ch_versions = ch_versions.mix(Multiqc.out.versions)
 
 
@@ -150,5 +163,8 @@ custom_versions_input = Multiqc.out.multiqc_report
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
 
+
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
 
 }

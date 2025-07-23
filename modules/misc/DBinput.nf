@@ -191,8 +191,9 @@ process DBinput_multiples {
      val(somatic),val(germline)
 
      output:
-     tuple val(meta),path("${meta.id}.${somatic}")
-     tuple val(meta),path("${meta.id}.${germline}")
+     tuple val(meta),
+     path("${meta.id}.${somatic}"),
+     path("${meta.id}.${germline}")
 
      stub:
      """

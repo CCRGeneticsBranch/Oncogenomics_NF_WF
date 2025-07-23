@@ -1,6 +1,7 @@
 include {Exome_common_WF} from './Exome_common_WF.nf'
 include {MakeHotSpotDB
-        CoveragePlot} from  '../modules/qc/plots'
+        CoveragePlot
+        Hotspot_Boxplot} from  '../modules/qc/plots'
 include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {AddAnnotation} from '../modules/annotation/annot'
@@ -14,6 +15,7 @@ include {DBinput} from '../modules/misc/DBinput'
 include {Actionable_variants} from '../modules/Actionable'
 include {TcellExtrect} from '../modules/misc/TcellExtrect'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 
    somatic_actionable_sites = Channel.of(file(params.somatic_actionable_sites, checkIfExists:true))
    combined_gene_list = Channel.of(file(params.combined_gene_list, checkIfExists:true))
@@ -47,7 +49,7 @@ samples_exome = exome_samplesheet
     return fastq_meta
 }
 
-
+ch_allcomplete = Channel.empty()
 Exome_common_WF(samples_exome)
 
 MakeHotSpotDB_input = Exome_common_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] }
@@ -56,13 +58,21 @@ MakeHotSpotDB(MakeHotSpotDB_input)
 
 Circosplot_input = Exome_common_WF.out.loh.map{ meta, loh -> [meta, [loh]] }
 CircosPlot(Circosplot_input)
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
 
 
 genotyping_input = (Exome_common_WF.out.gt.map{ meta, gt -> [meta, [gt]] })
 Genotyping_Sample(genotyping_input,
                 Pipeline_version)
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
+
 Combined_coverage = Exome_common_WF.out.coverage.map{meta, coverage -> [meta, [coverage] ] }
 CoveragePlot(Combined_coverage)
+ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
+
+Hotspot_Boxplot(Exome_common_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
+
 
 formatinput_input_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
 FormatInput(formatinput_input_ch)
@@ -78,6 +88,8 @@ dbinput_snpeff_ch = Exome_common_WF.out.HC_snpeff_snv_vcf2txt.map{ meta, txt -> 
 dbinput_anno_ch = AddAnnotation.out.map{ meta, txt -> [meta, [txt]] }
 dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
 DBinput(dbinput_ch)
+ch_allcomplete = ch_allcomplete.mix( DBinput.out.map { meta, file -> file } )
+
 
 cnvkit_input_bam = Exome_common_WF.out.exome_final_bam.branch{
         tumor: it[0].type == "tumor_DNA" || it[0].type == "cell_line_DNA"  }
@@ -115,13 +127,18 @@ cnvkit_input_bam|CNVkitPooled
 
 CNVkitPooled.out.cnvkit_pdf|CNVkit_png
 
+ch_allcomplete = ch_allcomplete.mix(
+    CNVkit_png.out.map { meta, file -> file }.ifEmpty([]) )
+
 TcellExtrect(
     Exome_common_WF.out.exome_final_bam
     .join(Exome_common_WF.out.target_capture_ch,by:[0])
     .combine(genome_version_tcellextrect)
 )
+ch_allcomplete = ch_allcomplete.mix( TcellExtrect.out.naive_txt.map { all -> all[1..-1] }.flatten())
 
 QC_summary_Patientlevel(Exome_common_WF.out.exome_qc)
+ch_allcomplete = ch_allcomplete.mix( QC_summary_Patientlevel.out.map { meta, file -> file } )
 
 multiqc_input = Exome_common_WF.out.Fastqc_out
     .join(Exome_common_WF.out.pileup, by: [0])
@@ -150,5 +167,8 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
 
 }

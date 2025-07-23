@@ -19,6 +19,7 @@ include {Actionable_variants} from '../modules/Actionable.nf'
 include {DBinput_multiple_new} from '../modules/misc/DBinput'
 include {Multiqc} from '../modules/qc/qc'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
+include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +79,7 @@ samples_rnaseq = multiple_rna_samplesheet
 
     return fastq_meta
 }
-
+ch_allcomplete = Channel.empty()
 //Run Common RNAseq WF, this runs all the steps from Cutadapt to GATK at library level
 Common_RNAseq_WF(samples_rnaseq)
 
@@ -105,26 +106,43 @@ merge_fusion_anno_input = Fusion_Annotation.out.map { meta, file ->
 
 
 Merge_fusion_annotation(merge_fusion_anno_input.combine(genome_version))
+ch_allcomplete = ch_allcomplete.mix( Merge_fusion_annotation.out.map { all -> all[1..-1] }.flatten())
 
 actionable_fusion_input = combinelibraries(Common_RNAseq_WF.out.fusion_calls)
 
 Actionable_fusion(actionable_fusion_input)
+ch_allcomplete = ch_allcomplete.mix( Actionable_fusion.out.map { meta, file -> file } )
+
 combine_customRNAQC_input = combinelibraries(Common_RNAseq_WF.out.rnalib_custum_qc)
 Combine_customRNAQC(combine_customRNAQC_input)
+ch_allcomplete = ch_allcomplete.mix( Combine_customRNAQC.out.map { meta, file -> file } )
+
+
 RNAqc_TrancriptCoverage_input = combinelibraries(Common_RNAseq_WF.out.picard_rnaseqmetrics)
+RNAqc_TrancriptCoverage(RNAqc_TrancriptCoverage_input)
+ch_allcomplete = ch_allcomplete.mix( RNAqc_TrancriptCoverage.out.map { meta, file -> file } )
+
+
 genotyping_input = combinelibraries(Common_RNAseq_WF.out.gt)
-
-
 Genotyping_Sample(genotyping_input,
                 Pipeline_version)
+ch_allcomplete = ch_allcomplete.mix( Genotyping_Sample.out.map { all -> all[1..-1] }.flatten())
 
 
 circos_input = combinelibraries(Common_RNAseq_WF.out.loh)
 CircosPlot(circos_input)
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
+
+
 hotspot_depth_input = combinelibraries(Common_RNAseq_WF.out.hotspot_depth)
 Hotspot_Boxplot(hotspot_depth_input)
+ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
+
+
 coverage_plot_input = combinelibraries(Common_RNAseq_WF.out.coverage)
 CoveragePlot(coverage_plot_input)
+ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
+
 
 makehotspotdb_input = combinelibraries(Common_RNAseq_WF.out.pileup)
 MakeHotSpotDB(makehotspotdb_input)
@@ -175,6 +193,7 @@ annot_ch_dbinput = AddAnnotation.out.map{ meta, file -> [ meta.id, meta.casename
 
 DBinput_multiple_new(annot_ch_dbinput,
                     combined_snpefflibs.map{meta, file -> file})
+ch_allcomplete = ch_allcomplete.mix( DBinput_multiple_new.out.map { meta, file -> file } )
 
 
 
@@ -212,5 +231,8 @@ custom_versions_input = Multiqc.out.multiqc_report
         .combine(Pipeline_version)
 
 CUSTOM_DUMPSOFTWAREVERSIONS(custom_versions_input)
+
+Allstepscomplete(CUSTOM_DUMPSOFTWAREVERSIONS.out.config,
+                ch_allcomplete)
 
 }

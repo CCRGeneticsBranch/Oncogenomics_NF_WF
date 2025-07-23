@@ -6,14 +6,12 @@ process Allstepscomplete {
     cache 'lenient'
 
     input:
-    tuple val(meta),
-        path(fusion),
-        path(annotation),
-        path(multiqc)
+    tuple val(meta),path(config)
+    path ch_allcomplete
 
     output:
-    tuple val(meta),
-        path("successful.txt")
+
+    path("successful.txt")
 
     stub:
     """

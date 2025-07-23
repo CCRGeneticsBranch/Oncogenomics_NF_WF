@@ -1,15 +1,19 @@
 {
     "samplesheet": {
         "description": "Input data",
-        "optional": true
+        "optional": false
     },
     "outdir": {
         "description": "The output directory where the results will be saved.",
         "optional": true
     },
-    "resultsdir": {
-        "description": "The output directory where the results will be saved.",
-        "optional": true
+    "genome_v": {
+        "description": "Genome version; accepted values are hg19",
+        "optional": false
+    },
+    "platform": {
+        "description": "Platform; accepted values are biowulf & AWS",
+        "optional": false
     },
     "ecr_registry": {
         "description": "Amazon ECR Registry to use for container images",
