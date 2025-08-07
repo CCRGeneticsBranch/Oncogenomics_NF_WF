@@ -415,6 +415,8 @@ targetbp_MB_ch = tumor_target_capture
             targetbp_mb = params.seqcapez.hu.ex.utr.v1_MB
         } else if (meta.sc == 'seqcapez.rms.v1') {
             targetbp_mb = params.seqcapez.rms.v1_MB
+        } else if (meta.sc == 'idt_v2_plus') {
+            targetbp_mb = params.idt_v2_plus_MB
         }
 
         return [meta,targetbp_mb]
