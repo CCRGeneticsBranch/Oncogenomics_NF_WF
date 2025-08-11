@@ -1,0 +1,25 @@
+/* Sidebar background */
+.wy-side-nav-search, .wy-nav-side {
+  background: #00c7b7 !important;  /* Teal like Nextflow */
+}
+
+/* Sidebar text color */
+.wy-menu-vertical a {
+  color: white !important;
+}
+
+/* Active nav item */
+.wy-menu-vertical li.current a {
+  background-color: #006b65 !important;
+  color: white !important;
+}
+
+/* Top nav bar (optional) */
+.wy-nav-top {
+  background: #00c7b7 !important;
+  color: white !important;
+}
+
+.md-grid {
+  max-width: 90rem; /* adjust: default is ~61rem; try 80–100rem */
+}
