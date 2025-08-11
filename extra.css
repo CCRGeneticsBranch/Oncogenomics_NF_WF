@@ -4,9 +4,7 @@
 }
 
 /* Sidebar text color */
-.wy-menu-vertical a {
-  color: white !important;
-}
+.wy-menu-vertical a { color: white !important; }
 
 /* Active nav item */
 .wy-menu-vertical li.current a {
@@ -14,12 +12,29 @@
   color: white !important;
 }
 
-/* Top nav bar (optional) */
+/* Top nav bar */
 .wy-nav-top {
   background: #00c7b7 !important;
   color: white !important;
 }
 
-.md-grid {
-  max-width: 90rem; /* adjust: default is ~61rem; try 80–100rem */
-}
+/* === WIDTH (Read the Docs theme) === */
+/* Wider but still constrained */
+.wy-nav-content { max-width: 90rem; }      /* tune 80–100rem */
+/* Or go full width: */
+/* .wy-nav-content { max-width: none; } */
+
+/* Keep images inside the column */
+.rst-content img { max-width: 100%; height: auto; }
+
+/* Tables: scroll horizontally within the content, not into the gutter */
+.wy-table-responsive { overflow-x: auto; }
+.wy-table-responsive table { width: 100%; }
+
+/* Code blocks: horizontal scroll instead of spilling */
+.rst-content pre { overflow-x: auto; }
+
+/* Long inline text (paths/URLs) may break when needed */
+.rst-content p,
+.rst-content li { overflow-wrap: anywhere; }
+.rst-content code:not(.hljs) { overflow-wrap: anywhere; }
