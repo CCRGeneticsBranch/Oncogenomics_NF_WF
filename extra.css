@@ -19,3 +19,7 @@
   background: #00c7b7 !important;
   color: white !important;
 }
+
+.md-grid {
+  max-width: 90rem; /* adjust: default is ~61rem; try 80–100rem */
+}
