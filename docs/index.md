@@ -1,7 +1,7 @@
 ## Introduction
 
 
-This bioinformatics pipeline is **containerized** and **platform-independent**, built using a **Nextflow DSL2** workflow, and deployed on both the NIH **Biowulf HPC cluster** and the **AWS cloud**.  
+This bioinformatics pipeline is containerized and platform-independent, built using a Nextflow DSL2 workflow, and deployed on both the NIH **Biowulf HPC cluster** and the **AWS cloud**.  
 
 This **Exome–RNA-seq workflow** accepts a samplesheet and FASTQ files as input, then performs a comprehensive set of analyses, including:  
 
@@ -17,7 +17,7 @@ This **Exome–RNA-seq workflow** accepts a samplesheet and FASTQ files as input
 - Fusion detection  
 - Variant calling and annotation  
 
-This end-to-end suite supports **deep genomic characterization** for both research and institutional datasets at NIH.  
+This end-to-end suite supports deep genomic characterization for both research and institutional datasets at NIH.  
 
 Results can be explored via the [ClinOmics Data Portal](https://oncogenomics.ccr.cancer.gov/production/public/), which provides a secure, interactive, user friendly web interface for data visualization and interpretation. It is well suited for both individual patient level and cohort wide cancer genomics analysis.
 
