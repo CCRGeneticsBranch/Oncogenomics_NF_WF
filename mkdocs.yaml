@@ -14,7 +14,22 @@ copyright: Copyright &copy; 2025 CCR Genetics Branch
 
 # Configuration
 theme:
-  name: readthedocs
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
   custom_dir: overrides
 plugins:
   - search
@@ -34,14 +49,15 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.highlight
   - pymdownx.inlinehilite
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
 extra_css:
   - overrides/extra.css
 # Page Tree
 nav:
-  - Overview: index.md
+  - Introduction: index.md
   - Setting up Samplesheet: samplesheet.md
   - Running the Pipeline: pipeline_launch.md
   - Pipeline References & Tools: references.md
