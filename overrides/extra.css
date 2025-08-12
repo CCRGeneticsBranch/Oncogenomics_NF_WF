@@ -1,25 +1,55 @@
+/* ==== MATERIAL THEME CUSTOMIZATION ==== */
+
 /* Sidebar background */
-.wy-side-nav-search, .wy-nav-side {
-  background: #00c7b7 !important;  /* Teal like Nextflow */
+.md-sidebar {
+  background-color: #00c7b7 !important; /* Teal like Nextflow */
 }
 
-/* Sidebar text color */
-.wy-menu-vertical a {
+/* Sidebar links */
+.md-nav__link {
   color: white !important;
 }
 
 /* Active nav item */
-.wy-menu-vertical li.current a {
+.md-nav__link--active {
   background-color: #006b65 !important;
   color: white !important;
 }
 
-/* Top nav bar (optional) */
-.wy-nav-top {
-  background: #00c7b7 !important;
+/* Top nav bar */
+.md-header {
+  background-color: #00c7b7 !important;
   color: white !important;
 }
 
+/* Content width */
 .md-grid {
-  max-width: 90rem; /* adjust: default is ~61rem; try 80–100rem */
+  max-width: 90rem; /* Default ~61rem; adjust for less gray space */
+}
+
+/* Keep images inside the column */
+.md-typeset img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables: scroll horizontally within the content */
+.md-typeset table:not([class]) {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Code blocks: horizontal scroll instead of wrapping */
+.md-typeset pre {
+  overflow-x: auto;
+}
+
+/* Long inline text (paths/URLs) can break across lines */
+.md-typeset p,
+.md-typeset li {
+  overflow-wrap: anywhere;
+}
+.md-typeset code {
+  overflow-wrap: anywhere;
 }
