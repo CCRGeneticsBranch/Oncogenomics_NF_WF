@@ -81,6 +81,13 @@ Here is a Snapshot of our RNAseq and Exome workflows.
     | BAM QC & Coverage Analysis | samtools, bamUtils, mpileup, bedtools | Generate hotspot coverage plots, transcript coverage plots, circos plots, and perform BAM compression/clean-up |
     | QC Aggregation | MultiQC | Aggregate QC metrics across all steps into a single interactive report |
 
+
+
+!!! tip "Before You Begin"
+    If you are setting up this workflow for the first time, ensure your environment meets all prerequisites and dependencies.  
+    See the [Prerequisites](#prerequisites) section below and If you are new to Nextflow, please refer to [this page](https://www.nextflow.io/docs/latest/) for quick introduction.
+
+
 ## Prerequisites
 
 To run this workflow, you will need the following software:
@@ -91,21 +98,30 @@ To run this workflow, you will need the following software:
 	Graphviz 2.40
 ```
 
-## Installation
 
-Please clone this repository to your local filesystem using the following command:
+## Architecture
 
-```
-        git clone https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF.git
-        cd Oncogenomics_NF_WF
-```
+1. The workflow is located in the Khanlab space: `/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF`.
+2. The **`biowulf_nextflow.config`** file in this directory contains the master configuration. A `config/` subfolder contains additional configuration files:
 
-## Setting up the workflow on biowulf
+	```
+	config/
+	├── aws_cluster_test.config
+	├── aws_ec2_test.config
+	├── aws_params.config
+	├── biowulf_cluster_test.config
+	├── biowulf_s3_test_params.config
+	├── biowulf_singularity.config
+	├── biowulf_small_test_params.config
+	├── biowulf_small_test_params_hg38.config
+	├── docker.config
+	├── GRCm39.config
+	└── omics.config
 
-1. This workflow is hosted on biowulf in khanlab space `/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF`.
-2. All the pipeline config can be accessed using `/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/nextflow.config` file.
-3. Within the nextflow.config file you can select the profile to launch the pipeline.`biowulf` profile is preselected in the `nf.sh` script. This is set up to work with biowulf batch resources.
-4. Guidelines to create an input samplesheet can be found [here](samplesheet.md).
+	```
+
+3. Pipeline can be launched using the script launch.sh. It takes samplesheet.csv as a mandatory input. 
+4. Guidelines to create an input samplesheet can be found [here](usage.md).
 5. All the references, annotation and bed files are currently located under `/data/khanlab`. We currently support data processing for these capture kits.
 
 ### Sequencing capture kits
