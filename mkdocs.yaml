@@ -69,6 +69,6 @@ nav:
   - Introduction: index.md
   - Usage: usage.md
   - Running the Pipeline: pipeline_launch.md
+  - Results: results.md
   - Pipeline References & Tools: references.md
   - Dockers: dockers.md
-  - Results: results.md
