@@ -1,40 +1,68 @@
+/* ==== MATERIAL THEME CUSTOMIZATION ==== */
+
 /* Sidebar background */
-.wy-side-nav-search, .wy-nav-side {
-  background: #00c7b7 !important;  /* Teal like Nextflow */
+.md-sidebar {
+  background-color: #00c7b7 !important; /* Teal like Nextflow */
 }
 
-/* Sidebar text color */
-.wy-menu-vertical a { color: white !important; }
+/* Sidebar links */
+.md-nav__link {
+  color: white !important;
+}
 
 /* Active nav item */
-.wy-menu-vertical li.current a {
+.md-nav__link--active {
   background-color: #006b65 !important;
   color: white !important;
 }
 
 /* Top nav bar */
-.wy-nav-top {
-  background: #00c7b7 !important;
+.md-header {
+  background-color: #00c7b7 !important;
   color: white !important;
 }
 
-/* === WIDTH (Read the Docs theme) === */
-/* Wider but still constrained */
-.wy-nav-content { max-width: 90rem; }      /* tune 80–100rem */
-/* Or go full width: */
-/* .wy-nav-content { max-width: none; } */
+/* Content width */
+.md-grid {
+  max-width: 90rem; /* Default ~61rem; adjust for less gray space */
+}
 
 /* Keep images inside the column */
-.rst-content img { max-width: 100%; height: auto; }
+.md-typeset img {
+  max-width: 100%;
+  height: auto;
+}
 
-/* Tables: scroll horizontally within the content, not into the gutter */
-.wy-table-responsive { overflow-x: auto; }
-.wy-table-responsive table { width: 100%; }
+/* Tables: scroll horizontally within the content */
+.md-typeset table:not([class]) {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
 
-/* Code blocks: horizontal scroll instead of spilling */
-.rst-content pre { overflow-x: auto; }
+/* Code blocks: horizontal scroll instead of wrapping */
+.md-typeset pre {
+  overflow-x: auto;
+}
 
-/* Long inline text (paths/URLs) may break when needed */
-.rst-content p,
-.rst-content li { overflow-wrap: anywhere; }
-.rst-content code:not(.hljs) { overflow-wrap: anywhere; }
+/* Long inline text (paths/URLs) can break across lines */
+.md-typeset p,
+.md-typeset li {
+  overflow-wrap: anywhere;
+}
+.md-typeset code {
+  overflow-wrap: anywhere;
+}
+.md-typeset table.table-divider td:nth-child(2),
+.md-typeset table.table-divider th:nth-child(2),
+.md-typeset .table-divider table td:nth-child(2),
+.md-typeset .table-divider table th:nth-child(2) {
+  border-left: 2px solid var(--md-typeset-table-color) !important;
+}
+
+/* Optional: tighten cell padding a touch so the rule looks crisp */
+.md-typeset table.table-divider td,
+.md-typeset table.table-divider th {
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
