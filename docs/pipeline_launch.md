@@ -1,24 +1,21 @@
 # Running the workflow.
 
-To initiate the workflow, execute the `launch.sh` script in a interactive node. This script acts as a wrapper, spawning and submitting jobs to the SLURM scheduling system. It extracts the `PatientID` and `Casename` information from the [samplesheet](samplesheet.md), creates the corresponding output directory for each case, and organizes all results and log files under `[output_directory]/PatientID/Casename/`.
+This page explains what gets written where, how to monitor runs on Biowulf, how to resume or recover failed tasks, and what to collect when reporting errors.
 
-```
-Usage: ./launch.sh <samplesheet_with_full_path> [output_directory] [genome]
-This script requires at least one positional argument:
-1. Full path to samplesheet csv file
-Optional arguments:
-2. Path to results directory (default: /data/khanlab/projects/processed_DATA)
-3. Genome name. Accepted values are hg19 and mm39 (default: hg19)
 
-```
 
-# Workflow log
+### Results & Directory Layout:
 
-When the workflow is launched, it will produce a log file that provides information about the pipeline execution, including the command line used, the version of Nextflow, the input folder path, the results directory, and the work directory.
+${OUTDIR} is the results root — either the default location or the custom path you provide when [launching](usage.md) the workflow.
 
-The log file will be generated under /Resultsdir/PatientID/casename directory. This is the logfile naming convention. `patientid_casename_jobid_datelaunched-timelaunched.out`
+| Files | Path |
+|---|---|
+| Results root | `${OUTDIR}/${PATIENT}/${CASENAME}/` |
+| NXF state | `${OUTDIR}/${PATIENT}/${CASENAME}/.nextflow/` |
+| Run logs (stdout) | `${OUTDIR}/${PATIENT}/${CASENAME}/*.out` |
+| Nextflow reports (timeline, trace, manifest) | `${OUTDIR}/${PATIENT}/${CASENAME}/log/` |
+| Nextflow workdir | `${OUTDIR}/${PATIENT}/${CASENAME}/work/` |
 
-`Example: NCI0439_TestTNR_34233573_20240822-183525.out`
 
 ### Sample log file:
 
@@ -54,20 +51,30 @@ homeDir      : /home/gangalapudiv2
 
 ```
 
-# Workflow Resources
 
-$Script_home ---> Path to the code repository (/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF).
+### Debugging: Where to look
 
-$Script_home/nextflow.config ---> All the pipeline config resources are called from this file. We are using `biowulf_test_run_slurm` profile to run the samples on biowulf.
+#### 1) Start with the run’s stdout
+Check the Biowulf/Slurm stdout files for a quick overview and the **exact work directory** of the failed process:
 
-$Script_home/config ---> Cluster config, singularity config, docker config and params config are located here.
+- `${OUTDIR}/${PATIENT}/${CASENAME}/*.out`
 
-$Script_home/main.nf ---> This script calls the workflows and subworkflows in the pipeline.
+> These files usually contain the error summary and a line like `work/<hash>` pointing to the failing task’s work dir.
 
-# Run Debugging
+---
 
-Run-related Files: All files associated with the run will be generated in the `[output_directory]/PatientID/Casename` directory.
+#### 2) Inspect per-process work-directory logs
+For any failed task, open the work directory reported above and examine:
 
-Log Files: The log file, ending in `*.out`, will be located in `[output_directory]/PatientID/Casename`. This file contains details on any errors encountered during the run and provides the path to the work directory for troubleshooting.
+```
+    work/<hash>/.command.sh
+    work/<hash>/.command.out
+    work/<hash>/.command.err
+    work/<hash>/.command.log
+```
+> These files contain in-depth details of the process error (command, stdout, stderr, and Nextflow’s execution log).
 
-Work directory: Inside `[output_directory]/PatientID/Casename/work`, you will find subfolders containing `.command.sh`, `.command.log`, and `.command.err` files for each process. These files offer detailed information about the execution of each command and any issues that may have occurred.
+---
+
+### Reporting pipeline issues
+If the failure appears to be a **code error** or a **pipeline glitch**, please open a new issue with logs [here](https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/issues/new)

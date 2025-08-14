@@ -175,7 +175,7 @@ To use custom directories, edit DEFAULT_SAMPLESHEET_DIR and DEFAULT_INPUT_DIR in
 
 ### 2. Build Your Own Samplesheet
 
-If no master sheet is available, create a CSV with these column information:
+Create a CSV with these column information:
 
 | Column          | Description                                        | Example                                                                 |
 |-----------------|----------------------------------------------------|-------------------------------------------------------------------------|
