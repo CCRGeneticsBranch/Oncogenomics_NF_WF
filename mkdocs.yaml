@@ -68,7 +68,7 @@ extra_css:
 nav:
   - Introduction: index.md
   - Usage: usage.md
-  - Setting up Samplesheet: samplesheet.md
   - Running the Pipeline: pipeline_launch.md
+  - Results: results.md
   - Pipeline References & Tools: references.md
   - Dockers: dockers.md

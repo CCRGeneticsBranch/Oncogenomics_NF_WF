@@ -53,3 +53,16 @@
 .md-typeset code {
   overflow-wrap: anywhere;
 }
+.md-typeset table.table-divider td:nth-child(2),
+.md-typeset table.table-divider th:nth-child(2),
+.md-typeset .table-divider table td:nth-child(2),
+.md-typeset .table-divider table th:nth-child(2) {
+  border-left: 2px solid var(--md-typeset-table-color) !important;
+}
+
+/* Optional: tighten cell padding a touch so the rule looks crisp */
+.md-typeset table.table-divider td,
+.md-typeset table.table-divider th {
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
