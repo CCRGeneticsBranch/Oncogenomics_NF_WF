@@ -1,9 +1,6 @@
-<h1 align="center">🧬CCRGeneticsBranch / Oncogenomics_NF_WF</h1>
-<p align="center">
-  A containerized Nextflow pipeline for scalable oncogenomics analyses
-</p>
+<h1 align="left">🧬CCRGeneticsBranch / Oncogenomics_NF_WF</h1>
 
-<p align="center">
+<p align="left">
   <a href="https://www.nextflow.io/">
     <img src="https://img.shields.io/badge/Nextflow%20DSL2-%E2%89%A523.10.0-23aa62.svg?labelColor=2b2d42&logo=nextflow&logoColor=white" alt="Nextflow">
   </a>
