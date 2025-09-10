@@ -1,8 +1,25 @@
-[![Nextflow](https://img.shields.io/badge/Nextflow%20DSL2-%E2%89%A523.10.0-23aa62.svg?labelColor=2b2d42&logo=nextflow&logoColor=white)](https://www.nextflow.io/)
-[![Docker](https://img.shields.io/badge/Run%20with-Docker-2496ED.svg?labelColor=2b2d42&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Singularity](https://img.shields.io/badge/Run%20with-Singularity-1d355c.svg?labelColor=2b2d42&logo=singularity&logoColor=white)](https://sylabs.io/docs/)
-[![Release](https://img.shields.io/github/v/release/CCRGeneticsBranch/Oncogenomics_NF_WF?color=ff7b00&label=Latest%20Release&labelColor=2b2d42&logo=github)](https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/releases/latest)
-[![Documentation](https://img.shields.io/badge/Docs-Oncogenomics_NF_WF-008080.svg?labelColor=2b2d42&logo=readthedocs&logoColor=white)](https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/)
+<h1 align="center">🧬CCRGeneticsBranch / Oncogenomics_NF_WF</h1>
+<p align="center">
+  A containerized Nextflow pipeline for scalable oncogenomics analyses
+</p>
+
+<p align="center">
+  <a href="https://www.nextflow.io/">
+    <img src="https://img.shields.io/badge/Nextflow%20DSL2-%E2%89%A523.10.0-23aa62.svg?labelColor=2b2d42&logo=nextflow&logoColor=white" alt="Nextflow">
+  </a>
+  <a href="https://www.docker.com/">
+    <img src="https://img.shields.io/badge/Run%20with-Docker-2496ED.svg?labelColor=2b2d42&logo=docker&logoColor=white" alt="Docker">
+  </a>
+  <a href="https://sylabs.io/docs/">
+    <img src="https://img.shields.io/badge/Run%20with-Singularity-1d355c.svg?labelColor=2b2d42&logo=singularity&logoColor=white" alt="Singularity">
+  </a>
+  <a href="https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/releases/latest">
+    <img src="https://img.shields.io/github/v/release/CCRGeneticsBranch/Oncogenomics_NF_WF?color=ff7b00&label=Latest%20Release&labelColor=2b2d42&logo=github" alt="Latest Release">
+  </a>
+  <a href="https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/">
+    <img src="https://img.shields.io/badge/Docs-Oncogenomics_NF_WF-008080.svg?labelColor=2b2d42&logo=readthedocs&logoColor=white" alt="Documentation">
+  </a>
+</p>
 
 The Oncogenomics_NF_WF is a containerized Nextflow pipeline for processing exome and RNA-seq cancer data. It is built for scalable execution on HPC (Biowulf) and AWS. It integrates tools for variant calling, CNV detection, mutational signatures, TMB, HLA typing, neoantigen prediction, RNA quantification, fusion detection, and immune infiltration metrics. It currently supports hg19 and mm39 reference genomes. Efforts ongoing to expand support for hg38. For GRCm39 (mm39) reference, only mapping and RSEM quantification is supported.
 
