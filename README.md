@@ -1,24 +1,42 @@
-## AWS_POC_MVP_NF
+[![Nextflow](https://img.shields.io/badge/Nextflow%20DSL2-%E2%89%A523.10.0-23aa62.svg?labelColor=2b2d42&logo=nextflow&logoColor=white)](https://www.nextflow.io/)
+[![Docker](https://img.shields.io/badge/Run%20with-Docker-2496ED.svg?labelColor=2b2d42&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Singularity](https://img.shields.io/badge/Run%20with-Singularity-1d355c.svg?labelColor=2b2d42&logo=singularity&logoColor=white)](https://sylabs.io/docs/)
+[![Release](https://img.shields.io/github/v/release/CCRGeneticsBranch/Oncogenomics_NF_WF?color=ff7b00&label=Latest%20Release&labelColor=2b2d42&logo=github)](https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/releases/latest)
+[![Documentation](https://img.shields.io/badge/Docs-Oncogenomics_NF_WF-008080.svg?labelColor=2b2d42&logo=readthedocs&logoColor=white)](https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/)
 
-We started the [AWS_MVP_HPC](https://github.com/CCRGeneticsBranch/AWS_MVP_HPC) project to kick start transfer of CCR Genetics Branch (GB) NGS data analyses pipelines to the cloud (specifically AWS AGC.) Since, AWS(Cloud One) [AGC](https://aws.github.io/amazon-genomics-cli/docs/reference/agc/) supports multiple pipelining frameworks we decided to test out two:
- - Nextflow
- - Snakemake
+The Oncogenomics_NF_WF is a containerized Nextflow pipeline for processing exome and RNA-seq cancer data. It is built for scalable execution on HPC (Biowulf) and AWS. It integrates tools for variant calling, CNV detection, mutational signatures, TMB, HLA typing, neoantigen prediction, RNA quantification, fusion detection, and immune infiltration metrics. It currently supports hg19 and mm39 reference genomes. Efforts ongoing to expand support for hg38. For GRCm39 (mm39) reference, only mapping and RSEM quantification is supported.
 
-This code repo represents the Nextflow implementation of the POC (and MVP) of the GB's transcriptomic pipeline currently running on [BIOWULF](https://hpc.nih.gov/) using Snakemake.
+## Requirements
 
-### Flowchart
+- Nextflow (>= 23.10.0)
+- Graphviz 2.40
+- Docker or Singularity 3.10.5
+- Access to Biowulf HPC or AWS Batch
 
-![](https://i.imgur.com/NvfwmRD.png)
+## Usage
 
-This chart represents the entire MVP plan with the POC being highlighted in yellow.
+```
+# Run on Biowulf
+# Copy the launcher from the Khanlab space and run with a samplesheet
+# cp /data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/launch.sh .
+./launch.sh /path/to/samplesheet.csv
+```
 
-> <ins>Disclaimer</ins>: There are two parallel efforts underway for the _"cloudification"_ of GB, namely, 
-> 
-> a. Moving the database management and its web-interface to AWS also referred to as **"the Database component"** and 
-> 
-> b. Orchestrating NGS analysis workflows on AWS which is also referred to as **"the HPC compotent"**. This repository solely focuses on _the HPC component_.
+## Input / Output
 
-For complete documentation please go [here](https://CCRGeneticsBranch.github.io/AWS_MVP_HPC/).
+Input: Sample sheet with paths to fastq or bam/cram files. Link to [samplesheet guidelines](https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/usage/).
 
-Please send your comments/questions/suggestions to [Vishal Koparde](https://github.com/kopardev) via [email](mailto:vishal.koparde@nih.gov).
+Output: VCFs, CNV calls, mutational signatures, TMB metrics, HLA predictions, neoantigen candidates, expression matrices, fusion calls, immune infiltration metrics, QC reports.
 
+Results are organized by patientID/casename with an option to visualize data at [clinOmics data portal](https://oncogenomics.ccr.cancer.gov/production/public/)
+
+## Documentation
+
+Full documentation is available here:
+👉 [Oncogenomics_NF_WF Documentation](https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/)
+
+## Contributing
+
+Issues and pull requests are welcome. Please follow coding and documentation guidelines.
+
+Please send your comments/questions/suggestions to [Vineela Gangalapudi](https://github.com/vinegang) via [email](mailto:vineela.gangalapudi@nih.gov).
