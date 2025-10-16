@@ -163,7 +163,22 @@ def read_and_map_samplesheet(
                     row["bam"] = bam_path
                     filtered_samplesheet_data.append(row)
                 else:
-                    invalid_paths.append((read1, read2, bam_path))
+                    # Try alternate BAM naming conventions
+                    alt_library_id = library_id.replace("_Exome", ".Exome").replace(
+                        "_RNA-Seq", ".RNA-Seq"
+                    )
+                    alt_bam_path = os.path.join(
+                        DEFAULT_BAM_DIR, f"{alt_library_id}.bam"
+                    )
+
+                    if os.path.exists(alt_bam_path):
+                        row["read1"] = ""
+                        row["read2"] = ""
+                        row["bam"] = alt_bam_path
+                        filtered_samplesheet_data.append(row)
+                    else:
+                        both_bams = f"{bam_path} || {alt_bam_path}"
+                        invalid_paths.append((read1, read2, both_bams))
 
     return filtered_samplesheet_data, invalid_paths
 
@@ -191,7 +206,7 @@ def process_samplesheets(
 
     for key in grouped_data:
         grouped_data[key] = list(
-            {tuple(d.items()): d for d in grouped_data[key]}.values()
+            {tuple(sorted(d.items())): d for d in grouped_data[key]}.values()
         )
 
     # If any combinations lack both FASTQ and BAM, report and exit
