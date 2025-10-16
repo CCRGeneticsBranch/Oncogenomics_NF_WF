@@ -31,7 +31,120 @@ log.info """\
          """
          .stripIndent()
 
+Channel
+  .fromPath(params.samplesheet)
+  .splitCsv(header: true)
+  .map { row ->
+    [
+      sample   : (row.sample ?: '').toString(),
+      casename : (row.casename ?: '').toString(),
+      library      : (row.library ?: '').toString(),
+      read1    : (row.read1 ?: '').toString(),
+      read2    : (row.read2 ?: '').toString(),
+      bam      : (row.bam   ?: '').toString(),
+      sample_captures : (row.sample_captures ?: '').toString(),
+      Matched_RNA    : (row.Matched_RNA ?: '').toString(),
+      Matched_normal : (row.Matched_normal ?: '').toString(),
+      Diagnosis      : (row.Diagnosis ?: '').toString(),
+      type           : (row.type ?: '').toString(),
+      filetype : ((row.file_type ?: row.filetype ?: '') as String).toLowerCase()
+    ]
+  }
+  .set { ROWS }
 
+// Partition rows
+FASTQ_ROWS = ROWS.filter { it.read1 }     // rows providing FASTQs
+BAM_ROWS   = ROWS.filter { it.bam }       // rows providing BAM/CRAM
+
+FASTQ_ROWS
+  .map { meta ->
+    tuple(meta, file(meta.read1), meta.read2 ? file(meta.read2) : null)
+  }
+  .set { FASTQ_IN }
+
+FASTQ_IN
+  .map { meta, r1, r2 -> tuple("${meta.sample}||${meta.casename}||${meta.library}", meta, r1, r2) }
+  .groupTuple(by: 0)
+  .map { key, metas, r1s, r2s ->
+    def meta = metas[0]  // representative; carries all your extra columns
+    def sortedR1s = r1s.sort { it.toString() }
+    def sortedR2s = r2s.findAll { it != null }.sort { it.toString() }
+    tuple(meta, sortedR1s, sortedR2s)
+  }
+  .set { FASTQ_GROUPED }
+
+// channel of samples with >1 R1 file OR >1 R2 file
+TO_MERGE = FASTQ_GROUPED.filter { meta, r1s, r2s ->
+  ((r1s?.size() ?: 0) > 1) || ((r2s?.size() ?: 0) > 1)
+}
+
+// channel of samples with exactly 1 R1 AND exactly 1 R2
+PASSTHRU = FASTQ_GROUPED.filter { meta, r1s, r2s ->
+  ((r1s?.size() ?: 0) == 1) && ((r2s?.size() ?: 0) == 1)
+}
+.map { meta, r1s, r2s ->
+  def r1 = r1s[0]
+  def r2 = r2s[0]
+  tuple(meta, r1, r2)
+}
+
+BAM_ROWS
+  .map { meta -> tuple(meta, file(meta.bam)) }
+  .set { BAM_IN }
+
+process MERGE_FASTQS {
+  tag { "${meta.sample}_${meta.library}" }
+
+  //publishDir "${params.resultsdir}/fastq", mode:'copy', overwrite:true
+
+  input:
+    tuple val(meta), path(r1_lanes), path(r2_lanes)
+
+  output:
+    tuple val(meta),
+          path("${meta.sample}_${meta.library}_R1.fastq.gz"),
+          path("${meta.sample}_${meta.library}_R2.fastq.gz")
+
+  script:
+  """
+  # R1: merge fastq
+cat ${r1_lanes.join(' ')} > ${meta.sample}_${meta.library}_R1.fastq.gz
+
+# R2: same logic;
+cat ${r2_lanes.join(' ')} > ${meta.sample}_${meta.library}_R2.fastq.gz
+"""
+}
+
+
+process BAM_TO_FASTQ {
+  tag { "${meta.sample}_${meta.library}" }
+
+  //publishDir "${params.resultsdir}/fastq1", mode:'copy', overwrite:true
+
+  input:
+    tuple val(meta), path(bam)
+
+  output:
+    tuple val(meta),
+          path("${meta.sample}_${meta.library}_R1.fastq.gz"),
+          path("${meta.sample}_${meta.library}_R2.fastq.gz")
+
+  script:
+  """
+  set -euo pipefail
+#  module -q load samtools || true
+#  module load picard
+
+  # Sort the BAM by queryname (required for SamToFastq)
+  samtools sort -n -@ ${task.cpus} -o ${meta.sample}_${meta.library}.queryname.bam ${bam}
+
+  # Use Picard SamToFastq to split into R1/R2
+  java -Xmx40g -jar \$PICARDJAR SamToFastq \
+      I=${meta.sample}_${meta.library}.queryname.bam \
+      FASTQ=${meta.sample}_${meta.library}_R1.fastq.gz \
+      SECOND_END_FASTQ=${meta.sample}_${meta.library}_R2.fastq.gz
+  """
+}
 
 process PREPARE_SAMPLESHEET {
 
@@ -48,7 +161,7 @@ process PREPARE_SAMPLESHEET {
     """
 
     if [ ${genome_version} == "hg19" ]; then
-        python ${workflow.projectDir}/bin/split_samplesheet.py ${samplesheet} .
+        python ${workflow.projectDir}/bin/prepare_samplesheet.py ${samplesheet} .
     elif [ ${genome_version} == "mm39" ]; then
         cp ${samplesheet} mouse_rnaseq.csv
     else
@@ -74,7 +187,37 @@ include {Mouse_RNA} from './workflows/Mouse_RNA.nf'
 
 
 workflow {
-def prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet,params.genome_v)
+
+TO_MERGE | MERGE_FASTQS
+//FASTQ_MERGED = MERGE_FASTQS.out
+
+BAM_IN|BAM_TO_FASTQ
+//FASTQ_FROM_BAM = BAM_TO_FASTQ.out
+
+def HEADER = [
+  'sample','casename','library','read1','read2',
+  'bam','sample_captures','Matched_RNA','Matched_normal','Diagnosis','type','filetype'
+]
+// Combine streams and render rows using meta + the produced R1/R2
+def data_rows = MERGE_FASTQS.out
+  .mix(PASSTHRU)
+  .mix(BAM_TO_FASTQ.out)
+  .map { meta, r1, r2 ->
+    // build row values in header order
+    def rowmap = meta + [ read1: r1.toString(), read2: r2.toString() ]
+    HEADER.collect { k -> (rowmap[k] ?: '').toString() }.join(',')
+  }
+
+data_rows
+  .collect()
+  .map { rows -> ([HEADER.join(',')] + rows).join('\n') + '\n' }
+  .collectFile(name: 'merged_samplesheet.csv', storeDir: params.resultsdir)
+  .set { MERGED_SHEET }
+
+  // 4) Splitter on the merged sheet
+def prepared_samplesheets = PREPARE_SAMPLESHEET( MERGED_SHEET, params.genome_v )
+
+//def prepared_samplesheets = PREPARE_SAMPLESHEET(params.samplesheet,params.genome_v)
     //prepared_samplesheets.patientid.view()
 
 
