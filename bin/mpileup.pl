@@ -24,13 +24,19 @@ while(<IN2>){
 	my @line = split("\t",$_);
 	$Expressed{join("\t",@line[0..4])} = join("\t",@line[9..13]);
 }
+
+my $hdr = basename($BAM);     # e.g., SJWLM071778_D1.RNA-Seq.final.bam
+$hdr =~ s/^trim_//;           # drop leading trim_ if present
+$hdr =~ s/\.final.bam$//i;
 close IN2;
 while(<FH>){
 	chomp;
 	my $line = $_;
 	my @d = split("\t", $_);
 	if($_ =~ /^Chr/ or $_ =~ /^#/){
-		print "$line\t$a[0].GT\tRNASeq.TotCov\tRNASeq.RefCov\tRNASeq.VarCov\tRNASeq.VAF\n";
+		#print "$line\t$a[0].GT\tRNASeq.TotCov\tRNASeq.RefCov\tRNASeq.VarCov\tRNASeq.VAF\n";
+		print "$line\t$hdr.GT\tRNASeq.TotCov\tRNASeq.RefCov\tRNASeq.VarCov\tRNASeq.VAF\n";
+
 	}
 	elsif ($d[1] eq $d[2] and length($d[3]) eq length($d[4]) and length($d[3]) <2){
 		my $rnaseq;
