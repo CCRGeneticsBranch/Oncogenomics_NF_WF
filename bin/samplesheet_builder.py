@@ -135,6 +135,13 @@ def read_and_map_samplesheet(
                 row["genome"] = "hg19"
 
             library_id = row["library"]
+            if "." in library_id:
+                print(
+                    f"ERROR: Library ID '{library_id}' contains a '.' character. "
+                    "This will cause issues with visualizing results on the website.\n"
+                    "Please rename the library ID to replace '.' with '_' and relaunch the script."
+                )
+                sys.exit(1)
             fcid = row.get("FCID", "")
 
             # Compose FASTQ expectations
