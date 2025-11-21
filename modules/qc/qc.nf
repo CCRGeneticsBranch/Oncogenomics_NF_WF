@@ -441,8 +441,8 @@ process Conpair_concordance {
 
     input:
     tuple val(meta),
-        path(tumor),
         path(normal),
+        path(tumor),
         path(conpair)
 
     output:
@@ -450,7 +450,7 @@ process Conpair_concordance {
 
     stub:
     """
-      touch "${meta.lib}.concod.txt
+      touch "${meta.lib}.concod.txt"
     """
 
     script:
@@ -467,8 +467,8 @@ process Conpair_contamination {
 
     input:
     tuple val(meta),
-        path(tumor),
         path(normal),
+        path(tumor),
         path(conpair)
 
     output:
@@ -476,7 +476,7 @@ process Conpair_contamination {
 
     stub:
     """
-      touch "${meta.lib}.conta.txt
+      touch "${meta.lib}.conta.txt"
     """
 
     script:
