@@ -3,11 +3,11 @@
 Launcher for the Oncogenomics Nextflow workflow (Biowulf/SLURM).
 
 Usage (existing):
-  run_nf.py --samplesheet /path/to/sheet.csv [--outdir DIR] [--genome {hg19,mm39}] [--platform biowulf]
+  launch.py --samplesheet /path/to/sheet.csv [--outdir DIR] [--genome {hg19,mm39}] [--platform biowulf]
             [--profile PROFILE] [--no-resume] [--no-cleanup]
 
 Usage (new, auto-generate samplesheet first):
-  run_nf.py --patient P123 --casename CASE_X [--inputdir /data/khanlab/projects/DATA] \
+  launch.py --patient P123 --casename CASE_X [--inputdir /data/khanlab/projects/DATA] \
             [--outdir DIR] [--genome {hg19,mm39}] [--platform biowulf] [--profile PROFILE] \
             [--no-resume] [--no-cleanup]
 """
@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import List, Optional
 
 # ---- Paths & defaults ----
-WF_HOME = Path("/data/khanlab/projects/Nextflow_dev/dev/vg_dev/Oncogenomics_NF_WF")
+WF_HOME = Path("/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF")
 CONFIG_FILE = WF_HOME / "nextflow.config"
 DEFAULT_OUTDIR = "/data/khanlab/projects/processed_DATA"
 DEFAULT_GENOME = "hg19"
