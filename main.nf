@@ -211,7 +211,7 @@ def data_rows = MERGE_FASTQS.out
 data_rows
   .collect()
   .map { rows -> ([HEADER.join(',')] + rows).join('\n') + '\n' }
-  .collectFile(name: 'merged_samplesheet.csv', storeDir: params.resultsdir)
+  .collectFile(name: 'merged_samplesheet.csv', storeDir: workflow.workDir)
   .set { MERGED_SHEET }
 
   // 4) Splitter on the merged sheet
