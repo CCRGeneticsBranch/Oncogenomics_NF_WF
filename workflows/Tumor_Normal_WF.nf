@@ -276,11 +276,7 @@ AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-UnionSomaticCalls.out
-        .filter {meta, file -> def lines = file.readLines()
-        lines.size() > 50 }
-        .set {mutationalsignature_input_ch}
-mutationalsignature_input_ch|MutationalSignature
+UnionSomaticCalls.out|MutationalSignature
 ch_allcomplete = ch_allcomplete.mix(
     MutationalSignature.out.map { meta, file -> file }.ifEmpty([]) )
 
