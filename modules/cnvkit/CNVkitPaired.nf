@@ -15,8 +15,6 @@ process CNVkitPaired {
     tuple val(meta),path("${meta.lib}.cnr"), emit: cnvkit_cnr
     tuple val(meta),path("${meta.lib}.pdf"), emit: cnvkit_pdf
     tuple val(meta),path("${meta.lib}.call.cns"), emit: cnvkit_call_cns
-    tuple val(meta),path("${meta.lib}.call.cns_lowPurity"), emit: cnvkit_call_cns_lowPurity , optional: true
-    //tuple val(meta),path("${meta.lib}_genelevel.txt"), emit: cnvkit_genelevel
     path "versions.yml"             , emit: versions
 
     stub:
@@ -38,14 +36,6 @@ process CNVkitPaired {
         PURITY=`awk '{ print \$1 }' ${sequenza_alternate} | sed -n '2p'`
         echo "purity is  \$PURITY"
         cnvkit.py call -m clonal ${prefix}.cns --purity \$PURITY -v ${mutect_raw_vcf} -o ${prefix}.call.cns
-        limit=0.3
-        #if [ 1 -eq "\$(echo "\$PURITY < \$limit" | bc)" ]; then
-        if awk "BEGIN {exit !(\$PURITY < \$limit)}"; then
-            mv ${prefix}.call.cns ${prefix}.call.cns_lowPurity
-            touch ${prefix}.call.cns
-        fi
-    else
-        touch ${prefix}.call.cns
     fi
 
 cat <<-END_VERSIONS > versions.yml

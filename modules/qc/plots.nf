@@ -135,7 +135,13 @@ process Bamutil {
      def prefix = task.ext.prefix ?: "${meta.lib}"
       """
      set -exo pipefail
-     bam squeeze --in ${bam} --out ${prefix}.final.squeeze.bam --refFile ${genome}  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
+
+     if [[ "${meta.type}" == *"DNA"* ]]; then
+        bam squeeze --in ${bam} --out ${prefix}.final.squeeze.bam --refFile ${genome} --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
+     else
+        bam squeeze --in ${bam} --out ${prefix}.final.squeeze.bam --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
+     fi
+     #bam squeeze --in ${bam} --out ${prefix}.final.squeeze.bam --refFile ${genome}  --rmTags "PG:Z;RG:Z;BI:Z;BD:Z"
      samtools index ${prefix}.final.squeeze.bam
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":

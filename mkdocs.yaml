@@ -7,91 +7,68 @@ site_description: >-
 # Repository
 repo_name: AWS_POC_MVP_NF
 repo_url: https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF
-edit_uri: https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/edit
+edit_uri: https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/tree/main/docs
 
 # Copyright
-copyright: Copyright &copy; 2022 CCR Genetics
+copyright: Copyright &copy; 2025 CCR Genetics Branch
 
 # Configuration
 theme:
   name: material
   features:
-    - navigation.tabs
-    - navigation.top
-    - navigation.indexes
-    - toc.integrate
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/toggle-switch-off-outline
-        name: Switch to dark mode
-    - scheme: slate
-      primary: red
-      accent: red
-      toggle:
-        icon: material/toggle-switch
-        name: Switch to light mode
-#  logo: assets/images/doc-book.svg
-#  favicon: assets/images/favicon.png
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
 
-# Plugins
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+
+  custom_dir: overrides
 plugins:
   - search
   - git-revision-date
   - minify:
       minify_html: true
 
-# Customization
-extra:
-  social:
-    - icon: fontawesome/solid/users
-      link: http://bioinformatics.cancer.gov
-    - icon: fontawesome/brands/github
-      link: https://github.com/CCRGeneticsBranch
-    - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/orgs/nciccbr/repositories
-  version:
-    provider: mike
-
-# Extensions
+# Markdown Extensions
 markdown_extensions:
-  - markdown.extensions.admonition
-  - markdown.extensions.attr_list
-  - markdown.extensions.def_list
-  - markdown.extensions.footnotes
-  - markdown.extensions.meta
-  - markdown.extensions.toc:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - toc:
       permalink: true
-  - pymdownx.arithmatex:
-      generic: true
-  - pymdownx.betterem:
-      smart_enable: all
-  - pymdownx.caret
-  - pymdownx.critic
   - pymdownx.details
+  - pymdownx.superfences
   - pymdownx.highlight
   - pymdownx.inlinehilite
-  - pymdownx.keys
-  - pymdownx.magiclink:
-      repo_url_shorthand: true
-      user: squidfunk
-      repo: mkdocs-material
-  - pymdownx.mark
-  - pymdownx.smartsymbols
-  - pymdownx.snippets:
-      check_paths: true
-  - pymdownx.superfences
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
-  - pymdownx.tilde
-
+extra_css:
+  - overrides/extra.css
 # Page Tree
 nav:
-  - Overview: index.md
-  - Setting up Samplesheet: samplesheet.md
+  - Introduction: index.md
+  - Usage: usage.md
   - Running the Pipeline: pipeline_launch.md
+  - Results: results.md
   - Pipeline References & Tools: references.md
   - Dockers: dockers.md

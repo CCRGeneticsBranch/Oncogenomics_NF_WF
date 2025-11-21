@@ -276,11 +276,7 @@ AddAnnotationFull_somatic_variants(addannotationfull_somatic_variants_input_ch)
 
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 //Test mutational signature only with full sample
-UnionSomaticCalls.out
-        .filter {meta, file -> def lines = file.readLines()
-        lines.size() > 50 }
-        .set {mutationalsignature_input_ch}
-mutationalsignature_input_ch|MutationalSignature
+UnionSomaticCalls.out|MutationalSignature
 ch_allcomplete = ch_allcomplete.mix(
     MutationalSignature.out.map { meta, file -> file }.ifEmpty([]) )
 
@@ -415,6 +411,8 @@ targetbp_MB_ch = tumor_target_capture
             targetbp_mb = params.seqcapez.hu.ex.utr.v1_MB
         } else if (meta.sc == 'seqcapez.rms.v1') {
             targetbp_mb = params.seqcapez.rms.v1_MB
+        } else if (meta.sc == 'idt_v2_plus') {
+            targetbp_mb = params.idt_v2_plus_MB
         }
 
         return [meta,targetbp_mb]
