@@ -349,14 +349,10 @@ ch_allcomplete = ch_allcomplete.mix( DBinput.out.map { all -> all[1..-1] }.flatt
 UnionSomaticCalls(AddAnnotationFull_somatic_variants.out)
 
 
-UnionSomaticCalls.out
-        .filter {meta, file -> def lines = file.readLines()
-        lines.size() > 50 }
-        .set {mutationalsignature_input_ch}
 
-mutationalsignature_input_ch|MutationalSignature
+UnionSomaticCalls.out|MutationalSignature
 ch_allcomplete = ch_allcomplete.mix(
-    MutationalSignature.out.map { meta, file -> file }.ifEmpty([]) )
+    MutationalSignature.out.map { meta, file -> file } )
 
 
 somatic_variants = Mutect_WF.out.mutect_raw_vcf
@@ -541,7 +537,6 @@ Conpair_contamination(exome_conpair_pileup
                     .combine(conpair_marker)
                     )
 ch_allcomplete = ch_allcomplete.mix( Conpair_contamination.out.map { all -> all[1..-1] }.flatten())
-
 
 //RNA lib processing steps
 actionable_fusion_input = Common_RNAseq_WF.out.fusion_calls.map{ meta, fusion -> [meta, [fusion]] }

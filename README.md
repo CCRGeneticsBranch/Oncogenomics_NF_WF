@@ -1,24 +1,75 @@
-## AWS_POC_MVP_NF
+<h1 align="left">🧬CCRGeneticsBranch / Oncogenomics_NF_WF</h1>
 
-We started the [AWS_MVP_HPC](https://github.com/CCRGeneticsBranch/AWS_MVP_HPC) project to kick start transfer of CCR Genetics Branch (GB) NGS data analyses pipelines to the cloud (specifically AWS AGC.) Since, AWS(Cloud One) [AGC](https://aws.github.io/amazon-genomics-cli/docs/reference/agc/) supports multiple pipelining frameworks we decided to test out two:
- - Nextflow
- - Snakemake
+<p align="left">
+  <a href="https://www.nextflow.io/">
+    <img src="https://img.shields.io/badge/Nextflow%20DSL2-%E2%89%A523.10.0-23aa62.svg?labelColor=2b2d42&logo=nextflow&logoColor=white" alt="Nextflow">
+  </a>
+  <a href="https://www.docker.com/">
+    <img src="https://img.shields.io/badge/Run%20with-Docker-2496ED.svg?labelColor=2b2d42&logo=docker&logoColor=white" alt="Docker">
+  </a>
+  <a href="https://sylabs.io/docs/">
+    <img src="https://img.shields.io/badge/Run%20with-Singularity-1d355c.svg?labelColor=2b2d42&logo=singularity&logoColor=white" alt="Singularity">
+  </a>
+  <a href="https://github.com/CCRGeneticsBranch/Oncogenomics_NF_WF/releases/latest">
+    <img src="https://img.shields.io/github/v/release/CCRGeneticsBranch/Oncogenomics_NF_WF?color=ff7b00&label=Latest%20Release&labelColor=2b2d42&logo=github" alt="Latest Release">
+  </a>
+  <a href="https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/">
+    <img src="https://img.shields.io/badge/Docs-Oncogenomics_NF_WF-008080.svg?labelColor=2b2d42&logo=readthedocs&logoColor=white" alt="Documentation">
+  </a>
+</p>
 
-This code repo represents the Nextflow implementation of the POC (and MVP) of the GB's transcriptomic pipeline currently running on [BIOWULF](https://hpc.nih.gov/) using Snakemake.
+The Oncogenomics_NF_WF is a containerized Nextflow pipeline for processing exome and RNA-seq cancer data. It is built for scalable execution on HPC (Biowulf) and AWS. It integrates tools for variant calling, CNV detection, mutational signatures, TMB, HLA typing, neoantigen prediction, RNA quantification, fusion detection, and immune infiltration metrics. It currently supports hg19 and mm39 reference genomes. Efforts ongoing to expand support for hg38. For GRCm39 (mm39) reference, only mapping and RSEM quantification is supported.
 
-### Flowchart
+## Requirements
 
-![](https://i.imgur.com/NvfwmRD.png)
+- Nextflow (>= 23.10.0)
+- Graphviz 2.40
+- Docker or Singularity 3.10.5
+- Access to Biowulf HPC or AWS Batch
 
-This chart represents the entire MVP plan with the POC being highlighted in yellow.
+## Usage
 
-> <ins>Disclaimer</ins>: There are two parallel efforts underway for the _"cloudification"_ of GB, namely, 
-> 
-> a. Moving the database management and its web-interface to AWS also referred to as **"the Database component"** and 
-> 
-> b. Orchestrating NGS analysis workflows on AWS which is also referred to as **"the HPC compotent"**. This repository solely focuses on _the HPC component_.
+```
+# Run on Biowulf
 
-For complete documentation please go [here](https://CCRGeneticsBranch.github.io/AWS_MVP_HPC/).
+/data/khanlab/projects/Nextflow_dev/dev/vg_dev/Oncogenomics_NF_WF/launch.py --help
 
-Please send your comments/questions/suggestions to [Vishal Koparde](https://github.com/kopardev) via [email](mailto:vishal.koparde@nih.gov).
+usage: launch.py [-h] (--samplesheet SAMPLESHEET | --patient PATIENT) [--casename CASENAME] [--inputdir INPUTDIR] [--outdir OUTDIR] [--genome {hg19,mm39}]
+                 [--platform PLATFORM] [--profile PROFILE] [--no-resume] [--no-cleanup]
 
+Submit the Oncogenomics Nextflow workflow to SLURM.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --samplesheet SAMPLESHEET
+                        Path to existing samplesheet CSV
+  --patient PATIENT     Patient ID (requires --casename to build a samplesheet)
+  --casename CASENAME   Case name (required with --patient)
+  --inputdir INPUTDIR   Optional input directory passed to samplesheet_builder.py
+  --outdir OUTDIR       Results root directory (default: /data/khanlab/projects/processed_DATA)
+  --genome {hg19,mm39}  Genome (default: hg19)
+  --platform PLATFORM   Platform label (default: biowulf)
+  --profile PROFILE     Explicit Nextflow profile (overrides genome→profile mapping)
+  --no-resume           Run Nextflow without -resume
+  --no-cleanup          Disable cleanup (default: cleanup runs after successful job)
+
+```
+
+## Input / Output
+
+Input: Sample sheet with paths to fastq or bam/cram files. Link to [samplesheet guidelines](https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/usage/).
+
+Output: VCFs, CNV calls, mutational signatures, TMB metrics, HLA predictions, neoantigen candidates, expression matrices, fusion calls, immune infiltration metrics, QC reports.
+
+Results are organized by patientID/casename with an option to visualize data at [clinOmics data portal](https://oncogenomics.ccr.cancer.gov/production/public/)
+
+## Documentation
+
+Full documentation is available here:
+👉 [Oncogenomics_NF_WF Documentation](https://ccrgeneticsbranch.github.io/Oncogenomics_NF_WF/)
+
+## Contributing
+
+Issues and pull requests are welcome. Please follow coding and documentation guidelines.
+
+Please send your comments/questions/suggestions to [Vineela Gangalapudi](https://github.com/vinegang) via [email](mailto:vineela.gangalapudi@nih.gov).

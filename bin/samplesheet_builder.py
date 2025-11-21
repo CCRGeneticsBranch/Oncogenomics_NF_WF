@@ -8,7 +8,7 @@ import re
 # Set default directories
 DEFAULT_SAMPLESHEET_DIR = "/data/khanlab/projects/DATA/Sequencing_Tracking_Master"
 DEFAULT_INPUT_DIR = "/data/khanlab/projects/DATA"
-# DEFAULT_INPUT_DIR = "/data/khanlab2/kids_first_RMS/cavatica/exome_bam/DATA"
+DEFAULT_BAM_DIR = "/data/khanlab3/David_Milewski_StJude_202504"
 
 # Check if the correct number of arguments is provided
 if len(sys.argv) != 3:
@@ -28,11 +28,11 @@ case_name = sys.argv[2]
 samplesheet_dir = DEFAULT_SAMPLESHEET_DIR
 inputdir = DEFAULT_INPUT_DIR
 
-# Print debug information to verify arguments and directories
 print(f"Sample ID: {sample_id}")
 print(f"Case Name: {case_name}")
 print(f"Samplesheet Directory: {samplesheet_dir}")
 print(f"Input Directory: {inputdir}")
+print(f"BAM Directory: {DEFAULT_BAM_DIR}")
 
 
 def read_and_map_samplesheet(
@@ -61,38 +61,45 @@ def read_and_map_samplesheet(
                     )
                     mapped_row["Diagnosis"] = mapped_row["Diagnosis"].replace(" ", ".")
 
-                # Check if casename column has comma-separated values
+                # --- expand multiple casenames (append once) ---
+                appended = False
                 if "," in mapped_row.get("casename", ""):
                     casenames = mapped_row["casename"].split(",")
                     for individual_casename in casenames:
-                        new_row = dict(mapped_row)  # Create copy of the original row
-                        new_row[
-                            "casename"
-                        ] = individual_casename.strip()  # Update casename
+                        new_row = dict(mapped_row)
+                        new_row["casename"] = individual_casename.strip()
                         samplesheet_data.append(new_row)
+                    appended = True
                 else:
-                    samplesheet_data.append(mapped_row)
+                    pass
 
+                # --- expand multi seq_type (append once) ---
                 if "/" in mapped_row.get("seq_type", ""):
+                    # add the primary as-is on first append
+                    if not appended:
+                        samplesheet_data.append(mapped_row)
+                        appended = True
                     seqtypes = mapped_row["seq_type"].split("/")
+                    # start from the second item (index 1)
                     for individual_seqtype in seqtypes[1:]:
-                        new_row = dict(mapped_row)  # Create copy of the original row
-                        new_row[
-                            "seq_type"
-                        ] = individual_seqtype.strip()  # Update seqtype
+                        new_row = dict(mapped_row)
+                        new_row["seq_type"] = individual_seqtype.strip()
                         samplesheet_data.append(new_row)
-                else:
+
+                # if nothing special, append once
+                if not appended:
                     samplesheet_data.append(mapped_row)
 
     except UnicodeDecodeError:
         print(f"Error decoding file: {samplesheet}. Please check the file encoding.")
         return [], []
+
     ALLOWED_SAMPLE_CAPTURES = {
         "access",
         "polya_stranded",
         "polya",
         "ribozero",
-        "SmartRNA",
+        "smartrna",
         "ribodepleted_nebnext_v2",
         "clin.ex.v1",
         "seqcapez.hu.ex.v3",
@@ -103,18 +110,20 @@ def read_and_map_samplesheet(
         "comp_ex_v1",
         "seqcapez.hu.ex.utr.v1",
     }
+
     # Filter rows matching sample_id and case_name
     filtered_samplesheet_data = []
     for row in samplesheet_data:
-        # if row.get("sample") == sample_id and row.get("casename") == case_name:
         if (
             row.get("sample") == sample_id
             and row.get("casename") == case_name
             and row.get("seq_type") in ["E-il", "P-il", "T-il"]
         ):
-            sample_captures = row.get("sample_captures", "").strip()
+            if row.get("type") == "normal_RNA":
+                row["type"] = "cell_line_RNA"
 
-            # Check if sample_captures is missing or empty
+            sample_captures = row.get("sample_captures", "").strip().lower()
+            row["sample_captures"] = sample_captures
             if not sample_captures:
                 print(
                     f"ERROR: 'sample_captures' is missing or empty for sample {sample_id}, case {case_name}"
@@ -128,15 +137,27 @@ def read_and_map_samplesheet(
                     "Please add this sample capture type to the workflow before creating the samplesheet."
                 )
                 sys.exit(1)
+
+            # default genome if missing
             if row.get("genome") not in ["hg19", "hg38", "mm10"]:
                 print("genome information missing, defaulting to hg19")
                 row["genome"] = "hg19"
+
             library_id = row["library"]
+            if "." in library_id:
+                print(
+                    f"ERROR: Library ID '{library_id}' contains a '.' character. "
+                    "This will cause issues with visualizing results on the website.\n"
+                    "Please rename the library ID to replace '.' with '_' and relaunch the script."
+                )
+                sys.exit(1)
             fcid = row.get("FCID", "")
-            if fcid:  # If FCID is not empty
+
+            # Compose FASTQ expectations
+            if fcid:
                 read1 = f"{inputdir}/Sample_{library_id}_{fcid}/Sample_{library_id}_{fcid}_R1.fastq.gz"
                 read2 = f"{inputdir}/Sample_{library_id}_{fcid}/Sample_{library_id}_{fcid}_R2.fastq.gz"
-            else:  # If FCID is empty
+            else:
                 read1 = (
                     f"{inputdir}/Sample_{library_id}/Sample_{library_id}_R1.fastq.gz"
                 )
@@ -144,15 +165,101 @@ def read_and_map_samplesheet(
                     f"{inputdir}/Sample_{library_id}/Sample_{library_id}_R2.fastq.gz"
                 )
 
-            # Check if input fastq path exists
+            # Check FASTQs; else fall back to BAM
             if os.path.exists(read1) and os.path.exists(read2):
                 row["read1"] = read1
                 row["read2"] = read2
+                row["bam"] = ""  # ensure bam column present when FASTQs are used
                 filtered_samplesheet_data.append(row)
             else:
-                invalid_paths.append((read1, read2))
+                bam_path = os.path.join(DEFAULT_BAM_DIR, f"{library_id}.bam")
+                if os.path.exists(bam_path):
+                    row["read1"] = ""
+                    row["read2"] = ""
+                    row["bam"] = bam_path
+                    filtered_samplesheet_data.append(row)
+                else:
+                    # Try alternate BAM naming conventions
+                    alt_library_id = library_id.replace("_Exome", ".Exome").replace(
+                        "_RNA-Seq", ".RNA-Seq"
+                    )
+                    alt_bam_path = os.path.join(
+                        DEFAULT_BAM_DIR, f"{alt_library_id}.bam"
+                    )
+
+                    if os.path.exists(alt_bam_path):
+                        row["read1"] = ""
+                        row["read2"] = ""
+                        row["bam"] = alt_bam_path
+                        filtered_samplesheet_data.append(row)
+                    else:
+                        both_bams = f"{bam_path} || {alt_bam_path}"
+                        invalid_paths.append((read1, read2, both_bams))
 
     return filtered_samplesheet_data, invalid_paths
+
+
+def fill_matches_for_group(rows):
+    """
+    For each xeno_DNA/tumor_DNA row:
+      - If BOTH Matched_RNA and Matched_normal already populated -> skip this row.
+      - Else require a normal_DNA row; if absent -> skip.
+      - Fill only missing fields:
+          * Matched_normal <- normal_DNA library
+          * Matched_RNA    <- xeno_RNA library if available, else tumor_RNA
+    Assumes at most one library per type in a (sample, casename) group.
+    """
+
+    def norm(v):
+        # strip + lowercase + collapse internal spaces/underscores/hyphens
+        t = (v or "").strip()
+        t = t.replace("-", "_").replace(" ", "_")
+        return t.lower()
+
+    normal_dna_lib = ""
+    xeno_rna_lib = ""
+    tumor_rna_lib = ""
+
+    # Collect candidates once; require non-empty library; don't overwrite non-empty
+    for r in rows:
+        t = norm(r.get("type"))
+        lib = (r.get("library") or "").strip()
+        if not lib:
+            continue
+        if t == "normal_dna" and not normal_dna_lib:
+            normal_dna_lib = lib
+        elif t == "xeno_rna" and not xeno_rna_lib:
+            xeno_rna_lib = lib
+        elif t == "tumor_rna" and not tumor_rna_lib:
+            tumor_rna_lib = lib
+
+    # Per-row fill
+    for r in rows:
+        r_type = norm(r.get("type"))
+        if r_type not in {"xeno_dna", "tumor_dna"}:
+            continue
+
+        matched_rna = (r.get("Matched_RNA") or "").strip()
+        matched_normal = (r.get("Matched_normal") or "").strip()
+
+        # If BOTH already set, skip this row entirely
+        if matched_rna and matched_normal:
+            continue
+
+        # Require a normal_DNA to fill anything
+        if not normal_dna_lib:
+            continue
+
+        changed = False
+        if not matched_normal:
+            r["Matched_normal"] = normal_dna_lib
+            changed = True
+
+        if not matched_rna:
+            if xeno_rna_lib:
+                r["Matched_RNA"] = xeno_rna_lib
+            elif tumor_rna_lib:
+                r["Matched_RNA"] = tumor_rna_lib
 
 
 def process_samplesheets(
@@ -177,33 +284,41 @@ def process_samplesheets(
         grouped_data[(row["sample"], row["casename"])].append(row)
 
     for key in grouped_data:
+        # de-dup per group
         grouped_data[key] = list(
-            {tuple(d.items()): d for d in grouped_data[key]}.values()
+            {tuple(sorted(d.items())): d for d in grouped_data[key]}.values()
         )
+        fill_matches_for_group(grouped_data[key])
 
-    if not all_invalid_paths:  # Only proceed if no invalid paths were found
-        for sample_casename, rows in grouped_data.items():
-            if sample_casename[1].startswith("patient_"):
-                if sample_casename in all_invalid_paths:
-                    continue
-            output_file = os.path.join(
-                os.getcwd(), f"{sample_casename[0]}_{sample_casename[1]}.csv"
-            )
-            with open(output_file, "w", newline="") as file:
-                writer = csv.DictWriter(file, fieldnames=column_mapping.values())
-                writer.writeheader()
-                writer.writerows(rows)
-    else:
-        print("Skipping CSV generation due to invalid FASTQ paths.")
-
-    # Report invalid paths
+    # If any combinations lack both FASTQ and BAM, report and exit
     if all_invalid_paths:
-        print("The following fastq file paths are invalid:")
-        for read1, read2 in all_invalid_paths:
-            print(f"Read1: {read1}, Read2: {read2}")
+        print("No FASTQ or BAM found for the following combinations:")
+        for read1, read2, bam in all_invalid_paths:
+            print(f"  Read1: {read1}")
+            print(f"  Read2: {read2}")
+            print(f"  BAM  : {bam}")
+            print("  ---")
+        sys.exit(1)
+
+    # Write CSVs with your mapping order (bam is in the mapping, right after seq_type)
+    for sample_casename, rows in grouped_data.items():
+        if sample_casename[1].startswith("patient_"):
+            pass
+        output_file = os.path.join(
+            os.getcwd(), f"{sample_casename[0]}_{sample_casename[1]}.csv"
+        )
+        with open(output_file, "w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=column_mapping.values())
+            writer.writeheader()
+            # ensure every row has bam field (and all others)
+            for r in rows:
+                for k in column_mapping.values():
+                    r.setdefault(k, "")
+                writer.writerow(r)
+        print(output_file)
 
 
-# column mapping
+# column mapping (bam placed immediately after seq_type)
 column_mapping = {
     "Patient ID": "sample",
     "Library ID": "library",
@@ -217,6 +332,7 @@ column_mapping = {
     "Type": "type",
     "FCID": "FCID",
     "Type of sequencing": "seq_type",
+    "bam": "bam",
     "SampleRef": "genome",
 }
 

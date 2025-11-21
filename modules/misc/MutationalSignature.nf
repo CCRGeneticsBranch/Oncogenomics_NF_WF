@@ -9,7 +9,7 @@ process MutationalSignature {
 
     output:
     tuple val(meta),
-    path("${meta.lib}.mutationalSignature.pdf")
+    path("${meta.lib}.mutationalSignature.pdf") , optional: true
 
     stub:
     """
@@ -18,9 +18,16 @@ process MutationalSignature {
 
     script:
     """
-    awk '{OFS="\t"}{print \$1,\$2,\$4,\$5,"${meta.lib}"}' ${unionSomaticVarsFull} |sed -e '1s/${meta.lib}/Sample/g' > ${meta.lib}.mutationalSignature.pdf.tmp
-    mutationSignature.R --input ${meta.lib}.mutationalSignature.pdf.tmp --sample ${meta.lib} --output ${meta.lib}.mutationalSignature.pdf
-    rm -rf ${meta.lib}.mutationalSignature.pdf.tmp
+    n_lines=`wc -l < ${unionSomaticVarsFull}`
+
+    if [ "\$n_lines" -gt 50 ]; then
+        echo "File has \$n_lines lines — running mutationSignature.R"
+        awk '{OFS="\t"}{print \$1,\$2,\$4,\$5,"${meta.lib}"}' ${unionSomaticVarsFull} |sed -e '1s/${meta.lib}/Sample/g' > ${meta.lib}.mutationalSignature.pdf.tmp
+        mutationSignature.R --input ${meta.lib}.mutationalSignature.pdf.tmp --sample ${meta.lib} --output ${meta.lib}.mutationalSignature.pdf
+        rm -rf ${meta.lib}.mutationalSignature.pdf.tmp
+    else
+        echo "File has \$n_lines lines (<50) — skipping mutationalSignature.R"
+    fi
     """
 
 }

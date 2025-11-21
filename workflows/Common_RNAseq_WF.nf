@@ -133,7 +133,7 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
             target_file = params.polya_target
         } else if (meta.sc == 'ribozero') {
             target_file = params.ribozero_target
-        } else if (meta.sc == 'SmartRNA') {
+        } else if (meta.sc == 'smartrna') {
             target_file = params.smartrna_target
         } else if (meta.sc == 'ribodepleted_nebnext_v2') {
             target_file = params.ribozero_target
