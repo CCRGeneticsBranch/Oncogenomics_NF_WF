@@ -28,7 +28,6 @@ case_name = sys.argv[2]
 samplesheet_dir = DEFAULT_SAMPLESHEET_DIR
 inputdir = DEFAULT_INPUT_DIR
 
-# Print debug information to verify arguments and directories
 print(f"Sample ID: {sample_id}")
 print(f"Case Name: {case_name}")
 print(f"Samplesheet Directory: {samplesheet_dir}")
@@ -62,23 +61,33 @@ def read_and_map_samplesheet(
                     )
                     mapped_row["Diagnosis"] = mapped_row["Diagnosis"].replace(" ", ".")
 
-                # --- keep your original expansion logic ---
+                # --- expand multiple casenames (append once) ---
+                appended = False
                 if "," in mapped_row.get("casename", ""):
                     casenames = mapped_row["casename"].split(",")
                     for individual_casename in casenames:
                         new_row = dict(mapped_row)
                         new_row["casename"] = individual_casename.strip()
                         samplesheet_data.append(new_row)
+                    appended = True
                 else:
-                    samplesheet_data.append(mapped_row)
+                    pass
 
+                # --- expand multi seq_type (append once) ---
                 if "/" in mapped_row.get("seq_type", ""):
+                    # add the primary as-is on first append
+                    if not appended:
+                        samplesheet_data.append(mapped_row)
+                        appended = True
                     seqtypes = mapped_row["seq_type"].split("/")
+                    # start from the second item (index 1)
                     for individual_seqtype in seqtypes[1:]:
                         new_row = dict(mapped_row)
                         new_row["seq_type"] = individual_seqtype.strip()
                         samplesheet_data.append(new_row)
-                else:
+
+                # if nothing special, append once
+                if not appended:
                     samplesheet_data.append(mapped_row)
 
     except UnicodeDecodeError:
@@ -190,6 +199,69 @@ def read_and_map_samplesheet(
     return filtered_samplesheet_data, invalid_paths
 
 
+def fill_matches_for_group(rows):
+    """
+    For each xeno_DNA/tumor_DNA row:
+      - If BOTH Matched_RNA and Matched_normal already populated -> skip this row.
+      - Else require a normal_DNA row; if absent -> skip.
+      - Fill only missing fields:
+          * Matched_normal <- normal_DNA library
+          * Matched_RNA    <- xeno_RNA library if available, else tumor_RNA
+    Assumes at most one library per type in a (sample, casename) group.
+    """
+
+    def norm(v):
+        # strip + lowercase + collapse internal spaces/underscores/hyphens
+        t = (v or "").strip()
+        t = t.replace("-", "_").replace(" ", "_")
+        return t.lower()
+
+    normal_dna_lib = ""
+    xeno_rna_lib = ""
+    tumor_rna_lib = ""
+
+    # Collect candidates once; require non-empty library; don't overwrite non-empty
+    for r in rows:
+        t = norm(r.get("type"))
+        lib = (r.get("library") or "").strip()
+        if not lib:
+            continue
+        if t == "normal_dna" and not normal_dna_lib:
+            normal_dna_lib = lib
+        elif t == "xeno_rna" and not xeno_rna_lib:
+            xeno_rna_lib = lib
+        elif t == "tumor_rna" and not tumor_rna_lib:
+            tumor_rna_lib = lib
+
+    # Per-row fill
+    for r in rows:
+        r_type = norm(r.get("type"))
+        if r_type not in {"xeno_dna", "tumor_dna"}:
+            continue
+
+        matched_rna = (r.get("Matched_RNA") or "").strip()
+        matched_normal = (r.get("Matched_normal") or "").strip()
+
+        # If BOTH already set, skip this row entirely
+        if matched_rna and matched_normal:
+            continue
+
+        # Require a normal_DNA to fill anything
+        if not normal_dna_lib:
+            continue
+
+        changed = False
+        if not matched_normal:
+            r["Matched_normal"] = normal_dna_lib
+            changed = True
+
+        if not matched_rna:
+            if xeno_rna_lib:
+                r["Matched_RNA"] = xeno_rna_lib
+            elif tumor_rna_lib:
+                r["Matched_RNA"] = tumor_rna_lib
+
+
 def process_samplesheets(
     samplesheet_dir, inputdir, column_mapping, sample_id, case_name
 ):
@@ -212,9 +284,11 @@ def process_samplesheets(
         grouped_data[(row["sample"], row["casename"])].append(row)
 
     for key in grouped_data:
+        # de-dup per group
         grouped_data[key] = list(
             {tuple(sorted(d.items())): d for d in grouped_data[key]}.values()
         )
+        fill_matches_for_group(grouped_data[key])
 
     # If any combinations lack both FASTQ and BAM, report and exit
     if all_invalid_paths:

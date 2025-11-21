@@ -31,9 +31,28 @@ The Oncogenomics_NF_WF is a containerized Nextflow pipeline for processing exome
 
 ```
 # Run on Biowulf
-# Copy the launcher from the Khanlab space and run with a samplesheet
-# cp /data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF/launch.sh .
-./launch.sh /path/to/samplesheet.csv
+
+/data/khanlab/projects/Nextflow_dev/dev/vg_dev/Oncogenomics_NF_WF/launch.py --help
+
+usage: launch.py [-h] (--samplesheet SAMPLESHEET | --patient PATIENT) [--casename CASENAME] [--inputdir INPUTDIR] [--outdir OUTDIR] [--genome {hg19,mm39}]
+                 [--platform PLATFORM] [--profile PROFILE] [--no-resume] [--no-cleanup]
+
+Submit the Oncogenomics Nextflow workflow to SLURM.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --samplesheet SAMPLESHEET
+                        Path to existing samplesheet CSV
+  --patient PATIENT     Patient ID (requires --casename to build a samplesheet)
+  --casename CASENAME   Case name (required with --patient)
+  --inputdir INPUTDIR   Optional input directory passed to samplesheet_builder.py
+  --outdir OUTDIR       Results root directory (default: /data/khanlab/projects/processed_DATA)
+  --genome {hg19,mm39}  Genome (default: hg19)
+  --platform PLATFORM   Platform label (default: biowulf)
+  --profile PROFILE     Explicit Nextflow profile (overrides genome→profile mapping)
+  --no-resume           Run Nextflow without -resume
+  --no-cleanup          Disable cleanup (default: cleanup runs after successful job)
+
 ```
 
 ## Input / Output
