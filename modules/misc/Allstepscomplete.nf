@@ -7,7 +7,7 @@ process Allstepscomplete {
 
     input:
     tuple val(meta),path(config)
-    path ch_allcomplete
+    path complete_list
 
     output:
 
