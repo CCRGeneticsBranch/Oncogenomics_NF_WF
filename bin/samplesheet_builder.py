@@ -201,39 +201,91 @@ def read_and_map_samplesheet(
 
 def fill_matches_for_group(rows):
     """
-    For each xeno_DNA/tumor_DNA row:
-      - If BOTH Matched_RNA and Matched_normal already populated -> skip this row.
-      - Else require a normal_DNA row; if absent -> skip.
-      - Fill only missing fields:
-          * Matched_normal <- normal_DNA library
-          * Matched_RNA    <- xeno_RNA library if available, else tumor_RNA
-    Assumes at most one library per type in a (sample, casename) group.
+    Strict matching:
+      - If BOTH Matched_RNA and Matched_normal are already populated for a DNA row -> skip it.
+      - Else fill only missing fields (don't overwrite non-empty):
+          * Matched_normal <- normal_DNA library (if exactly one exists)
+          * Matched_RNA    <- xeno_RNA or tumor_RNA library (if exactly one total exists)
+      - If multiple normal_DNA libs exist (same sample+casename) and any DNA row needs a normal -> exit with error.
+      - If multiple RNA libs exist (same sample+casename) and any DNA row needs RNA -> exit with error.
+    Assumes library ID is the unique identifier per row.
     """
 
     def norm(v):
-        # strip + lowercase + collapse internal spaces/underscores/hyphens
         t = (v or "").strip()
         t = t.replace("-", "_").replace(" ", "_")
         return t.lower()
 
-    normal_dna_lib = ""
-    xeno_rna_lib = ""
-    tumor_rna_lib = ""
-
-    # Collect candidates once; require non-empty library; don't overwrite non-empty
+    # Bucket by type
+    by_type = {
+        "normal_dna": [],
+        "xeno_rna": [],
+        "tumor_rna": [],
+        "xeno_dna": [],
+        "tumor_dna": [],
+    }
     for r in rows:
         t = norm(r.get("type"))
-        lib = (r.get("library") or "").strip()
-        if not lib:
-            continue
-        if t == "normal_dna" and not normal_dna_lib:
-            normal_dna_lib = lib
-        elif t == "xeno_rna" and not xeno_rna_lib:
-            xeno_rna_lib = lib
-        elif t == "tumor_rna" and not tumor_rna_lib:
-            tumor_rna_lib = lib
+        if t in by_type:
+            by_type[t].append(r)
 
-    # Per-row fill
+    # Unique libs per type
+    def libs(rs):
+        return sorted(
+            {
+                (r.get("library") or "").strip()
+                for r in rs
+                if (r.get("library") or "").strip()
+            }
+        )
+
+    normal_dna_libs = libs(by_type["normal_dna"])
+    xeno_rna_libs = libs(by_type["xeno_rna"])
+    tumor_rna_libs = libs(by_type["tumor_rna"])
+    all_rna_libs = sorted(set(xeno_rna_libs) | set(tumor_rna_libs))
+
+    def dna_row_needs(rna=False, normal=False):
+        for r in rows:
+            t = norm(r.get("type"))
+            if t not in {"xeno_dna", "tumor_dna"}:
+                continue
+            mrna = (r.get("Matched_RNA") or "").strip()
+            mnorm = (r.get("Matched_normal") or "").strip()
+            # Skip rows already fully matched
+            if mrna and mnorm:
+                continue
+            if rna and not mrna:
+                return True
+            if normal and not mnorm:
+                return True
+        return False
+
+    need_rna = dna_row_needs(rna=True)
+    need_norm = dna_row_needs(normal=True)
+
+    # Strict checks
+    errs = []
+    sample = (rows[0].get("sample") or "").strip()
+    case = (rows[0].get("casename") or "").strip()
+
+    if need_norm and len(normal_dna_libs) > 1:
+        errs.append(f"Multiple normal_DNA libraries: {', '.join(normal_dna_libs)}")
+
+    if need_rna and len(all_rna_libs) > 1:
+        errs.append(f"Multiple RNA libraries: {', '.join(all_rna_libs)}")
+
+    if errs:
+        print(
+            f"ERROR: Ambiguous matches for sample '{sample}', case '{case}'. "
+            + " | ".join(errs)
+            + ". Unable to set matches deterministically. Please select a single library."
+        )
+        sys.exit(1)
+
+    normal_dna_lib = normal_dna_libs[0] if len(normal_dna_libs) == 1 else ""
+    rna_lib = all_rna_libs[0] if len(all_rna_libs) == 1 else ""
+
+    # Fill per DNA row
     for r in rows:
         r_type = norm(r.get("type"))
         if r_type not in {"xeno_dna", "tumor_dna"}:
@@ -242,24 +294,14 @@ def fill_matches_for_group(rows):
         matched_rna = (r.get("Matched_RNA") or "").strip()
         matched_normal = (r.get("Matched_normal") or "").strip()
 
-        # If BOTH already set, skip this row entirely
         if matched_rna and matched_normal:
             continue
 
-        # Require a normal_DNA to fill anything
-        if not normal_dna_lib:
-            continue
-
-        changed = False
-        if not matched_normal:
+        if not matched_normal and normal_dna_lib:
             r["Matched_normal"] = normal_dna_lib
-            changed = True
 
-        if not matched_rna:
-            if xeno_rna_lib:
-                r["Matched_RNA"] = xeno_rna_lib
-            elif tumor_rna_lib:
-                r["Matched_RNA"] = tumor_rna_lib
+        if not matched_rna and rna_lib:
+            r["Matched_RNA"] = rna_lib
 
 
 def process_samplesheets(
