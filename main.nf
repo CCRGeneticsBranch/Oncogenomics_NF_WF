@@ -5,7 +5,7 @@ nextflow.enable.dsl = 2
 
 // Default parameter values
 
-OUTDIR = "${params.outdir}"
+//OUTDIR = "${params.outdir}"
 
 def patientid_val = Channel.value(null)
 def casename_val = Channel.value(null)
@@ -160,7 +160,7 @@ process PREPARE_SAMPLESHEET {
     script:
     """
 
-    if [ ${genome_version} == "hg19" ]; then
+    if [ "${genome_version}" == "hg19" ] || [ "${genome_version}" == "hg38" ]; then
         python ${workflow.projectDir}/bin/prepare_samplesheet.py ${samplesheet} .
     elif [ ${genome_version} == "mm39" ]; then
         cp ${samplesheet} mouse_rnaseq.csv
@@ -238,7 +238,7 @@ def prepared_samplesheets = PREPARE_SAMPLESHEET( MERGED_SHEET, params.genome_v )
 
 
     }.set { branched_samplesheets }
-
+/*
     branched_samplesheets.rnaseq | RNAseq_only
     branched_samplesheets.tumor_rnaseq | Tumor_RNAseq_WF
     branched_samplesheets.exome | Exome_only_WF
@@ -247,10 +247,10 @@ def prepared_samplesheets = PREPARE_SAMPLESHEET( MERGED_SHEET, params.genome_v )
     branched_samplesheets.multiple_rna | RNAseq_multiple_libs
     branched_samplesheets.tumor_normal | Tumor_Normal_WF
     branched_samplesheets.mouse_rna | Mouse_RNA
-
+*/
 }
 
-
+/*
 workflow.onComplete {
     println "✅ Done!"
     println "🧬 PatientID: ${patientid_val}"
@@ -277,3 +277,4 @@ workflow.onComplete {
         )
     }
 }
+*/
