@@ -4,15 +4,18 @@ import csv
 from collections import defaultdict
 import sys
 import re
+import argparse
 
 # Set default directories
 DEFAULT_SAMPLESHEET_DIR = "/data/khanlab/projects/DATA/Sequencing_Tracking_Master"
 DEFAULT_INPUT_DIR = "/data/khanlab/projects/DATA"
 DEFAULT_BAM_DIR = "/data/khanlab3/David_Milewski_StJude_202504"
 
-# Check if the correct number of arguments is provided
-if len(sys.argv) != 3:
-    print(f"Usage: python {sys.argv[0]} <patient_id> <case_name>")
+# Check required positional args (allow optional flags like --genome)
+if len(sys.argv) < 3:
+    print(
+        f"Usage: python {sys.argv[0]} <patient_id> <case_name> [--genome <hg19|hg38|mm39>]"
+    )
     print(f"Default Mastersheet Directory: {DEFAULT_SAMPLESHEET_DIR}")
     print(f"Default Input Directory: {DEFAULT_INPUT_DIR}")
     print("To use custom directories, modify the script:")
@@ -20,9 +23,23 @@ if len(sys.argv) != 3:
     print(f"   - Change 'DEFAULT_INPUT_DIR' to your input directory path")
     sys.exit(1)
 
-# Extract arguments from command-line
+# Extract required positionals
 sample_id = sys.argv[1]
 case_name = sys.argv[2]
+
+# Optional: --genome fallback (minimal parser, no argparse wiring)
+fallback_genome = None
+if "--genome" in sys.argv:
+    i = sys.argv.index("--genome")
+    if i + 1 < len(sys.argv):
+        fallback_genome = (sys.argv[i + 1] or "").strip().lower()
+        # normalize a few common aliases
+        if fallback_genome in {"grch38", "38"}:
+            fallback_genome = "hg38"
+        elif fallback_genome in {"grch37", "b37", "hs37d5", "37", "19"}:
+            fallback_genome = "hg19"
+        elif fallback_genome in {"grcm39"}:
+            fallback_genome = "mm39"
 
 # Use default directories
 samplesheet_dir = DEFAULT_SAMPLESHEET_DIR
@@ -33,6 +50,8 @@ print(f"Case Name: {case_name}")
 print(f"Samplesheet Directory: {samplesheet_dir}")
 print(f"Input Directory: {inputdir}")
 print(f"BAM Directory: {DEFAULT_BAM_DIR}")
+if fallback_genome:
+    print(f"Fallback genome from CLI: {fallback_genome}")
 
 
 def read_and_map_samplesheet(
@@ -138,10 +157,15 @@ def read_and_map_samplesheet(
                 )
                 sys.exit(1)
 
-            # default genome if missing
-            if row.get("genome") not in ["hg19", "hg38", "mm10"]:
-                print("genome information missing, defaulting to hg19")
-                row["genome"] = "hg19"
+            # default genome if missing or invalid; prefer CLI fallback when provided
+
+            if fallback_genome:
+                row["genome"] = fallback_genome
+                print(f"genome missing in sheet, using CLI fallback: {fallback_genome}")
+            else:
+                if row.get("genome") not in ["hg19", "hg38", "mm39"]:
+                    print("genome information missing, defaulting to hg19")
+                    row["genome"] = "hg19"
 
             library_id = row["library"]
             if "." in library_id:
