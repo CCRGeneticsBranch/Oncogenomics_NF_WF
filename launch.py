@@ -8,7 +8,7 @@ Usage (existing):
 
 Usage (new, auto-generate samplesheet first):
   launch.py --patient P123 --casename CASE_X [--inputdir /data/khanlab/projects/DATA] \
-            [--outdir DIR] [--genome {hg19,mm39}] [--platform biowulf] [--profile PROFILE] \
+            [--outdir DIR] [--genome {hg19,hg38,mm39}] [--platform biowulf] [--profile PROFILE] \
             [--no-resume] [--no-cleanup]
 """
 import argparse
@@ -21,16 +21,18 @@ from datetime import datetime
 from typing import List, Optional
 
 # ---- Paths & defaults ----
-WF_HOME = Path("/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF")
-CONFIG_FILE = WF_HOME / "nextflow.config"
+DEFAULT_WF_HOME = Path("/data/khanlab/projects/Nextflow_dev/dev/AWS_POC_MVP_NF")
+DEV_WF_HOME = Path("/data/khanlab/projects/Nextflow_dev/dev/vg_dev/Oncogenomics_NF_WF")
+
+# CONFIG_FILE = WF_HOME / "nextflow.config"
 DEFAULT_OUTDIR = "/data/khanlab/projects/processed_DATA"
 DEFAULT_GENOME = "hg19"
 DEFAULT_PLATFORM = "biowulf"
-ACCEPTED_GENOMES = {"hg19", "mm39"}
+ACCEPTED_GENOMES = {"hg19", "hg38", "mm39"}
 
 # Fixed builder script; users do NOT override this on CLI.
 # Invoked as: python samplesheet_builder.py Patient Casename [inputdir]
-BUILDER_SCRIPT = WF_HOME / "bin" / "samplesheet_builder.py"
+# BUILDER_SCRIPT = WF_HOME / "bin" / "samplesheet_builder.py"
 
 
 # ----------------- helpers -----------------
@@ -170,6 +172,16 @@ def parse_args():
         action="store_true",
         help="Disable cleanup (default: cleanup runs after successful job)",
     )
+    p.add_argument(
+        "--wf-home",
+        default=None,
+        help="Override workflow home (path containing main.nf and nextflow.config)",
+    )
+    p.add_argument(
+        "--dev",
+        action="store_true",
+        help=f"Use dev WF at {str(DEV_WF_HOME)}",
+    )
 
     return p.parse_args()
 
@@ -177,7 +189,16 @@ def parse_args():
 # ----------------- main -----------------
 def main():
     args = parse_args()
+    if args.dev:
+        WF_HOME = DEV_WF_HOME
+        DEFAULT_OUTDIR_DEV = "/data/khanlab/projects/Nextflow_dev/dev/vg_dev"
+        args.outdir = DEFAULT_OUTDIR_DEV
+        print(f"🔧 Dev mode enabled — using WF_HOME={WF_HOME} and OUTDIR={args.outdir}")
+    else:
+        WF_HOME = DEFAULT_WF_HOME
 
+    CONFIG_FILE = WF_HOME / "nextflow.config"
+    BUILDER_SCRIPT = WF_HOME / "bin" / "samplesheet_builder.py"
     # Validate mode
     if args.patient and not args.casename:
         sys.exit("ERROR: --patient requires --casename.")
@@ -218,6 +239,7 @@ def main():
         builder_cmd = ["python", str(BUILDER_SCRIPT), patient, casename]
         if args.inputdir:
             builder_cmd.append(args.inputdir)
+        builder_cmd.extend(["--genome", shlex.quote(genome)])
 
         print(
             "🔧 Generating samplesheet via:\n  "
@@ -242,7 +264,9 @@ def main():
         profile = args.profile
     else:
         profile = (
-            "biowulf_test_run_slurm" if genome == "hg19" else "biowulf_mouse_RNA_slurm"
+            "biowulf_test_run_slurm"
+            if genome in ("hg19", "hg38")
+            else "biowulf_mouse_RNA_slurm"
         )
 
     logname = Path(samplesheet).stem
