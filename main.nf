@@ -238,7 +238,6 @@ def prepared_samplesheets = PREPARE_SAMPLESHEET( MERGED_SHEET, params.genome_v )
 
 
     }.set { branched_samplesheets }
-/*
     branched_samplesheets.rnaseq | RNAseq_only
     branched_samplesheets.tumor_rnaseq | Tumor_RNAseq_WF
     branched_samplesheets.exome | Exome_only_WF
@@ -247,10 +246,9 @@ def prepared_samplesheets = PREPARE_SAMPLESHEET( MERGED_SHEET, params.genome_v )
     branched_samplesheets.multiple_rna | RNAseq_multiple_libs
     branched_samplesheets.tumor_normal | Tumor_Normal_WF
     branched_samplesheets.mouse_rna | Mouse_RNA
-*/
 }
 
-/*
+
 workflow.onComplete {
     println "✅ Done!"
     println "🧬 PatientID: ${patientid_val}"
@@ -277,4 +275,3 @@ workflow.onComplete {
         )
     }
 }
-*/
