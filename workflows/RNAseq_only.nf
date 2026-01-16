@@ -9,7 +9,8 @@ include {FormatInput} from '../modules/annotation/annot'
 include {Annotation} from '../subworkflows/Annotation'
 include {Multiqc} from '../modules/qc/qc'
 include {AddAnnotation} from '../modules/annotation/annot'
-include {DBinput} from '../modules/misc/DBinput'
+include {DBinput
+        DBinput_opencravat} from '../modules/misc/DBinput'
 include {Combine_customRNAQC
         RNAqc_TrancriptCoverage} from '../modules/qc/picard'
 include {CircosPlot
@@ -20,6 +21,9 @@ include {Fusion_Annotation} from '../modules/annotation/Fusion_Annotation'
 include {Merge_fusion_annotation} from '../modules/annotation/Fusion_Annotation'
 include {CUSTOM_DUMPSOFTWAREVERSIONS} from '../modules/nf-core/dumpsoftwareversions/main.nf'
 include {Allstepscomplete} from '../modules/misc/Allstepscomplete'
+include {OPENCRAVAT
+        FILTER_OPENCRAVAT_OUTPUT
+        ADD_OPENCRAVAT_ANNOTATIONS} from '../modules/annotation/opencravat'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -91,8 +95,8 @@ ch_allcomplete = ch_allcomplete.mix( RNAqc_TrancriptCoverage.out.map { meta, fil
 MakeHotSpotDB(Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] })
 
 //Run circos plot at case level
-CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
-ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
+//CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
+//ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
 
 Hotspot_Boxplot(Common_RNAseq_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
 ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
@@ -109,30 +113,46 @@ Combined_coverage = Common_RNAseq_WF.out.coverage.map{meta, coverage -> [meta, [
 CoveragePlot(Combined_coverage)
 ch_allcomplete = ch_allcomplete.mix( CoveragePlot.out.map { meta, file -> file } )
 
-formatinput_input_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
-FormatInput(formatinput_input_ch)
+if (params.genome_v == "hg19") {
+    formatinput_input_ch = Common_RNAseq_WF.out.snpeff_txt.map{ meta, vcf -> [meta, [vcf]] }.join(MakeHotSpotDB.out)
+    FormatInput(formatinput_input_ch)
 
+    //Run Annotation subworkflow
+    Annotation(FormatInput.out)
 
-//Run Annotation subworkflow
-Annotation(FormatInput.out)
+    ch_versions = Common_RNAseq_WF.out.ch_versions.mix(Annotation.out.version)
 
-ch_versions = Common_RNAseq_WF.out.ch_versions.mix(Annotation.out.version)
+    merged_ch = Common_RNAseq_WF.out.snpeff_txt.join(Annotation.out.rare_annotation,by:[0])
+    AddAnnotation(merged_ch)
 
-merged_ch = Common_RNAseq_WF.out.snpeff_vcf.join(Annotation.out.rare_annotation,by:[0])
-AddAnnotation(merged_ch)
+    dbinput_anno_ch = AddAnnotation.out.map{ meta, txt -> [meta, [txt]] }
+    dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, txt -> [meta, [txt]] }
+    dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
+    DBinput(dbinput_ch)
+    ch_allcomplete = ch_allcomplete.mix( DBinput.out.map { meta, file -> file } )
+} else {
+    // Alternative workflow for non-hg19 genomes using OpenCRAVAT
+    OPENCRAVAT(Common_RNAseq_WF.out.rna_raw_vcf)
 
-dbinput_anno_ch = AddAnnotation.out.map{ meta, txt -> [meta, [txt]] }
-dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, txt -> [meta, [txt]] }
-dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
-DBinput(dbinput_ch)
-ch_allcomplete = ch_allcomplete.mix( DBinput.out.map { meta, file -> file } )
+    FILTER_OPENCRAVAT_OUTPUT(OPENCRAVAT.out.tsv)
+    ADD_OPENCRAVAT_ANNOTATIONS(Common_RNAseq_WF.out.snpeff_vcf.join(FILTER_OPENCRAVAT_OUTPUT.out.rare,by:[0]))
 
+    ch_versions = Common_RNAseq_WF.out.ch_versions.mix(OPENCRAVAT.out.versions)
+
+    // Add DBinput processing for hg38 (using OpenCRAVAT format)
+    dbinput_anno_ch = ADD_OPENCRAVAT_ANNOTATIONS.out.annotated_txt.map{ meta, txt -> [meta, [txt]] }
+    dbinput_snpeff_ch = Common_RNAseq_WF.out.snpeff_vcf.map{ meta, txt -> [meta, [txt]] }
+    dbinput_ch = dbinput_anno_ch.join(dbinput_snpeff_ch,by:[0])
+    DBinput_opencravat(dbinput_ch)
+    ch_allcomplete = ch_allcomplete.mix( DBinput_opencravat.out.map { meta, file -> file } )
+
+}
 
 multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup, by: [0])
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
-                      .join(Common_RNAseq_WF.out.circos_plot, by: [0])
+                      //.join(Common_RNAseq_WF.out.circos_plot, by: [0])
                       .join(Common_RNAseq_WF.out.strandedness, by: [0])
                       .join(Common_RNAseq_WF.out.rnalib_custum_qc, by: [0])
                       .join(Common_RNAseq_WF.out.picard_rnaseqmetrics, by: [0])
