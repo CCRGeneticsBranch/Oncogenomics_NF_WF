@@ -62,6 +62,36 @@ process DBinput {
 
 
 
+process DBinput_opencravat {
+
+     tag "$meta.id"
+
+     publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.id}/db", mode: "${params.publishDirMode}"
+
+     input:
+     tuple val(meta),path(dbinput_annot_libs),path(dbinput_snpeff_libs)
+
+     output:
+     tuple val(meta),path("${meta.id}.*")
+
+     stub:
+     """
+     touch "${meta.id}.*"
+     """
+
+     script:
+
+     """
+     if [[ "${meta.type}" == "tumor_RNA" || "${meta.type}" == "cell_line_RNA" || "${meta.type}" == "xeno_RNA" ]]; then
+          tag="rnaseq"
+          makeDBVariantFile_opencravat.pl ${dbinput_annot_libs.join(' ')} 2>/dev/null |sed 's/trim_//'|AddSampleType.pl - "${meta.lib} ${meta.type}" "${meta.lib} ${meta.sc}" > ${meta.id}.\$tag
+     fi
+
+     """
+}
+
+
+
 process DBinput_multiple {
 
      tag "$meta.id"
