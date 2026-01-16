@@ -62,4 +62,5 @@ workflow RNAseq_GATK {
      SnpEff_vcf      = Vcf2txt.out
      GATK_version   = RNAseq_HaplotypeCaller.out.versions
      Bam = GATK_BR_PR.out.final_bam
+     rna_raw_vcf = RNAseq_HaplotypeCaller.out.rna_HC
 }
