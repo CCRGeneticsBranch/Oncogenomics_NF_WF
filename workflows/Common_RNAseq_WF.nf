@@ -176,4 +176,5 @@ Star_bam_processing.out.rnalib_custom_qc.map { meta, file ->
   Bam = RNAseq_GATK.out.Bam
   hotspot_depth = QC_from_finalBAM.out.hotspot_depth
   coverage = QC_from_finalBAM.out.coverage
+  rna_raw_vcf = RNAseq_GATK.out.rna_raw_vcf
 }
