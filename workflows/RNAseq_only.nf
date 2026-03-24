@@ -95,8 +95,8 @@ ch_allcomplete = ch_allcomplete.mix( RNAqc_TrancriptCoverage.out.map { meta, fil
 MakeHotSpotDB(Common_RNAseq_WF.out.pileup.map{ meta, pileup -> [meta, [pileup]] })
 
 //Run circos plot at case level
-//CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
-//ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
+CircosPlot(Common_RNAseq_WF.out.loh.map{ meta, loh -> [meta, [loh]] })
+ch_allcomplete = ch_allcomplete.mix( CircosPlot.out.map { meta, file -> file } )
 
 Hotspot_Boxplot(Common_RNAseq_WF.out.hotspot_depth.map{ meta, hotspot -> [meta, [hotspot]] })
 ch_allcomplete = ch_allcomplete.mix( Hotspot_Boxplot.out.map { meta, file -> file } )
@@ -152,7 +152,7 @@ multiqc_input = Common_RNAseq_WF.out.Fastqc_out.join(Common_RNAseq_WF.out.pileup
                       .join(Common_RNAseq_WF.out.chimeric_junction, by: [0])
                       .join(Common_RNAseq_WF.out.rsem_genes, by: [0])
                       .join(Common_RNAseq_WF.out.rnaseqc, by: [0])
-                      //.join(Common_RNAseq_WF.out.circos_plot, by: [0])
+                      .join(Common_RNAseq_WF.out.circos_plot, by: [0])
                       .join(Common_RNAseq_WF.out.strandedness, by: [0])
                       .join(Common_RNAseq_WF.out.rnalib_custum_qc, by: [0])
                       .join(Common_RNAseq_WF.out.picard_rnaseqmetrics, by: [0])
