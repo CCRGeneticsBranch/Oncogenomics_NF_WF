@@ -19,8 +19,7 @@ process OPENCRAVAT {
 
     """
 
-    #/data/khanlab/projects/ngs_pipeline_testing/opencravat/oc_vg_2.13_install/bin/oc run \\
-    oc run \\
+    /data/khanlab/projects/ngs_pipeline_testing/opencravat/oc_vg_2.13_install/bin/oc run \\
         $vcf \\
         -a gnomad3 \\
         -l ${params.genome_v} \\
