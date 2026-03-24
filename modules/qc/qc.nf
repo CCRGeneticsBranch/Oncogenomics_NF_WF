@@ -205,8 +205,9 @@ process Genotyping {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
+    def ploidy = params.genome_v == "hg19" ? "GRCh37" : "GRCh38"
      """
-    bcftools mpileup -R ${Sites1000g4genotyping} -C50 -Ou -d 5000 -f ${genome} ${bam} --threads ${task.cpus}| bcftools call --ploidy GRCh37 --threads ${task.cpus} -m -Ov -o ${prefix}.samtools.vcf
+    bcftools mpileup -R ${Sites1000g4genotyping} -C50 -Ou -d 5000 -f ${genome} ${bam} --threads ${task.cpus}| bcftools call --ploidy ${ploidy} --threads ${task.cpus} -m -Ov -o ${prefix}.samtools.vcf
 
     vcf2genotype.pl ${prefix}.samtools.vcf > ${prefix}.gt
 
@@ -289,7 +290,8 @@ process CircosPlot_lib {
     script:
 
      """
-     circosLib.R  \$PWD/ ${meta.lib}.circos.png ${meta.lib}
+     #circosLib.R  \$PWD/ ${meta.lib}.circos.png ${meta.lib}
+     circosLib_circlize.R  \$PWD/ ${meta.lib}.circos.png ${meta.lib} ${params.genome_v}
      """
 }
 
@@ -313,7 +315,8 @@ process CircosPlot {
     script:
 
      """
-     circos.R  \$PWD/ ${meta.id}.circos.png ${loh_files.join(' ')}
+     #circos.R  \$PWD/ ${meta.id}.circos.png ${loh_files.join(' ')}
+     circos_circlize.R  \$PWD/ ${meta.id}.circos.png ${params.genome_v} ${loh_files.join(' ')}
      """
 }
 
