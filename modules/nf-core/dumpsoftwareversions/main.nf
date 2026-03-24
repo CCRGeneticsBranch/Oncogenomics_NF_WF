@@ -17,6 +17,7 @@ process CUSTOM_DUMPSOFTWAREVERSIONS {
     """
 
     dumpsoftwareversions.py ${versions} ${nextflow.version} Software_versions ${meta.id} ${pipeline_version}
+    sed -i "1i Genome version: ${params.genome_v}" ${meta.id}.config*.txt
     sed -i "s/'//g" ${meta.id}.config*txt
     #touch successful.txt
     """
