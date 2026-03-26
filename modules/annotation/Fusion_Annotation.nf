@@ -16,7 +16,10 @@ process Fusion_Annotation {
 
     script:
      """
-        fusionTools.py -i ${actionable_fusion} -m ${isoform_file} -o ${meta.lib}.annotated -t ${task.cpus} -p ${pfamdb} -f ${genome} -g /apps/data/gencode.${genome_version_fusion_annotation}.annotation.sorted.gtf.gz -n /apps/data/gencode.${genome_version_fusion_annotation}.canonical.txt -d /apps/data/gencode.${genome_version_fusion_annotation}.domains.tsv
+        fusionTools.py -i ${actionable_fusion} -m ${isoform_file} -o ${meta.lib}.annotated -t ${task.cpus} -p ${pfamdb} -f ${genome} \
+        -g /apps/data/gencode.${genome_version_fusion_annotation}.annotation.sorted.gtf.gz \
+        -n /apps/data/gencode.${genome_version_fusion_annotation}.canonical.txt \
+        -d /apps/data/gencode.${genome_version_fusion_annotation}.domains.tsv
      """
 }
 
