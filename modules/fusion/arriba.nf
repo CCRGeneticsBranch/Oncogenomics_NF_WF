@@ -19,6 +19,9 @@ process Arriba {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
+    def blacklist      = params.genome_v == "hg38" ? "/opt2/arriba_v2.3.0/database/blacklist_hg38_GRCh38_v2.3.0.tsv.gz"          : "/opt2/arriba_v2.3.0/database/blacklist_hg19_hs37d5_GRCh37_v2.3.0.tsv.gz"
+    def protein_domains = params.genome_v == "hg38" ? "/opt2/arriba_v2.3.0/database/protein_domains_hg38_GRCh38_v2.3.0.gff3"      : "/opt2/arriba_v2.3.0/database/protein_domains_hg19_hs37d5_GRCh37_v2.3.0.gff3"
+    def cytobands      = params.genome_v == "hg38" ? "/opt2/arriba_v2.3.0/database/cytobands_hg38_GRCh38_v2.3.0.tsv"             : "/opt2/arriba_v2.3.0/database/cytobands_hg19_hs37d5_GRCh37_v2.3.0.tsv"
     """
     set -exo pipefail
 
@@ -57,8 +60,8 @@ process Arriba {
         -O ${prefix}.fusions.discarded.tsv \
         -a ${reffa} \
         -g ${gtf} \
-        -b /opt2/arriba_v2.3.0/database/blacklist_hg19_hs37d5_GRCh37_v2.3.0.tsv.gz \
-        -p /opt2/arriba_v2.3.0/database/protein_domains_hg19_hs37d5_GRCh37_v2.3.0.gff3
+        -b ${blacklist} \
+        -p ${protein_domains}
 
     # index file
     samtools index -@ ${task.cpus} ${prefix}.arriba.Aligned.sortedByCoords.out.bam
@@ -73,8 +76,8 @@ process Arriba {
             --alignments=${prefix}.arriba.Aligned.sortedByCoords.out.bam \
             --output=${prefix}.fusions.pdf \
             --annotation=${gtf} \
-            --cytobands=/opt2/arriba_v2.3.0/database/cytobands_hg19_hs37d5_GRCh37_v2.3.0.tsv \
-            --proteinDomains=/opt2/arriba_v2.3.0/database/protein_domains_hg19_hs37d5_GRCh37_v2.3.0.gff3
+            --cytobands=${cytobands} \
+            --proteinDomains=${protein_domains}
     else
         touch ${prefix}.fusions.pdf
     fi
