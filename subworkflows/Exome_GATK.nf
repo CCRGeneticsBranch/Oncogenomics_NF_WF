@@ -66,4 +66,5 @@ emit:
      SnpEff_vcf      = SnpEff.out.raw_snpeff
      HC_snpeff_snv_vcf2txt = Vcf2txt.out
      ch_versions = ch_versions
+     raw_vcf = Exome_HaplotypeCaller.out.exome_HC
 }
