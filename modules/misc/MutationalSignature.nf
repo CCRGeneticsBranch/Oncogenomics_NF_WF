@@ -23,7 +23,7 @@ process MutationalSignature {
     if [ "\$n_lines" -gt 50 ]; then
         echo "File has \$n_lines lines — running mutationSignature.R"
         awk '{OFS="\t"}{print \$1,\$2,\$4,\$5,"${meta.lib}"}' ${unionSomaticVarsFull} |sed -e '1s/${meta.lib}/Sample/g' > ${meta.lib}.mutationalSignature.pdf.tmp
-        mutationSignature.R --input ${meta.lib}.mutationalSignature.pdf.tmp --sample ${meta.lib} --output ${meta.lib}.mutationalSignature.pdf
+        mutationSignature.R --input ${meta.lib}.mutationalSignature.pdf.tmp --sample ${meta.lib} --output ${meta.lib}.mutationalSignature.pdf --genome ${params.genome_v}
         rm -rf ${meta.lib}.mutationalSignature.pdf.tmp
     else
         echo "File has \$n_lines lines (<50) — skipping mutationalSignature.R"
@@ -49,16 +49,16 @@ process Cosmic3Signature {
 
     output:
     tuple val(meta),
-    path("${meta.lib}.Indel83_cosmic_v3.pdf"),
-    path("${meta.lib}.SBS96_cosmic_v3.pdf"),
-    path("${meta.lib}.DBS78_cosmic_v3.pdf")
+    path("${meta.lib}.Indel83_cosmic_*.pdf"),
+    path("${meta.lib}.SBS96_cosmic_*.pdf"),
+    path("${meta.lib}.DBS78_cosmic_*.pdf")
 
 
     stub:
     """
-    touch "${meta.lib}.Indel83_cosmic_v3.pdf"
-    touch "${meta.lib}.SBS96_cosmic_v3.pdf"
-    touch "${meta.lib}.DBS78_cosmic_v3.pdf"
+    touch "${meta.lib}.Indel83_cosmic_*.pdf"
+    touch "${meta.lib}.SBS96_cosmic_*.pdf"
+    touch "${meta.lib}.DBS78_cosmic_*.pdf"
     """
 
     script:
@@ -69,9 +69,13 @@ process Cosmic3Signature {
     trap 'rm -rf "\$TMP"' EXIT
 
     mv ${mutect} ${strelka_indels} ${strelka_snvs} \$TMP
-    matrixgenerator.py ${prefix} \$TMP
-    cut -f1 \$TMP/output/ID/${prefix}.ID83.all |awk -F ":" -v OFS="_" '{print \$2,\$3,\$1,\$4}'|sed  s'/Del/DEL/g'|sed s'/Ins/INS/g' |sed s'/__MutationType_/MutationType/g'|sed s'/_R_/_repeats_/g'|sed s'/_M_/_MH_/g'| sed s'/5/5+/g' |paste - \$TMP/output/ID/${prefix}.ID83.all|cut -f1,3 > \$TMP/output/ID/${prefix}.ID83.all_updatedcolumns
-    deconstructsigs_indels.R \$TMP/output/ID/${prefix}.ID83.all_updatedcolumns ${prefix}.Indel83 ${cosmic_indel_rda}
+    mutect_file=\$(basename "${mutect}")
+    if [[ "\$mutect_file" == *.gz ]]; then
+        gunzip -f "\$TMP/\$mutect_file"
+    fi
+    matrixgenerator.py ${prefix} \$TMP ${params.genome_v}
+    cut -f1 \$TMP/output/ID/${prefix}.ID83.all |awk -F ":" -v OFS="_" '{print \$2,\$3,\$1,\$4}'|sed  s'/Del/DEL/g'|sed s'/Ins/INS/g' |sed s'/__MutationType_/MutationType/g'|sed s'/_R_/_repeats_/g'|sed s'/_M_/_MH_/g'| sed -E s'/_(repeats|MH)_5_/_\\1_5+_/g' |paste - \$TMP/output/ID/${prefix}.ID83.all|cut -f1,3 > \$TMP/output/ID/${prefix}.ID83.all_updatedcolumns
+    deconstructsigs_indels.R \$TMP/output/ID/${prefix}.ID83.all_updatedcolumns ${prefix}.Indel83 ${cosmic_indel_rda} ${params.genome_v}
     deconstructsigs_sbs.R \$TMP/output/SBS/${prefix}.SBS96.all ${prefix}.SBS96 ${cosmic_genome_rda}
     deconstructsigs_dbs.R \$TMP/output/DBS/${prefix}.DBS78.all ${prefix}.DBS78 ${cosmic_dbs_rda}
 

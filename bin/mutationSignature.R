@@ -2,17 +2,27 @@
 
 suppressPackageStartupMessages(library("deconstructSigs"))
 suppressPackageStartupMessages(library("optparse"))
+suppressPackageStartupMessages(library("BSgenome.Hsapiens.UCSC.hg19"))
+suppressPackageStartupMessages(library("BSgenome.Hsapiens.UCSC.hg38"))
 
 option_list <- list(
                 make_option("--input", help="input file name"),
                 make_option("--sample", help="Header of the sample column"),
-		make_option("--output", help="output pdf file name")
-		
+		make_option("--output", help="output pdf file name"),
+		make_option("--genome", help="genome build: hg19 or hg38")
+
 )
 opt <- parse_args(OptionParser(option_list=option_list))
 input=opt$input
 output=opt$output
 sample=opt$sample
+genome=opt$genome
+
+if (is.null(genome) || !(genome %in% c("hg19", "hg38"))) {
+	stop("--genome must be one of: hg19, hg38")
+}
+
+bsg <- if (genome == "hg38") BSgenome.Hsapiens.UCSC.hg38 else BSgenome.Hsapiens.UCSC.hg19
 
 
 
@@ -23,7 +33,8 @@ sigs.input <- mut.to.sigs.input(mut.ref = mut_data,
 		chr = "Chr",
 		pos = "Start",
 		ref = "Ref",
-		alt = "Alt")
+		alt = "Alt",
+		bsg = bsg)
 cosmic = whichSignatures(tumor.ref = sigs.input,
 		signatures.ref = signatures.cosmic,
 		sample.id = sample,
