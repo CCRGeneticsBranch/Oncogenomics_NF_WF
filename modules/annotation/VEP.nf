@@ -46,10 +46,12 @@ process VEP {
 
   script:
   def prefix = task.ext.prefix ?: "${meta.lib}"
+  def assembly = params.genome_v == "hg19" ? "GRCh37" : "GRCh38"
+
   """
   /opt/vep/src/ensembl-vep/vep -i ${combined_vcf_tmp} --format vcf --plugin Downstream --plugin Wildtype \
                   --terms SO --offline --cache --dir ${vep_cache} \
-                   --assembly GRCh37 \
+                   --assembly ${assembly} \
                   --output_file ${prefix}_final.vcf --vcf --force_overwrite --no_check_variants_order
 
   cat <<-END_VERSIONS > versions.yml
