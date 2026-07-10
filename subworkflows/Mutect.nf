@@ -12,7 +12,6 @@ workflow Mutect_WF {
     genome_fai              = Channel.of(file(params.genome_fai, checkIfExists:true))
     genome_dict             = Channel.of(file(params.genome_dict, checkIfExists:true))
     dbsnp_138_b37_vcf       = Channel.of(file(params.dbsnp, checkIfExists:true))
-    cosmic_v67_hg19_vcf     = Channel.of(file(params.cosmic_v67_hg19_vcf, checkIfExists:true))
     dbNSFP2_4             = Channel.of(file(params.dbNSFP2_4, checkIfExists:true))
     dbNSFP2_4_tbi         = Channel.of(file(params.dbNSFP2_4_tbi, checkIfExists:true))
     Biowulf_snpEff_config  = Channel.of(file(params.Biowulf_snpEff_config, checkIfExists:true))
@@ -58,6 +57,8 @@ if (params.genome_v == "hg38") {
     )
 
 } else {
+
+    cosmic_v67_hg19_vcf = Channel.of(file(params.cosmic_v67_hg19_vcf, checkIfExists:true))
 
     Mutect(
         bam_variant_calling_pair
