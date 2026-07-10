@@ -2,7 +2,7 @@ process Combine_variants  {
 
    tag "$meta.lib"
 
-   publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}", pattern: "*.txt"
+  //publishDir "${params.resultsdir}/${meta.id}/${meta.casename}/${meta.lib}/NeoAntigen", mode: "${params.publishDirMode}", pattern: "*.txt"
 
   input:
 
@@ -20,7 +20,7 @@ process Combine_variants  {
   script:
   def prefix = task.ext.prefix ?: "${meta.lib}"
   """
-  consensusSomaticVCF.pl -vcf ${strelka_indel_raw_vcf},${strelka_snvs_raw_vcf},${mutect_raw_vcf} -order ${meta.normal_id},${prefix} -filter REJECT |vcf-subset -u -c ${prefix} > ${prefix}.final.vcf.tmp
+  consensusSomaticVCF.py -vcf ${strelka_indel_raw_vcf},${strelka_snvs_raw_vcf},${mutect_raw_vcf} -order ${meta.normal_id},${prefix} -filter REJECT |vcf-subset -u -c ${prefix} > ${prefix}.final.vcf.tmp
 
   """
 
