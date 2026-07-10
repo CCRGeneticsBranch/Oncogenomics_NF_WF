@@ -11,16 +11,17 @@ process Allstepscomplete {
 
     output:
 
-    path("successful.txt")
+    path("successful*")
 
     stub:
     """
-    touch "successful.txt"
+    touch "successful*"
     """
 
     script:
+     def successful_file = params.genome_v == 'hg19' ? 'successful.txt' : 'successful_hg38.txt'
     """
-     touch "successful.txt"
+     touch "${successful_file}"
+    """
 
-    """
 }
