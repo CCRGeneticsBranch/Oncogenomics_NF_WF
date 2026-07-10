@@ -300,8 +300,10 @@ process Coverage {
 
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
+     def genome_build = (params.genome_v ?: 'hg19').toString().toLowerCase()
+     def chrm_coords = genome_build.contains('hg38') ? 'chrM\t1\t16569' : 'chrM\t3306\t15887'
      """
-     if ! grep -q "^chrM" ${targetcapture} ; then echo -e "chrM\t3306\t15887" >> ${targetcapture} ; fi
+     if ! grep -q "^chrM" ${targetcapture} ; then echo -e "${chrm_coords}" >> ${targetcapture} ; fi
      awk -F'\t'  '\$1 !~ /_/' ${targetcapture}|awk 'NR==FNR{order[\$1]=NR; next} {print order[\$1]"\t"\$0}' ${sorted_chr_order} - | \
      sort -k1,1n -k3,3n |tr -s ' ' '\t' | cut -f 2,3,4 |sed 's/\t*\$//' > sorted_bed
      bedtools coverage -a sorted_bed -sorted -b ${bam} -g ${genomelength} -hist |grep "^all" > ${prefix}.coverage.txt
