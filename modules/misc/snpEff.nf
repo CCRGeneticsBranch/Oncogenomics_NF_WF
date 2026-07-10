@@ -23,11 +23,12 @@ process SnpEff {
 
      script:
      def prefix = task.ext.prefix ?: "${meta.lib}"
+     def snpeff_genome = (params.genome_v == "hg19") ? "GRCh37.75" : "GRCh38.86"
      """
 
      set -exo pipefail
 
-     java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db ${dbNSFP2_4}  -c ${Biowulf_snpEff_config} -a ${vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon GRCh37.75 > ${prefix}.${tool_ch}_${meta.type}.raw.snpEff.vcf
+     java -jar \$SNPEFF_HOME/SnpSift.jar dbnsfp -db ${dbNSFP2_4}  -c ${Biowulf_snpEff_config} -a ${vcf} | java -jar \$SNPEFF_HOME/snpEff.jar -t -canon ${snpeff_genome} > ${prefix}.${tool_ch}_${meta.type}.raw.snpEff.vcf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
