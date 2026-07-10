@@ -17,9 +17,10 @@ process BWA {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.lib}"
+    def genome_fa = params.genome_v == "hg38" ? "hg38_GRCh38_v44.fa" : "hg19.fa"
 
     """
-    bwa mem -M -t ${task.cpus} -R '@RG\\tID:${prefix}\\tSM:${prefix}\\tLB:${prefix}\\tPL:illumina' ${bwa_genomeindex}/hg19.fa ${r1fq} ${r2fq} | samtools view -Sbh - | samtools sort -m 30000000000 -o ${prefix}.bam
+    bwa-mem2 mem -M -t ${task.cpus} -R '@RG\\tID:${prefix}\\tSM:${prefix}\\tLB:${prefix}\\tPL:illumina' ${bwa_genomeindex}/${genome_fa} ${r1fq} ${r2fq} | samtools view -Sbh - | samtools sort -m 30000000000 -o ${prefix}.bam
     samtools index ${prefix}.bam
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
