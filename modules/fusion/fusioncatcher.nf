@@ -38,7 +38,11 @@ process Fusioncatcher {
             touch ${prefix}.fusion-catcher.txt
             touch ${prefix}.summary_candidate_fusions.txt
         else
-            cp \$TMP/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
+            if [[ "${params.genome_v}" == "hg19" ]]; then
+                cp \$TMP/final-list_candidate-fusion-genes.hg19.txt ${prefix}.fusion-catcher.txt
+            else
+                cp \$TMP/final-list_candidate-fusion-genes.txt ${prefix}.fusion-catcher.txt
+            fi
             cp \$TMP/summary_candidate_fusions.txt ${prefix}.summary_candidate_fusions.txt
         fi
 
