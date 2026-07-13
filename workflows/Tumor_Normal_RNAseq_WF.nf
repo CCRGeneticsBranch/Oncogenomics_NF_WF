@@ -464,7 +464,7 @@ highconfidence_somatic_threshold = pileup_pair
         def Normal = ''
         def Tumor = ''
         def VAF =  ''
-        if (meta.sc == 'clin.ex.v1' || meta.sc == 'nextera.ex.v1'|| meta.sc == 'vcrome2.1_pkv2' || meta.sc == 'seqcapez.hu.ex.v3' || meta.sc == 'seqcapez.hu.ex.utr.v1' || meta.sc == 'agilent.v7'|| meta.sc == 'panel_paed_v5_w5.1') {
+        if (meta.sc == 'clin.ex.v1' || meta.sc == 'nextera.ex.v1'|| meta.sc == 'vcrome2.1_pkv2' || meta.sc == 'seqcapez.hu.ex.v3' || meta.sc == 'seqcapez.hu.ex.utr.v1' || meta.sc == 'agilent.v7'|| meta.sc == 'panel_paed_v5_w5.1'|| meta.sc == 'hybrid_selection') {
             Normal = params.highconfidence_somatic_threshold['threshold_1']['Normal']
             Tumor = params.highconfidence_somatic_threshold['threshold_1']['Tumor']
             VAF = params.highconfidence_somatic_threshold['threshold_1']['VAF']
@@ -499,6 +499,8 @@ targetbp_MB_ch = pileup_pair
             targetbp_mb = params.seqcapez.hu.ex.utr.v1_MB
         } else if (meta.sc == 'seqcapez.rms.v1') {
             targetbp_mb = params.seqcapez.rms.v1_MB
+        } else if (meta.sc == 'hybrid_selection') {
+            targetbp_mb = params.hybrid_selection_MB
         }
 
         return [meta,targetbp_mb]
