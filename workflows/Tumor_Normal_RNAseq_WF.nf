@@ -22,7 +22,7 @@ include {AddAnnotation_TN
 include {UnionSomaticCalls} from '../modules/misc/UnionSomaticCalls.nf'
 include {MutationalSignature
         Cosmic3Signature} from '../modules/misc/MutationalSignature.nf'
-include {MutationBurden} from '../modules/misc/MutationBurden.nf'
+include {MutationBurden; combineTMB} from '../modules/misc/MutationBurden.nf'
 include {Sequenza_annotation} from '../subworkflows/Sequenza_annotation'
 include {Annotation_somatic} from '../subworkflows/Actionable_somatic.nf'
 include {Annotation_germline} from '../subworkflows/Actionable_germline.nf'
@@ -514,7 +514,15 @@ mutationburden_input_ch = AddAnnotationFull_somatic_variants.out
                     .combine(strelka_snvsch)
 
 MutationBurden(mutationburden_input_ch)
-ch_allcomplete = ch_allcomplete.mix( MutationBurden.out.map { all -> all[1..-1] }.flatten())
+ch_allcomplete = ch_allcomplete.mix( MutationBurden.out.mutect.map { all -> all[1..-1] }.flatten())
+ch_allcomplete = ch_allcomplete.mix( MutationBurden.out.strelka_indels.map { all -> all[1..-1] }.flatten())
+ch_allcomplete = ch_allcomplete.mix( MutationBurden.out.strelka_snvs.map { all -> all[1..-1] }.flatten())
+
+combineTMB_input_ch = MutationBurden.out.mutect.join(MutationBurden.out.strelka_indels,by:[0])
+
+combineTMB(combineTMB_input_ch)
+
+ch_allcomplete = ch_allcomplete.mix( combineTMB.out.map { all -> all[1..-1] }.flatten())
 
 exome_qc_status = Exome_common_WF.out.exome_qc.branch{
     normal: it[0].type == "normal_DNA" || it[0].type == "blood_DNA"
